@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Roster — Mobile Medical Operations Tracker</title>
+<style>
+  :root{
+    --ink:#12312b;
+    --paper:#f6f4ef;
+    --card:#ffffff;
+    --line:#dcd6c8;
+    --teal:#14524a;
+    --teal-deep:#0b3630;
+    --amber:#c8862b;
+    --amber-bg:#fbeed9;
+    --blue:#2f5f8a;
+    --blue-bg:#e4edf5;
+    --green:#3d7a4f;
+    --green-bg:#e2efe3;
+    --red:#a8402f;
+    --red-bg:#f6e3df;
+    --muted:#6c7570;
+    --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    color:#f2ede0;
+    padding:22px 26px 20px;
+    position:sticky; top:0; z-index:30;
+    box-shadow:0 4px 14px rgba(11,54,48,0.25);
+  }
+  .header-row{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap;
+    max-width:1400px; margin:0 auto;
+  }
+  .brand-eyebrow{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600;
+  }
+  .brand-title{
+    font-size:24px; font-weight:800; letter-spacing:-0.01em; margin:0;
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-title .tag{
+    font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0;
+  }
+  .org-input{
+    background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35);
+    color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit;
+  }
+  .org-input::placeholder{ color:rgba(242,237,224,0.55); }
+  .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
+
+  .stat-strip{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    border-radius:10px; padding:8px 14px; min-width:92px; text-align:center;
+  }
+  .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
+  .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    max-width:1400px; margin:16px auto 10px; padding:0 26px;
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  .btn{
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow);
+  }
+  .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
+  .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+  .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .btn-ghost{ box-shadow:none; }
+  input[type="text"], input[type="date"], select{
+    font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  #search{ min-width:220px; flex:1; }
+  .spacer{ flex:1; }
+  input[type="file"]{ display:none; }
+
+  /* ---------- Groups ---------- */
+  .team-group{
+    max-width:1400px; margin:18px auto; padding:0 26px;
+  }
+  .team-head{
+    display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+    padding:10px 4px; border-bottom:2px solid var(--ink);
+  }
+  .team-head .chev{ transition:transform .15s ease; font-size:12px; color:var(--muted); }
+  .team-head.collapsed .chev{ transform:rotate(-90deg); }
+  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
+  .team-head .count{
+    font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace;
+    background:var(--line); padding:2px 8px; border-radius:20px;
+  }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
+  .team-head .team-tools button{
+    background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline;
+  }
+
+  /* ---------- Table ---------- */
+  .table-wrap{ overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:var(--card); margin-top:8px; }
+  table{ width:100%; border-collapse:collapse; min-width:1180px; }
+  thead th{
+    position:sticky; top:0; background:#eef0e8; color:var(--teal-deep);
+    font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700;
+    padding:10px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  tbody tr{ border-bottom:1px solid #ece8dc; }
+  tbody tr:hover{ background:#fbfaf6; }
+  tbody tr.dup-row{ background:var(--red-bg); }
+  td{ padding:9px 10px; font-size:13px; vertical-align:middle; }
+  td.name{ font-weight:600; min-width:190px; }
+  td.name .sub{ display:block; font-size:11px; color:var(--muted); font-weight:400; }
+  .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
+  .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; }
+
+  input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--teal); cursor:pointer; }
+
+  .badge-select{
+    border:none; border-radius:20px; padding:5px 10px 5px 9px; font-size:11.5px; font-weight:700;
+    cursor:pointer; appearance:none; -webkit-appearance:none; text-align:left;
+    background-position:right 7px center; background-repeat:no-repeat; background-size:9px;
+    padding-right:22px;
+  }
+  .st-registered{ background:var(--amber-bg); color:var(--amber); }
+  .st-validated{ background:var(--blue-bg); color:var(--blue); }
+  .st-submitted{ background:var(--green-bg); color:var(--green); }
+  .st-hold{ background:var(--red-bg); color:var(--red); }
+
+  .cl-t1{ background:var(--blue-bg); color:var(--blue); }
+  .cl-pending{ background:var(--amber-bg); color:var(--amber); }
+  .cl-approved{ background:var(--green-bg); color:var(--green); }
+  .cl-returned{ background:var(--red-bg); color:var(--red); }
+
+  .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+  .dup-new{ background:var(--green-bg); color:var(--green); }
+  .dup-flag{ background:var(--red-bg); color:var(--red); }
+
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{
+    border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:3px 5px; border-radius:6px;
+  }
+  .icon-btn:hover{ background:var(--line); color:var(--ink); }
+
+  .empty-state{
+    text-align:center; padding:50px 20px; color:var(--muted); font-size:13px;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none;
+    align-items:flex-start; justify-content:center; z-index:100; padding:40px 16px; overflow-y:auto;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal{
+    background:var(--card); border-radius:14px; max-width:640px; width:100%;
+    padding:26px 28px 22px; box-shadow:0 20px 60px rgba(11,54,48,0.3);
+  }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
+  .modal .modal-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+  .form-grid .full{ grid-column:1/-1; }
+  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-deep); display:block; margin-bottom:4px; }
+  .form-grid input, .form-grid select{ width:100%; }
+  .check-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .dup-warning{
+    background:var(--red-bg); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-top:4px; display:none;
+  }
+
+  .legend{
+    max-width:1400px; margin:26px auto 0; padding:16px 26px; font-size:12px; color:var(--muted);
+    display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+  }
+  .legend b{ color:var(--ink); }
+
+  @media (max-width: 720px){
+    .stat-strip{ display:none; }
+    .form-grid{ grid-template-columns:1fr; }
+    header{ padding:16px; }
+    .toolbar{ padding:0 14px; }
+    .team-group{ padding:0 14px; }
+  }
+  @media print{
+    header, .toolbar, .row-actions, .legend, th:last-child, td:last-child{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div>
+      <div class="brand-eyebrow">Mobile Medical Operations</div>
+      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
+      <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
+    </div>
+    <div class="stat-strip" id="statStrip"></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-primary" id="addPatientBtn">+ Add Patient</button>
+  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
+  <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
+  <select id="filterStatus">
+    <option value="">All statuses</option>
+    <option value="registered">Registered</option>
+    <option value="validated">Validated</option>
+    <option value="submitted">Submitted</option>
+    <option value="hold">On hold</option>
+  </select>
+  <select id="filterBenefit">
+    <option value="">All benefit states</option>
+    <option value="rice-yes">Rice availed</option>
+    <option value="rice-no">Rice not yet availed</option>
+    <option value="lab-yes">Lab availed</option>
+    <option value="lab-no">Lab not yet availed</option>
+  </select>
+  <div class="spacer"></div>
+  <button class="btn" id="exportBtn">⬇ Export CSV</button>
+  <button class="btn" id="importBtn">⬆ Import CSV</button>
+  <input type="file" id="importFile" accept=".csv">
+  <button class="btn" id="printBtn">🖨 Print</button>
+</div>
+
+<div id="groupsContainer"></div>
+
+<div class="legend" id="legend"></div>
+
+<!-- Patient Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Add Patient</h3>
+    <div class="modal-sub">Fields marked with the team dropdown determine which group this row appears under.</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Patient name (Last, First, Middle, Suffix)</label>
+        <input type="text" id="f_name" placeholder="DELA CRUZ, JUAN, SANTOS">
+      </div>
+      <div>
+        <label>PhilHealth ID</label>
+        <input type="text" id="f_phid" placeholder="1234-5678-9012">
+        <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
+      </div>
+      <div>
+        <label>Team / Site</label>
+        <select id="f_team"></select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="f_status">
+          <option value="registered">Registered</option>
+          <option value="validated">Validated</option>
+          <option value="submitted">Submitted</option>
+          <option value="hold">On hold</option>
+        </select>
+      </div>
+      <div>
+        <label>Status of claim</label>
+        <select id="f_claim">
+          <option value="t1">T1 submitted</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="returned">Returned</option>
+        </select>
+      </div>
+      <div>
+        <label>Date encoded</label>
+        <input type="date" id="f_dateEncoded">
+      </div>
+      <div>
+        <label>Date validated &amp; submitted</label>
+        <input type="date" id="f_dateSubmitted">
+      </div>
+      <div class="full" style="display:flex; gap:24px; flex-wrap:wrap;">
+        <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA attachment on file</label></div>
+        <div class="check-row"><input type="checkbox" id="f_within24"><label for="f_within24">Submitted within 24 hours</label></div>
+        <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
+        <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Already availed laboratory</label></div>
+      </div>
+      <div class="full">
+        <label>Notes</label>
+        <input type="text" id="f_notes" placeholder="Optional remarks…">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save patient</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Storage ---------------- */
+const LS_KEY = "fieldRoster.v1";
+const ORG_KEY = "fieldRoster.org";
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.error("Load failed", e); }
+  return seedData();
+}
+function saveData(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state.patients));
+  renderAll();
+}
+function seedData(){
+  return [
+    {id:cryptoId(), team:"Mobile Staff — Site A", name:"DELA CRUZ, JUAN, SANTOS", phid:"1300-0004-937", status:"registered",
+     mca:true, dateEncoded:"2026-08-12", dateSubmitted:"2026-08-12", within24:false, claim:"t1", rice:true, lab:false, notes:""},
+    {id:cryptoId(), team:"Mobile Staff — Site A", name:"PELIÑO, VICTORIA, ACEBO", phid:"2300-2412-6981", status:"registered",
+     mca:true, dateEncoded:"2026-08-07", dateSubmitted:"2026-08-07", within24:false, claim:"t1", rice:true, lab:true, notes:""}
+  ];
+}
+function cryptoId(){ return 'p_' + Math.random().toString(36).slice(2,10); }
+
+let state = { patients: loadData() };
+
+/* ---------------- Rendering ---------------- */
+const groupsContainer = document.getElementById('groupsContainer');
+const statStrip = document.getElementById('statStrip');
+const legend = document.getElementById('legend');
+const collapsedTeams = new Set();
+
+function getTeams(){
+  return [...new Set(state.patients.map(p=>p.team))];
+}
+
+function filteredPatients(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const st = document.getElementById('filterStatus').value;
+  const bf = document.getElementById('filterBenefit').value;
+  return state.patients.filter(p=>{
+    if(q && !(p.name.toLowerCase().includes(q) || p.phid.toLowerCase().includes(q))) return false;
+    if(st && p.status !== st) return false;
+    if(bf === 'rice-yes' && !p.rice) return false;
+    if(bf === 'rice-no' && p.rice) return false;
+    if(bf === 'lab-yes' && !p.lab) return false;
+    if(bf === 'lab-no' && p.lab) return false;
+    return true;
+  });
+}
+
+function isDuplicate(phid, excludeId){
+  return state.patients.some(p => p.phid.trim() === phid.trim() && p.phid.trim() !== "" && p.id !== excludeId);
+}
+
+const statusLabel = {registered:"Registered", validated:"Validated", submitted:"Submitted", hold:"On hold"};
+const statusClass = {registered:"st-registered", validated:"st-validated", submitted:"st-submitted", hold:"st-hold"};
+const claimLabel = {t1:"T1 submitted", pending:"Pending", approved:"Approved", returned:"Returned"};
+const claimClass = {t1:"cl-t1", pending:"cl-pending", approved:"cl-approved", returned:"cl-returned"};
+
+function renderStats(){
+  const all = state.patients;
+  const stats = [
+    ["Total", all.length],
+    ["Registered", all.filter(p=>p.status==='registered').length],
+    ["Submitted", all.filter(p=>p.status==='submitted').length],
+    ["Rice availed", all.filter(p=>p.rice).length],
+    ["Lab availed", all.filter(p=>p.lab).length],
+    ["Duplicates", all.filter(p=>isDuplicate(p.phid, p.id)).length],
+  ];
+  statStrip.innerHTML = stats.map(([lbl,num])=>`
+    <div class="stat"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>
+  `).join('');
+}
+
+function renderLegend(){
+  legend.innerHTML = `
+    <span><b>Status:</b> Registered → Validated → Submitted, or On hold</span>
+    <span><b>Duplicate Tracker:</b> auto-flags a repeated PhilHealth ID across the whole roster</span>
+    <span><b>Data stored:</b> in this browser only — export CSV regularly to back up / merge across teams</span>
+  `;
+}
+
+function renderAll(){
+  renderStats();
+  renderLegend();
+  const teams = getTeams();
+  const list = filteredPatients();
+  populateTeamSelect(teams);
+
+  groupsContainer.innerHTML = '';
+  if(teams.length === 0){
+    groupsContainer.innerHTML = `<div class="empty-state">No patients yet. Click “Add Patient” to start today's roster.</div>`;
+    return;
+  }
+
+  teams.forEach(team=>{
+    const rows = list.filter(p=>p.team === team);
+    const totalInTeam = state.patients.filter(p=>p.team===team).length;
+    const wrap = document.createElement('div');
+    wrap.className = 'team-group';
+    const collapsed = collapsedTeams.has(team);
+    wrap.innerHTML = `
+      <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
+        <span class="chev">▾</span>
+        <h2>${escapeHtml(team)}</h2>
+        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
+        <div class="team-tools">
+          <button data-rename="${escapeAttr(team)}">rename</button>
+          <button data-delete-team="${escapeAttr(team)}">delete team</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="${collapsed?'display:none;':''}">
+        <table>
+          <thead>
+            <tr>
+              <th>Patient name</th>
+              <th>PhilHealth ID</th>
+              <th>Status</th>
+              <th>Digital MCA</th>
+              <th>Date encoded</th>
+              <th>Date validated &amp; submitted</th>
+              <th>Within 24h</th>
+              <th>Status of claim</th>
+              <th>Duplicate tracker</th>
+              <th>Rice availed</th>
+              <th>Lab availed</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="12" class="empty-state">No matching patients in this team.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+    groupsContainer.appendChild(wrap);
+  });
+}
+
+function rowHtml(p){
+  const dup = isDuplicate(p.phid, p.id);
+  return `
+    <tr class="${dup?'dup-row':''}" data-id="${p.id}">
+      <td class="name">${escapeHtml(p.name)}</td>
+      <td class="idcell">${escapeHtml(p.phid)}</td>
+      <td><select class="badge-select ${statusClass[p.status]}" data-field="status">
+        ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
+      <td class="datecell">${p.dateEncoded||'—'}</td>
+      <td class="datecell">${p.dateSubmitted||'—'}</td>
+      <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
+      <td><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
+        ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td>${dup ? `<span class="dup-tag dup-flag">DUPLICATE ID</span>` : `<span class="dup-tag dup-new">NEW RECORD</span>`}</td>
+      <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
+      <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
+      <td class="row-actions">
+        <button class="icon-btn" data-edit="${p.id}" title="Edit">✎</button>
+        <button class="icon-btn" data-remove="${p.id}" title="Delete">🗑</button>
+      </td>
+    </tr>
+  `;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* ---------------- Team select in modal ---------------- */
+function populateTeamSelect(teams){
+  const sel = document.getElementById('f_team');
+  const current = sel.value;
+  sel.innerHTML = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  if(teams.includes(current)) sel.value = current;
+}
+
+/* ---------------- Event delegation on table ---------------- */
+groupsContainer.addEventListener('click', e=>{
+  const teamHead = e.target.closest('.team-head');
+  if(teamHead && !e.target.closest('.team-tools')){
+    const team = teamHead.dataset.team;
+    if(collapsedTeams.has(team)) collapsedTeams.delete(team); else collapsedTeams.add(team);
+    renderAll();
+    return;
+  }
+  if(e.target.dataset.rename){
+    const oldName = e.target.dataset.rename;
+    const newName = prompt("Rename team / site:", oldName);
+    if(newName && newName.trim() && newName !== oldName){
+      state.patients.forEach(p=>{ if(p.team===oldName) p.team=newName.trim(); });
+      saveData();
+    }
+    return;
+  }
+  if(e.target.dataset.deleteTeam){
+    const team = e.target.dataset.deleteTeam;
+    const count = state.patients.filter(p=>p.team===team).length;
+    if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
+      state.patients = state.patients.filter(p=>p.team!==team);
+      saveData();
+    }
+    return;
+  }
+  if(e.target.dataset.edit){ openModal(e.target.dataset.edit); return; }
+  if(e.target.dataset.remove){
+    if(confirm("Delete this patient record?")){
+      state.patients = state.patients.filter(p=>p.id!==e.target.dataset.remove);
+      saveData();
+    }
+    return;
+  }
+});
+
+groupsContainer.addEventListener('change', e=>{
+  const row = e.target.closest('tr[data-id]');
+  if(!row) return;
+  const id = row.dataset.id;
+  const p = state.patients.find(p=>p.id===id);
+  if(!p) return;
+  const field = e.target.dataset.field;
+  if(!field) return;
+  if(e.target.type === 'checkbox') p[field] = e.target.checked;
+  else p[field] = e.target.value;
+  saveData();
+});
+
+/* ---------------- Modal ---------------- */
+const backdrop = document.getElementById('modalBackdrop');
+let editingId = null;
+
+function openModal(id){
+  editingId = id || null;
+  const p = id ? state.patients.find(p=>p.id===id) : null;
+  document.getElementById('modalTitle').textContent = p ? "Edit Patient" : "Add Patient";
+  populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
+
+  document.getElementById('f_name').value = p ? p.name : '';
+  document.getElementById('f_phid').value = p ? p.phid : '';
+  document.getElementById('f_team').value = p ? p.team : (getTeams()[0]||'');
+  document.getElementById('f_status').value = p ? p.status : 'registered';
+  document.getElementById('f_claim').value = p ? p.claim : 't1';
+  document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : new Date().toISOString().slice(0,10);
+  document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
+  document.getElementById('f_mca').checked = p ? p.mca : false;
+  document.getElementById('f_within24').checked = p ? p.within24 : false;
+  document.getElementById('f_rice').checked = p ? p.rice : false;
+  document.getElementById('f_lab').checked = p ? p.lab : false;
+  document.getElementById('f_notes').value = p ? (p.notes||'') : '';
+  document.getElementById('dupWarning').style.display = 'none';
+  backdrop.classList.add('open');
+  document.getElementById('f_name').focus();
+}
+function closeModal(){ backdrop.classList.remove('open'); editingId = null; }
+
+document.getElementById('addPatientBtn').addEventListener('click', ()=>{
+  if(getTeams().length === 0){
+    alert("Add a team / site first (top toolbar → “+ Add Team / Site”).");
+    return;
+  }
+  openModal(null);
+});
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeModal(); });
+
+document.getElementById('f_phid').addEventListener('input', e=>{
+  const dup = isDuplicate(e.target.value, editingId);
+  document.getElementById('dupWarning').style.display = (dup && e.target.value.trim()) ? 'block' : 'none';
+});
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('f_name').value.trim();
+  const phid = document.getElementById('f_phid').value.trim();
+  if(!name){ alert("Patient name is required."); return; }
+  const data = {
+    team: document.getElementById('f_team').value,
+    name, phid,
+    status: document.getElementById('f_status').value,
+    claim: document.getElementById('f_claim').value,
+    dateEncoded: document.getElementById('f_dateEncoded').value,
+    dateSubmitted: document.getElementById('f_dateSubmitted').value,
+    mca: document.getElementById('f_mca').checked,
+    within24: document.getElementById('f_within24').checked,
+    rice: document.getElementById('f_rice').checked,
+    lab: document.getElementById('f_lab').checked,
+    notes: document.getElementById('f_notes').value.trim(),
+  };
+  if(editingId){
+    const p = state.patients.find(p=>p.id===editingId);
+    Object.assign(p, data);
+  } else {
+    state.patients.push(Object.assign({id:cryptoId()}, data));
+  }
+  saveData();
+  closeModal();
+});
+
+document.getElementById('addTeamBtn').addEventListener('click', ()=>{
+  const name = prompt("New team / site name (e.g. “Mobile Staff — Site B”):");
+  if(name && name.trim()){
+    // Create a placeholder-free team by adding it to the select once a patient references it.
+    // We store it via a zero-patient marker so it shows even if empty:
+    if(!getTeams().includes(name.trim())){
+      pendingEmptyTeams.add(name.trim());
+      renderAll();
+    }
+  }
+});
+const pendingEmptyTeams = new Set();
+
+/* patch getTeams to include pending empty teams */
+const _origGetTeams = getTeams;
+getTeams = function(){
+  const t = new Set(state.patients.map(p=>p.team));
+  pendingEmptyTeams.forEach(x=>t.add(x));
+  return [...t];
+};
+
+/* ---------------- Search / filter listeners ---------------- */
+document.getElementById('search').addEventListener('input', renderAll);
+document.getElementById('filterStatus').addEventListener('change', renderAll);
+document.getElementById('filterBenefit').addEventListener('change', renderAll);
+
+/* ---------------- Org name ---------------- */
+const orgInput = document.getElementById('orgName');
+orgInput.value = localStorage.getItem(ORG_KEY) || '';
+orgInput.addEventListener('input', ()=> localStorage.setItem(ORG_KEY, orgInput.value));
+
+/* ---------------- CSV export / import ---------------- */
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const rows = [CSV_HEADERS.join(',')];
+  state.patients.forEach(p=>{
+    rows.push([
+      csvSafe(p.team), csvSafe(p.name), csvSafe(p.phid), statusLabel[p.status],
+      p.mca?"YES":"NO", p.dateEncoded||'', p.dateSubmitted||'', p.within24?"YES":"NO",
+      claimLabel[p.claim], p.rice?"YES":"NO", p.lab?"YES":"NO", csvSafe(p.notes||'')
+    ].join(','));
+  });
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `field-roster-${stamp}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+function csvSafe(v){
+  v = String(v ?? '');
+  if(v.includes(',') || v.includes('"') || v.includes('\n')) return '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    try{
+      const lines = evt.target.result.split(/\r?\n/).filter(l=>l.trim());
+      lines.shift(); // header
+      const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
+      const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
+      let added = 0;
+      lines.forEach(line=>{
+        const cols = parseCsvLine(line);
+        if(cols.length < 12) return;
+        const [team,name,phid,status,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
+        state.patients.push({
+          id: cryptoId(), team: team||'Imported', name, phid,
+          status: statusRev[(status||'').toLowerCase()] || 'registered',
+          mca: (mca||'').toUpperCase()==='YES',
+          dateEncoded: dateEnc||'', dateSubmitted: dateSub||'',
+          within24: (within24||'').toUpperCase()==='YES',
+          claim: claimRev[(claim||'').toLowerCase()] || 't1',
+          rice: (rice||'').toUpperCase()==='YES',
+          lab: (lab||'').toUpperCase()==='YES',
+          notes: notes||''
+        });
+        added++;
+      });
+      saveData();
+      alert(`Imported ${added} record(s).`);
+    }catch(err){
+      alert("Could not read that CSV file. Make sure it was exported from this tool.");
+      console.error(err);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+function parseCsvLine(line){
+  const out = []; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(inQ){
+      if(c==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+      else if(c==='"'){ inQ=false; }
+      else cur+=c;
+    } else {
+      if(c==='"') inQ=true;
+      else if(c===','){ out.push(cur); cur=''; }
+      else cur+=c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+/* ---------------- Init ---------------- */
+renderAll();
+</script>
+</body>
+</html>
