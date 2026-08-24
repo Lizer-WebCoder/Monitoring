@@ -145,10 +145,9 @@
   .st-submitted{ background:var(--green-bg); color:var(--green); }
   .st-hold{ background:var(--red-bg); color:var(--red); }
 
-  .cl-t1{ background:var(--blue-bg); color:var(--blue); }
   .cl-pending{ background:var(--amber-bg); color:var(--amber); }
-  .cl-approved{ background:var(--green-bg); color:var(--green); }
-  .cl-returned{ background:var(--red-bg); color:var(--red); }
+  .cl-t1{ background:var(--blue-bg); color:var(--blue); }
+  .cl-missed24{ background:var(--red-bg); color:var(--red); }
 
   .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
   .dup-new{ background:var(--green-bg); color:var(--green); }
@@ -278,10 +277,9 @@
       <div>
         <label>Status of claim</label>
         <select id="f_claim">
-          <option value="t1">T1 submitted</option>
           <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="returned">Returned</option>
+          <option value="t1">T1 Submitted</option>
+          <option value="missed24">Missed 24h</option>
         </select>
       </div>
       <div>
@@ -367,10 +365,37 @@ function isDuplicate(phid, excludeId){
   return state.patients.some(p => p.phid.trim() === phid.trim() && p.phid.trim() !== "" && p.id !== excludeId);
 }
 
+/* ---------------- Claim deadline auto-flagging ----------------
+   A patient's T1 claim is due within 24 hours of encoding, cut off
+   at 12:00am (midnight) the day after "Date encoded". If a patient
+   is still "Pending" once that cutoff passes, it's auto-flagged
+   "Missed 24h". */
+function claimDeadline(dateEncoded){
+  if(!dateEncoded) return null;
+  const d = new Date(dateEncoded + "T00:00:00");
+  d.setDate(d.getDate() + 1); // the 12am cutoff the day after encoding
+  return d;
+}
+function autoFlagMissedClaims(){
+  const now = new Date();
+  let changed = false;
+  state.patients.forEach(p=>{
+    if(p.claim === 'pending'){
+      const deadline = claimDeadline(p.dateEncoded);
+      if(deadline && now >= deadline){
+        p.claim = 'missed24';
+        changed = true;
+      }
+    }
+  });
+  if(changed) localStorage.setItem(LS_KEY, JSON.stringify(state.patients));
+  return changed;
+}
+
 const statusLabel = {registered:"Registered", validated:"Validated", submitted:"Submitted", hold:"On hold"};
 const statusClass = {registered:"st-registered", validated:"st-validated", submitted:"st-submitted", hold:"st-hold"};
-const claimLabel = {t1:"T1 submitted", pending:"Pending", approved:"Approved", returned:"Returned"};
-const claimClass = {t1:"cl-t1", pending:"cl-pending", approved:"cl-approved", returned:"cl-returned"};
+const claimLabel = {pending:"Pending", t1:"T1 Submitted", missed24:"Missed 24h"};
+const claimClass = {pending:"cl-pending", t1:"cl-t1", missed24:"cl-missed24"};
 
 function renderStats(){
   const all = state.patients;
@@ -390,12 +415,14 @@ function renderStats(){
 function renderLegend(){
   legend.innerHTML = `
     <span><b>Status:</b> Registered → Validated → Submitted, or On hold</span>
+    <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding, unless T1 was already submitted</span>
     <span><b>Duplicate Tracker:</b> auto-flags a repeated PhilHealth ID across the whole roster</span>
     <span><b>Data stored:</b> in this browser only — export CSV regularly to back up / merge across teams</span>
   `;
 }
 
 function renderAll(){
+  autoFlagMissedClaims();
   renderStats();
   renderLegend();
   const teams = getTeams();
@@ -554,7 +581,7 @@ function openModal(id){
   document.getElementById('f_phid').value = p ? p.phid : '';
   document.getElementById('f_team').value = p ? p.team : (getTeams()[0]||'');
   document.getElementById('f_status').value = p ? p.status : 'registered';
-  document.getElementById('f_claim').value = p ? p.claim : 't1';
+  document.getElementById('f_claim').value = p ? p.claim : 'pending';
   document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : new Date().toISOString().slice(0,10);
   document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
   document.getElementById('f_mca').checked = p ? p.mca : false;
@@ -689,7 +716,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
           mca: (mca||'').toUpperCase()==='YES',
           dateEncoded: dateEnc||'', dateSubmitted: dateSub||'',
           within24: (within24||'').toUpperCase()==='YES',
-          claim: claimRev[(claim||'').toLowerCase()] || 't1',
+          claim: claimRev[(claim||'').toLowerCase()] || 'pending',
           rice: (rice||'').toUpperCase()==='YES',
           lab: (lab||'').toUpperCase()==='YES',
           notes: notes||''
@@ -728,6 +755,9 @@ document.getElementById('printBtn').addEventListener('click', ()=> window.print(
 
 /* ---------------- Init ---------------- */
 renderAll();
+/* Re-check every minute so a patient auto-flips to "Missed 24h" live,
+   without needing a page reload or manual edit. */
+setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
 </script>
 </body>
 </html>
