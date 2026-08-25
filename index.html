@@ -353,16 +353,24 @@ function setSyncStatus(text, mode){
   syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '');
 }
 
-/* fetchShared distinguishes three outcomes instead of collapsing them
-   into one:
-   - found: true, value: "..."   -> key exists and read succeeded
-   - found: true, value: null    -> (not used by get(), kept for shape)
-   - found: false                -> get() threw. That can mean the key
-     genuinely doesn't exist yet, OR that the read failed for some
-     other reason (network blip, etc). We can't tell those apart from
-     the get() error alone, so callers must not assume "found:false"
-     means "safe to reseed". See loadData() below. */
-async function fetchShared(key, attempts=2){
+/* Give the host page a moment to inject window.storage before we try
+   to use it. On a hard refresh the page script can start running
+   before that bridge is ready, which otherwise makes the very first
+   read fail every single time. */
+async function waitForStorage(maxWaitMs=5000){
+  const start = Date.now();
+  while(typeof window.storage === 'undefined' && Date.now()-start < maxWaitMs){
+    await new Promise(r=>setTimeout(r, 150));
+  }
+  return typeof window.storage !== 'undefined';
+}
+
+/* fetchShared: read-only, with retry+backoff for transient failures.
+   Returns { found:true, value } on success, or { found:false, error }
+   if every attempt failed. Callers must NOT treat found:false as "the
+   key doesn't exist" — it just means we couldn't read it right now.
+   This function never writes to storage. */
+async function fetchShared(key, attempts=4){
   let lastErr = null;
   for(let i=0;i<attempts;i++){
     try{
@@ -370,28 +378,13 @@ async function fetchShared(key, attempts=2){
       return { found:true, value: res ? res.value : null };
     }catch(e){
       lastErr = e;
-      if(i < attempts-1) await new Promise(r=>setTimeout(r, 300));
+      if(i < attempts-1) await new Promise(r=>setTimeout(r, 400*(i+1)));
     }
   }
   return { found:false, value:null, error:lastErr };
 }
 async function pushShared(key, value){
   return window.storage.set(key, value, true);
-}
-
-/* Confirms whether a shared key genuinely exists, using list() rather
-   than get()'s throw-on-missing behaviour. Returns true/false when we
-   can tell, or null when list() itself failed (connection issue) —
-   in that case we don't know, so callers should treat it as "not
-   safe to overwrite". */
-async function sharedKeyExists(key){
-  try{
-    const res = await window.storage.list('', true);
-    if(res && Array.isArray(res.keys)) return res.keys.includes(key);
-    return null;
-  }catch(e){
-    return null;
-  }
 }
 
 /* Merge any patient records a teammate has added that we don't have
@@ -432,37 +425,22 @@ async function pullRemote(){
 }
 
 /* IMPORTANT: this is the fix for the "data disappears" bug.
-   Previously, ANY failure to read the shared "patients" key (including
-   a transient network error, not just a genuinely-empty store) caused
-   this function to seed 2 demo patients and PUSH them to shared
-   storage — overwriting whatever the team had already entered.
-   Now we only seed+push when sharedKeyExists() has positively
-   confirmed the key has never been created. Any other failure throws,
-   so the caller (initLoad) falls back to a LOCAL-ONLY seed and does
-   not touch shared storage. */
+   loadData() now ONLY reads. It never writes to shared storage, and
+   it never invents demo/seed patients. A brand-new roster simply
+   starts empty (the UI's existing "No patients yet" state handles
+   that) — the very first "Add Patient" you save is what actually
+   creates the shared record. That removes any scenario where a slow
+   or failed read could get mistaken for "nothing here yet" and
+   overwrite real data. */
 async function loadData(){
   const result = await fetchShared(PATIENTS_KEY);
   if(result.found){
-    if(result.value){
-      try{ return JSON.parse(result.value); }
-      catch(e){ throw new Error('Shared roster data is corrupted; refusing to overwrite it.'); }
-    }
-    // found:true with an empty value shouldn't normally happen for
-    // get(), but treat it the same as "confirmed empty" below.
+    if(!result.value) return [];
+    try{ return JSON.parse(result.value); }
+    catch(e){ throw new Error('Shared roster data is corrupted; refusing to overwrite it.'); }
   }
-
-  const exists = await sharedKeyExists(PATIENTS_KEY);
-  if(exists === false){
-    // Confirmed: nobody has ever saved a roster here. Safe to seed.
-    const seed = seedData();
-    await pushShared(PATIENTS_KEY, JSON.stringify(seed));
-    return seed;
-  }
-
-  // exists === true  -> data is there but we failed to read it (error)
-  // exists === null  -> couldn't even confirm (connection issue)
-  // Either way, do not push anything to shared storage.
-  throw new Error('Could not confirm shared roster is empty — working locally to avoid overwriting teammates\' data.');
+  console.error('Could not read shared roster after retries', result.error);
+  throw new Error('roster-read-failed');
 }
 
 async function saveData(){
@@ -1009,17 +987,20 @@ document.getElementById('syncNowBtn').addEventListener('click', ()=> pullRemote(
 async function initLoad(){
   setSyncStatus('Connecting…', 'busy');
   groupsContainer.innerHTML = `<div class="empty-state">Loading shared roster…</div>`;
+  const ready = await waitForStorage();
+  if(!ready) console.error('window.storage was never injected into this page');
   try{
     state.patients = await loadData();
     const orgResult = await fetchShared(ORG_KEY);
     if(orgResult.found && orgResult.value) orgInput.value = orgResult.value;
     setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   }catch(e){
-    // Safe fallback: show something on screen locally, but never push
-    // this fallback data to shared storage. Keep retrying via the
-    // periodic sync below so the real data appears once the read
-    // succeeds — without ever having been overwritten.
-    console.error("Initial load could not confirm shared data, working locally for now", e);
+    // Could not read shared data this time. Show an empty table for
+    // now rather than guessing — and critically, do NOT write
+    // anything to shared storage. The 15s retry loop below will pick
+    // up the real data as soon as a read succeeds, with nothing lost
+    // in the meantime.
+    console.error("Initial load failed, will keep retrying in the background", e);
     state.patients = [];
     setSyncStatus('Offline — retrying…', 'err');
   }
