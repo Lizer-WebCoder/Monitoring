@@ -3,151 +3,155 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Patients Management</title>
+<title>Patient Management</title>
 <style>
-  /* Basic styles for modal and table */
-  #modalBackdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-  #modalBackdrop.open { display: flex; }
-  #patientModal { background: #fff; padding: 20px; border-radius: 8px; max-width: 400px; width: 100%; }
-  .patient-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #ccc; }
-  #groupsContainer { max-height: 300px; overflow-y: auto; margin-top: 20px; }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  .form-container {
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+  }
+  label {
+    margin-bottom: 4px;
+    font-weight: bold;
+  }
+  input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  #patientsList {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .patient-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .patient-info {
+    max-width: 70%;
+  }
+  .patient-info p {
+    margin: 4px 0;
+  }
+  .actions button {
+    background-color: #e74c3c;
+    margin-left: 8px;
+  }
+  .actions button:hover {
+    background-color: #c0392b;
+  }
 </style>
 </head>
 <body>
 
-<h1>Patients Management</h1>
-<button onclick="showAddPatientModal()">Add Patient</button>
+<h1>Patient Management System</h1>
 
-<div id="groupsContainer"></div>
-
-<!-- Modal for add/edit -->
-<div id="modalBackdrop">
-  <div id="patientModal">
-    <h2 id="modalTitle">Add/Edit Patient</h2>
-    <label>Name: <input type="text" id="f_name" /></label><br />
-    <label>PHID: <input type="text" id="f_phid" /></label><br />
-    <!-- Add more fields as needed -->
-    <button id="saveBtn">Save</button>
-    <button onclick="closeModal()">Cancel</button>
+<div class="form-container">
+  <h2>Add New Patient</h2>
+  <div class="form-group">
+    <label for="f_name">Name:</label>
+    <input type="text" id="f_name" placeholder="Enter patient's name" />
   </div>
+  <div class="form-group">
+    <label for="f_phid">PHID:</label>
+    <input type="text" id="f_phid" placeholder="Enter patient's PHID" />
+  </div>
+  <button id="addPatientBtn">Add Patient</button>
 </div>
 
+<div id="patientsList"></div>
+
 <script>
-  // Utility functions for modal
-  function showModal() {
-    document.getElementById('modalBackdrop').classList.add('open');
-  }
-  function closeModal() {
-    document.getElementById('modalBackdrop').classList.remove('open');
-  }
+  const patients = [];
 
-  // Show modal for adding a new patient
-  function showAddPatientModal() {
-    document.getElementById('modalTitle').innerText = 'Add Patient';
-    document.getElementById('f_name').value = '';
-    document.getElementById('f_phid').value = '';
-    // Remove previous save handler
-    document.getElementById('saveBtn').onclick = async () => {
-      await addPatient();
-      closeModal();
-    };
-    showModal();
-  }
+  const addBtn = document.getElementById('addPatientBtn');
 
-  // Load patients from IndexedDB
-  async function loadPatients() {
-    const data = await fetchShared("patients");
-    let patients = [];
-    if (data) {
-      patients = JSON.parse(data);
+  addBtn.addEventListener('click', () => {
+    const name = document.getElementById('f_name').value.trim();
+    const phid = document.getElementById('f_phid').value.trim();
+
+    if (name && phid) {
+      patients.push({ name, phid });
+      renderPatients();
+      document.getElementById('f_name').value = '';
+      document.getElementById('f_phid').value = '';
+    } else {
+      alert('Please enter both name and PHID.');
     }
-    renderPatients(patients);
-  }
+  });
 
-  // Save patients to IndexedDB
-  async function savePatientsData(patients) {
-    await pushShared("patients", JSON.stringify(patients));
-  }
+  function renderPatients() {
+    const listContainer = document.getElementById('patientsList');
+    listContainer.innerHTML = '';
 
-  // Render patients in UI
-  function renderPatients(patients) {
-    const container = document.getElementById('groupsContainer');
-    container.innerHTML = '';
-    patients.forEach(patient => {
-      const row = document.createElement('div');
-      row.className = 'patient-row';
-      row.innerHTML = `
-        <div>${patient.name}</div>
-        <div>${patient.phID}</div>
-        <button onclick="editPatient('${patient.id}')">Edit</button>
-        <button onclick="deletePatient('${patient.id}')">Delete</button>
+    patients.forEach((patient, index) => {
+      const card = document.createElement('div');
+      card.className = 'patient-card';
+
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'patient-info';
+      infoDiv.innerHTML = `
+        <p><strong>Name:</strong> ${patient.name}</p>
+        <p><strong>PHID:</strong> ${patient.phid}</p>
       `;
-      container.appendChild(row);
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'actions';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.onclick = () => {
+        patients.splice(index, 1);
+        renderPatients();
+      };
+
+      // Optional: Add an Edit button in the future
+
+      actionsDiv.appendChild(deleteBtn);
+
+      card.appendChild(infoDiv);
+      card.appendChild(actionsDiv);
+
+      listContainer.appendChild(card);
     });
   }
-
-  // Add a new patient
-  async function addPatient() {
-    const name = document.getElementById('f_name').value.trim();
-    const phID = document.getElementById('f_phid').value.trim();
-    if (!name || !phID) {
-      alert('Please fill all fields.');
-      return;
-    }
-    const newPatient = {
-      id: Date.now().toString(),
-      name,
-      phID
-    };
-    const data = await fetchShared("patients");
-    let patients = data ? JSON.parse(data) : [];
-    patients.push(newPatient);
-    await savePatientsData(patients);
-    renderPatients(patients);
-  }
-
-  // Edit existing patient
-  async function editPatient(patientId) {
-    const data = await fetchShared("patients");
-    const patients = data ? JSON.parse(data) : [];
-    const patient = patients.find(p => p.id === patientId);
-    if (patient) {
-      // Fill modal fields
-      document.getElementById('f_name').value = patient.name;
-      document.getElementById('f_phid').value = patient.phID;
-      document.getElementById('modalTitle').innerText = 'Edit Patient';
-
-      // Set save handler
-      document.getElementById('saveBtn').onclick = async () => {
-        const name = document.getElementById('f_name').value.trim();
-        const phID = document.getElementById('f_phid').value.trim();
-        if (!name || !phID) {
-          alert('Please fill all fields.');
-          return;
-        }
-        patient.name = name;
-        patient.phID = phID;
-        await savePatientsData(patients);
-        renderPatients(patients);
-        closeModal();
-      };
-      showModal();
-    }
-  }
-
-  // Delete patient
-  async function deletePatient(patientId) {
-    const data = await fetchShared("patients");
-    let patients = data ? JSON.parse(data) : [];
-    patients = patients.filter(p => p.id !== patientId);
-    await savePatientsData(patients);
-    renderPatients(patients);
-  }
-
-  // Initialize on page load
-  window.onload = () => {
-    loadPatients();
-  };
 </script>
 
 </body>
