@@ -66,6 +66,15 @@
   }
   .org-input::placeholder{ color:rgba(242,237,224,0.55); }
   .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
+  .sync-pill{
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
+    font-size:11px; font-weight:600; color:#c7dcd5;
+  }
+  .sync-pill::before{
+    content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none;
+  }
+  .sync-pill.err::before{ background:#e2897a; }
+  .sync-pill.busy::before{ background:#e0c479; }
 
   .stat-strip{ display:flex; gap:10px; flex-wrap:wrap; }
   .stat{
@@ -220,6 +229,7 @@
       <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
       <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
+      <div class="sync-pill" id="syncPill">Connecting…</div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
   </div>
@@ -242,6 +252,7 @@
     <option value="lab-no">Lab not yet availed</option>
   </select>
   <div class="spacer"></div>
+  <button class="btn" id="syncNowBtn">🔄 Sync now</button>
   <button class="btn" id="exportBtn">⬇ Export CSV</button>
   <button class="btn" id="importBtn">⬆ Import CSV</button>
   <input type="file" id="importFile" accept=".csv">
@@ -318,25 +329,89 @@
 </div>
 
 <script>
-/* ---------------- Storage ---------------- */
-const LS_KEY = "fieldRoster.v1";
-const ORG_KEY = "fieldRoster.org";
+/* ---------------- Storage ----------------
+   Patient records and the org name are stored as SHARED data, so every
+   teammate who opens this artifact reads and writes the same roster —
+   this is now a team-wide roster, not a per-device one. There is no
+   push-based live sync: everyone's copy re-checks the shared store on
+   load, every 15s, and right after any save, so updates from teammates
+   show up within a few seconds rather than instantly. If two people
+   save at nearly the same moment, the later save wins for anything
+   they both touched (last-write-wins) — the periodic sync just makes
+   sure new records someone else added aren't lost from your view. */
+const PATIENTS_KEY = "patients";
+const ORG_KEY = "orgName";
 
 /* Facility lists */
 const HOME_FACILITY = "Abucay";
 const facilityOptionsOther = ["Cirian","Maasin","Sogod","Abuyog","Ormoc"];
 const facilityOptionsAll = [HOME_FACILITY, ...facilityOptionsOther];
 
-function loadData(){
-  try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){ console.error("Load failed", e); }
-  return seedData();
+const syncPill = document.getElementById('syncPill');
+function setSyncStatus(text, mode){
+  syncPill.textContent = text;
+  syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '');
 }
-function saveData(){
-  localStorage.setItem(LS_KEY, JSON.stringify(state.patients));
+
+async function fetchShared(key){
+  try{
+    const res = await window.storage.get(key, true);
+    return res ? res.value : null;
+  }catch(e){
+    return null; // missing key or transient error — treat as "nothing there yet"
+  }
+}
+async function pushShared(key, value){
+  return window.storage.set(key, value, true);
+}
+
+/* Merge any patient records a teammate has added that we don't have
+   locally yet. Does not touch records we already have (avoids
+   clobbering an edit in progress), only adds ones that are new to us. */
+function mergeRemotePatients(remoteJson){
+  if(!remoteJson) return false;
+  let remote;
+  try{ remote = JSON.parse(remoteJson); }catch(e){ return false; }
+  const localIds = new Set(state.patients.map(p=>p.id));
+  let added = false;
+  remote.forEach(rp=>{
+    if(!localIds.has(rp.id)){
+      state.patients.push(rp);
+      added = true;
+    }
+  });
+  return added;
+}
+
+async function pullRemote(){
+  setSyncStatus('Syncing…', 'busy');
+  const remoteJson = await fetchShared(PATIENTS_KEY);
+  const changed = mergeRemotePatients(remoteJson);
+  const remoteOrg = await fetchShared(ORG_KEY);
+  if(remoteOrg && document.activeElement !== orgInput) orgInput.value = remoteOrg;
+  if(changed) renderAll();
+  setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+}
+
+async function loadData(){
+  const remoteJson = await fetchShared(PATIENTS_KEY);
+  if(remoteJson){
+    try{ return JSON.parse(remoteJson); }catch(e){ /* fall through to seed */ }
+  }
+  // Nothing in shared storage yet — this is the first person to open it.
+  const seed = seedData();
+  await pushShared(PATIENTS_KEY, JSON.stringify(seed));
+  return seed;
+}
+async function saveData(){
   renderAll();
+  try{
+    await pushShared(PATIENTS_KEY, JSON.stringify(state.patients));
+    setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.error("Save failed", e);
+    setSyncStatus('Save failed — retrying on next sync', 'err');
+  }
 }
 function seedData(){
   return [
@@ -348,7 +423,7 @@ function seedData(){
 }
 function cryptoId(){ return 'p_' + Math.random().toString(36).slice(2,10); }
 
-let state = { patients: loadData() };
+let state = { patients: [] };
 
 /* ---------------- Rendering ---------------- */
 const groupsContainer = document.getElementById('groupsContainer');
@@ -402,7 +477,7 @@ function autoFlagMissedClaims(){
       }
     }
   });
-  if(changed) localStorage.setItem(LS_KEY, JSON.stringify(state.patients));
+  if(changed) pushShared(PATIENTS_KEY, JSON.stringify(state.patients));
   return changed;
 }
 
@@ -446,11 +521,11 @@ function renderStats(){
 
 function renderLegend(){
   legend.innerHTML = `
-    <span><b>Status:</b> Registered →  Registered to other DR facility</span>
+    <span><b>Status:</b> Registered → Validated → Registered to other DR facility</span>
     <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding, unless T1 was already submitted</span>
     <span><b>Duplicate Tracker:</b> auto-flags a repeated PhilHealth ID across the whole roster</span>
-    <span><b>Data stored:</b> in this browser only — export CSV regularly to back up / merge across teams</span>
+    <span><b>Data stored:</b> shared with everyone who opens this roster — teammates' additions appear within ~15s. Export CSV for a backup copy or to share outside this tool</span>
   `;
 }
 
@@ -774,8 +849,11 @@ document.getElementById('filterBenefit').addEventListener('change', renderAll);
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
-orgInput.value = localStorage.getItem(ORG_KEY) || '';
-orgInput.addEventListener('input', ()=> localStorage.setItem(ORG_KEY, orgInput.value));
+let orgSaveTimer = null;
+orgInput.addEventListener('input', ()=>{
+  clearTimeout(orgSaveTimer);
+  orgSaveTimer = setTimeout(()=> pushShared(ORG_KEY, orgInput.value), 500);
+});
 
 /* ---------------- CSV export / import ---------------- */
 const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
@@ -863,12 +941,29 @@ function parseCsvLine(line){
 }
 
 document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+document.getElementById('syncNowBtn').addEventListener('click', ()=> pullRemote());
 
 /* ---------------- Init ---------------- */
-renderAll();
-/* Re-check every minute so a patient auto-flips to "Missed 24h" live,
-   without needing a page reload or manual edit. */
-setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
+async function initLoad(){
+  setSyncStatus('Connecting…', 'busy');
+  groupsContainer.innerHTML = `<div class="empty-state">Loading shared roster…</div>`;
+  try{
+    state.patients = await loadData();
+    const remoteOrg = await fetchShared(ORG_KEY);
+    if(remoteOrg) orgInput.value = remoteOrg;
+    setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  }catch(e){
+    console.error("Initial load failed, starting local-only", e);
+    state.patients = seedData();
+    setSyncStatus('Offline — changes not shared', 'err');
+  }
+  renderAll();
+  // Pick up teammates' additions and re-check missed-claim deadlines
+  // regularly, without needing a page reload.
+  setInterval(()=>{ pullRemote(); }, 15000);
+  setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
+}
+initLoad();
 </script>
 </body>
 </html>
