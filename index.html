@@ -1,164 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/dexie@3/dist/dexie.min.js"></script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Field Roster — Divine Rays Mobile Operations Tracker</title>
-  <style>
-    :root{
-      --ink:#12312b;
-      --paper:#f6f4ef;
-      --card:#ffffff;
-      --line:#dcd6c8;
-      --teal:#14524a;
-      --teal-deep:#0b3630;
-      --amber:#c8862b;
-      --amber-bg:#fbeed9;
-      --blue:#2f5f8a;
-      --blue-bg:#e4edf5;
-      --green:#3d7a4f;
-      --green-bg:#e2efe3;
-      --red:#a8402f;
-      --red-bg:#f6e3df;
-      --purple:#6b3fa0;
-      --purple-bg:#efe3fb;
-      --muted:#6c7570;
-      --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
-      --radius: 10px;
-    }
-    *{box-sizing:border-box;}
-    html,body{margin:0;padding:0;}
-    body{
-      background:var(--paper);
-      color:var(--ink);
-      font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-font-smoothing:antialiased;
-      padding-bottom:60px;
-    }
-    .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
-
-    /* ... (rest of your CSS remains unchanged) ... */
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patients Management</title>
+<style>
+  /* Basic styles for modal and table */
+  #modalBackdrop { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+  #modalBackdrop.open { display: flex; }
+  #patientModal { background: #fff; padding: 20px; border-radius: 8px; max-width: 400px; width: 100%; }
+  .patient-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #ccc; }
+  #groupsContainer { max-height: 300px; overflow-y: auto; margin-top: 20px; }
+</style>
 </head>
 <body>
 
-<header>
-  <div class="header-row">
-    <div>
-      <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
-      <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
-      <div class="sync-pill" id="syncPill">Connecting…</div>
-    </div>
-    <div class="stat-strip" id="statStrip"></div>
-  </div>
-</header>
-
-<div class="toolbar">
-  <button class="btn btn-primary" id="addPatientBtn">+ Add Patient</button>
-  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
-  <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
-  <select id="filterStatus">
-    <option value="">All statuses</option>
-    <option value="registered">Registered</option>
-    <option value="registered_other">Registered to other DR facility</option>
-  </select>
-  <select id="filterBenefit">
-    <option value="">All benefit states</option>
-    <option value="rice-yes">Rice availed</option>
-    <option value="rice-no">Rice not yet availed</option>
-    <option value="lab-yes">Lab availed</option>
-    <option value="lab-no">Lab not yet availed</option>
-  </select>
-  <div class="spacer"></div>
-  <button class="btn" id="syncNowBtn">🔄 Sync now</button>
-  <button class="btn" id="exportBtn">⬇ Export CSV</button>
-  <button class="btn" id="importBtn">⬆ Import CSV</button>
-  <input type="file" id="importFile" accept=".csv" />
-  <button class="btn" id="printBtn">🖨 Print</button>
-</div>
+<h1>Patients Management</h1>
+<button onclick="showAddPatientModal()">Add Patient</button>
 
 <div id="groupsContainer"></div>
 
-<div class="legend" id="legend"></div>
-
-<!-- Patient Modal -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal">
-    <h3 id="modalTitle">Add Patient</h3>
-    <div class="modal-sub">
-      Fields marked with the team dropdown determine which group this row appears under.
-    </div>
-    <div class="form-grid">
-      <!-- ... (rest of your modal code) ... -->
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-      <button class="btn btn-primary" id="saveBtn">Save patient</button>
-    </div>
+<!-- Modal for add/edit -->
+<div id="modalBackdrop">
+  <div id="patientModal">
+    <h2 id="modalTitle">Add/Edit Patient</h2>
+    <label>Name: <input type="text" id="f_name" /></label><br />
+    <label>PHID: <input type="text" id="f_phid" /></label><br />
+    <!-- Add more fields as needed -->
+    <button id="saveBtn">Save</button>
+    <button onclick="closeModal()">Cancel</button>
   </div>
 </div>
 
 <script>
-/* ---------------- Dexie setup ---------------- */
-const db = new Dexie("FieldRosterDB");
-db.version(1).stores({
-  patients: 'id'
-});
-
-/* ---------------- Storage functions ---------------- */
-async function fetchShared(key) {
-  if (key !== "patients") return null;
-  try {
-    const allPatients = await db.patients.toArray();
-    return JSON.stringify(allPatients);
-  } catch (e) {
-    console.error("Dexie fetch error:", e);
-    return null;
+  // Utility functions for modal
+  function showModal() {
+    document.getElementById('modalBackdrop').classList.add('open');
   }
-}
-
-async function pushShared(key, value) {
-  if (key !== "patients") return;
-  try {
-    await db.patients.clear();
-    const patients = JSON.parse(value);
-    await db.patients.bulkAdd(patients);
-  } catch (e) {
-    console.error("Dexie push error:", e);
+  function closeModal() {
+    document.getElementById('modalBackdrop').classList.remove('open');
   }
-}
 
-/* Your existing script continues here... */
-
-// Example initialization: load patients from local storage on page load
-window.onload = async () => {
-  const data = await fetchShared("patients");
-  if (data) {
-    // Parse and initialize your app with data if needed
-    // For example, you may want to load patients into your UI
-    console.log("Loaded patients:", JSON.parse(data));
-    // You can implement your data loading logic here
+  // Show modal for adding a new patient
+  function showAddPatientModal() {
+    document.getElementById('modalTitle').innerText = 'Add Patient';
+    document.getElementById('f_name').value = '';
+    document.getElementById('f_phid').value = '';
+    // Remove previous save handler
+    document.getElementById('saveBtn').onclick = async () => {
+      await addPatient();
+      closeModal();
+    };
+    showModal();
   }
-  // Set organization name if stored
-  const orgName = localStorage.getItem("orgName");
-  if (orgName) document.getElementById("orgName").value = orgName;
-  setSyncStatus("Connected", ""); // or update based on actual sync status
-};
 
-/* Save organization name on change */
-document.getElementById("orgName").addEventListener("change", () => {
-  localStorage.setItem("orgName", document.getElementById("orgName").value);
-});
+  // Load patients from IndexedDB
+  async function loadPatients() {
+    const data = await fetchShared("patients");
+    let patients = [];
+    if (data) {
+      patients = JSON.parse(data);
+    }
+    renderPatients(patients);
+  }
 
-/* Example: Save patients data when needed */
-async function savePatientsData(patientsArray) {
-  await pushShared("patients", JSON.stringify(patientsArray));
-}
+  // Save patients to IndexedDB
+  async function savePatientsData(patients) {
+    await pushShared("patients", JSON.stringify(patients));
+  }
 
-/* You should replace your existing save/load logic with calls to these functions as needed. */
+  // Render patients in UI
+  function renderPatients(patients) {
+    const container = document.getElementById('groupsContainer');
+    container.innerHTML = '';
+    patients.forEach(patient => {
+      const row = document.createElement('div');
+      row.className = 'patient-row';
+      row.innerHTML = `
+        <div>${patient.name}</div>
+        <div>${patient.phID}</div>
+        <button onclick="editPatient('${patient.id}')">Edit</button>
+        <button onclick="deletePatient('${patient.id}')">Delete</button>
+      `;
+      container.appendChild(row);
+    });
+  }
 
+  // Add a new patient
+  async function addPatient() {
+    const name = document.getElementById('f_name').value.trim();
+    const phID = document.getElementById('f_phid').value.trim();
+    if (!name || !phID) {
+      alert('Please fill all fields.');
+      return;
+    }
+    const newPatient = {
+      id: Date.now().toString(),
+      name,
+      phID
+    };
+    const data = await fetchShared("patients");
+    let patients = data ? JSON.parse(data) : [];
+    patients.push(newPatient);
+    await savePatientsData(patients);
+    renderPatients(patients);
+  }
+
+  // Edit existing patient
+  async function editPatient(patientId) {
+    const data = await fetchShared("patients");
+    const patients = data ? JSON.parse(data) : [];
+    const patient = patients.find(p => p.id === patientId);
+    if (patient) {
+      // Fill modal fields
+      document.getElementById('f_name').value = patient.name;
+      document.getElementById('f_phid').value = patient.phID;
+      document.getElementById('modalTitle').innerText = 'Edit Patient';
+
+      // Set save handler
+      document.getElementById('saveBtn').onclick = async () => {
+        const name = document.getElementById('f_name').value.trim();
+        const phID = document.getElementById('f_phid').value.trim();
+        if (!name || !phID) {
+          alert('Please fill all fields.');
+          return;
+        }
+        patient.name = name;
+        patient.phID = phID;
+        await savePatientsData(patients);
+        renderPatients(patients);
+        closeModal();
+      };
+      showModal();
+    }
+  }
+
+  // Delete patient
+  async function deletePatient(patientId) {
+    const data = await fetchShared("patients");
+    let patients = data ? JSON.parse(data) : [];
+    patients = patients.filter(p => p.id !== patientId);
+    await savePatientsData(patients);
+    renderPatients(patients);
+  }
+
+  // Initialize on page load
+  window.onload = () => {
+    loadPatients();
+  };
 </script>
+
 </body>
 </html>
