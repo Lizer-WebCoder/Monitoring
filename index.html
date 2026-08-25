@@ -330,15 +330,17 @@
 
 <script>
 /* ---------------- Storage ----------------
-   Patient records and the org name are stored as SHARED data, so every
-   teammate who opens this artifact reads and writes the same roster —
-   this is now a team-wide roster, not a per-device one. There is no
-   push-based live sync: everyone's copy re-checks the shared store on
-   load, every 15s, and right after any save, so updates from teammates
-   show up within a few seconds rather than instantly. If two people
-   save at nearly the same moment, the later save wins for anything
-   they both touched (last-write-wins) — the periodic sync just makes
-   sure new records someone else added aren't lost from your view. */
+   Patient records and the org name live in a Google Sheet, via a
+   small Apps Script Web App (see API_URL below) that this page talks
+   to over plain HTTPS. Every teammate who opens this page — hosted
+   anywhere, no Claude required — reads and writes the same roster.
+   There is no push-based live sync: everyone's copy re-checks the
+   Sheet on load, every 15s, and right after any save, so updates from
+   teammates show up within a few seconds rather than instantly. If
+   two people save at nearly the same moment, the later save wins for
+   anything they both touched (last-write-wins) — the periodic sync
+   just makes sure new records someone else added aren't lost from
+   your view. */
 const PATIENTS_KEY = "patients";
 const ORG_KEY = "orgName";
 
@@ -353,17 +355,13 @@ function setSyncStatus(text, mode){
   syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '');
 }
 
-/* Give the host page a moment to inject window.storage before we try
-   to use it. On a hard refresh the page script can start running
-   before that bridge is ready, which otherwise makes the very first
-   read fail every single time. */
-async function waitForStorage(maxWaitMs=5000){
-  const start = Date.now();
-  while(typeof window.storage === 'undefined' && Date.now()-start < maxWaitMs){
-    await new Promise(r=>setTimeout(r, 150));
-  }
-  return typeof window.storage !== 'undefined';
-}
+/* This app talks to a Google Apps Script Web App backed by a Google
+   Sheet, instead of Claude's window.storage. Set API_URL to the
+   "/exec" URL you got from Deploy → New deployment → Web app. */
+const API_URL = "https://script.google.com/macros/s/AKfycbyLyuDHs-8Fbt6ock6-MFy8RpwhSj_iYhxr35oHj7MFnHeS-TKHbsIo5fmzQKFnJubPHg/exec";
+
+/* No storage bridge to wait for here — it's a plain HTTPS endpoint. */
+async function waitForStorage(){ return true; }
 
 /* fetchShared: read-only, with retry+backoff for transient failures.
    Returns { found:true, value } on success, or { found:false, error }
@@ -374,8 +372,10 @@ async function fetchShared(key, attempts=4){
   let lastErr = null;
   for(let i=0;i<attempts;i++){
     try{
-      const res = await window.storage.get(key, true);
-      return { found:true, value: res ? res.value : null };
+      const res = await fetch(`${API_URL}?key=${encodeURIComponent(key)}`, { method:'GET' });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      return { found:true, value: (data && data.value != null) ? data.value : null };
     }catch(e){
       lastErr = e;
       if(i < attempts-1) await new Promise(r=>setTimeout(r, 400*(i+1)));
@@ -384,7 +384,15 @@ async function fetchShared(key, attempts=4){
   return { found:false, value:null, error:lastErr };
 }
 async function pushShared(key, value){
-  return window.storage.set(key, value, true);
+  // text/plain avoids a CORS preflight that Apps Script Web Apps don't
+  // handle well — the script still parses the body as JSON itself.
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key, value })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
 }
 
 /* Merge any patient records a teammate has added that we don't have
