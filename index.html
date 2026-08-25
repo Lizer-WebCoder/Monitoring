@@ -356,12 +356,47 @@ function setSyncStatus(text, mode){
 }
 
 /* This app talks to a Google Apps Script Web App backed by a Google
-   Sheet, instead of Claude's window.storage. Set API_URL to the
-   "/exec" URL you got from Deploy → New deployment → Web app. */
+   Sheet. Apps Script Web Apps don't send the CORS header a normal
+   cross-origin fetch() needs to read its response, so reads use JSONP
+   (a <script> tag, not subject to CORS) and writes use a hidden form
+   submission (also not subject to CORS — you just can't read its
+   response, which is fine here). Set API_URL to the "/exec" URL from
+   Deploy → Manage deployments → Web app. */
 const API_URL = "https://script.google.com/macros/s/AKfycbyLyuDHs-8Fbt6ock6-MFy8RpwhSj_iYhxr35oHj7MFnHeS-TKHbsIo5fmzQKFnJubPHg/exec";
 
 /* No storage bridge to wait for here — it's a plain HTTPS endpoint. */
 async function waitForStorage(){ return true; }
+
+let jsonpCounter = 0;
+function jsonpRequest(url, timeoutMs=8000){
+  return new Promise((resolve, reject)=>{
+    const cbName = 'rosterCb' + (jsonpCounter++) + '_' + Date.now();
+    const script = document.createElement('script');
+    let done = false;
+    const cleanup = () => {
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+    const timer = setTimeout(()=>{
+      if(done) return;
+      done = true; cleanup();
+      reject(new Error('JSONP request timed out'));
+    }, timeoutMs);
+    window[cbName] = (data)=>{
+      if(done) return;
+      done = true; clearTimeout(timer); cleanup();
+      resolve(data);
+    };
+    script.onerror = ()=>{
+      if(done) return;
+      done = true; clearTimeout(timer); cleanup();
+      reject(new Error('JSONP script failed to load'));
+    };
+    const sep = url.includes('?') ? '&' : '?';
+    script.src = url + sep + 'callback=' + cbName;
+    document.head.appendChild(script);
+  });
+}
 
 /* fetchShared: read-only, with retry+backoff for transient failures.
    Returns { found:true, value } on success, or { found:false, error }
@@ -372,9 +407,8 @@ async function fetchShared(key, attempts=4){
   let lastErr = null;
   for(let i=0;i<attempts;i++){
     try{
-      const res = await fetch(`${API_URL}?key=${encodeURIComponent(key)}`, { method:'GET' });
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
+      const data = await jsonpRequest(`${API_URL}?key=${encodeURIComponent(key)}`);
+      if(data && data.error) throw new Error(data.error);
       return { found:true, value: (data && data.value != null) ? data.value : null };
     }catch(e){
       lastErr = e;
@@ -383,16 +417,53 @@ async function fetchShared(key, attempts=4){
   }
   return { found:false, value:null, error:lastErr };
 }
-async function pushShared(key, value){
-  // text/plain avoids a CORS preflight that Apps Script Web Apps don't
-  // handle well — the script still parses the body as JSON itself.
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-    body: JSON.stringify({ key, value })
+
+/* Submits a hidden form to the Apps Script endpoint. Cross-domain
+   form submissions aren't blocked by CORS (only reading their
+   response is), so this reliably reaches the sheet even though we
+   can't read a confirmation back — the next sync cycle is what
+   verifies the write actually landed. */
+function pushSharedViaForm(key, value){
+  return new Promise((resolve)=>{
+    const frameName = 'rosterSaveFrame_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    const iframe = document.createElement('iframe');
+    iframe.name = frameName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = frameName;
+    form.style.display = 'none';
+
+    const keyInput = document.createElement('input');
+    keyInput.type = 'hidden'; keyInput.name = 'key'; keyInput.value = key;
+    const valInput = document.createElement('input');
+    valInput.type = 'hidden'; valInput.name = 'value'; valInput.value = value;
+    form.appendChild(keyInput);
+    form.appendChild(valInput);
+    document.body.appendChild(form);
+
+    let settled = false;
+    const finish = () => {
+      if(settled) return;
+      settled = true;
+      setTimeout(()=>{
+        if(form.parentNode) form.parentNode.removeChild(form);
+        if(iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }, 500);
+      resolve();
+    };
+    iframe.addEventListener('load', finish);
+    setTimeout(finish, 6000); // fallback in case load never fires
+
+    form.submit();
   });
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
+}
+async function pushShared(key, value){
+  await pushSharedViaForm(key, String(value));
+  return { ok:true };
 }
 
 /* Merge any patient records a teammate has added that we don't have
