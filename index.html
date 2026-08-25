@@ -123,8 +123,9 @@
   thead th{
     position:sticky; top:0; background:#eef0e8; color:var(--teal-deep);
     font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700;
-    padding:10px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap;
+    padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap;
   }
+  thead th:first-child{ text-align:left; }
   tbody tr{ border-bottom:1px solid #ece8dc; }
   tbody tr:hover{ background:#fbfaf6; }
   tbody tr.dup-row{ background:var(--red-bg); }
@@ -132,7 +133,7 @@
   td.name{ font-weight:600; min-width:190px; }
   td.name .sub{ display:block; font-size:11px; color:var(--muted); font-weight:400; }
   .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
-  .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; }
+  .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; text-align:center; }
 
   input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--teal); cursor:pointer; }
 
@@ -494,7 +495,7 @@ function renderAll(){
               <th>Facility</th>
               <th>Digital MCA</th>
               <th>Date encoded</th>
-              <th>Date validated &amp; submitted</th>
+              <th>Date validated<br>&amp; submitted</th>
               <th>Within 24h</th>
               <th>Status of claim</th>
               <th>Duplicate tracker</th>
@@ -515,10 +516,10 @@ function renderAll(){
 
 function facilityCellHtml(p){
   if(p.status === 'registered'){
-    return `<td><span class="fac-fixed">${HOME_FACILITY}</span></td>`;
+    return `<td style="text-align:center"><span class="fac-fixed">${HOME_FACILITY}</span></td>`;
   }
   const opts = p.status === 'registered_other' ? facilityOptionsOther : facilityOptionsAll;
-  return `<td><select class="badge-select fac-select" data-field="facility">
+  return `<td style="text-align:center"><select class="badge-select fac-select" data-field="facility">
     ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
   </select></td>`;
 }
@@ -529,7 +530,7 @@ function rowHtml(p){
     <tr class="${dup?'dup-row':''}" data-id="${p.id}">
       <td class="name">${escapeHtml(p.name)}</td>
       <td class="idcell">${escapeHtml(p.phid)}</td>
-      <td><select class="badge-select ${statusClass[p.status]}" data-field="status">
+      <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
         ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
       ${facilityCellHtml(p)}
@@ -537,10 +538,10 @@ function rowHtml(p){
       <td class="datecell">${p.dateEncoded||'—'}</td>
       <td class="datecell">${p.dateSubmitted||'—'}</td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
-      <td><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
+      <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
-      <td>${dup ? `<span class="dup-tag dup-flag">DUPLICATE ID</span>` : `<span class="dup-tag dup-new">NEW RECORD</span>`}</td>
+      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag">DUPLICATE ID</span>` : `<span class="dup-tag dup-new">NEW RECORD</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
