@@ -353,16 +353,45 @@ function setSyncStatus(text, mode){
   syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '');
 }
 
-async function fetchShared(key){
-  try{
-    const res = await window.storage.get(key, true);
-    return res ? res.value : null;
-  }catch(e){
-    return null; // missing key or transient error — treat as "nothing there yet"
+/* fetchShared distinguishes three outcomes instead of collapsing them
+   into one:
+   - found: true, value: "..."   -> key exists and read succeeded
+   - found: true, value: null    -> (not used by get(), kept for shape)
+   - found: false                -> get() threw. That can mean the key
+     genuinely doesn't exist yet, OR that the read failed for some
+     other reason (network blip, etc). We can't tell those apart from
+     the get() error alone, so callers must not assume "found:false"
+     means "safe to reseed". See loadData() below. */
+async function fetchShared(key, attempts=2){
+  let lastErr = null;
+  for(let i=0;i<attempts;i++){
+    try{
+      const res = await window.storage.get(key, true);
+      return { found:true, value: res ? res.value : null };
+    }catch(e){
+      lastErr = e;
+      if(i < attempts-1) await new Promise(r=>setTimeout(r, 300));
+    }
   }
+  return { found:false, value:null, error:lastErr };
 }
 async function pushShared(key, value){
   return window.storage.set(key, value, true);
+}
+
+/* Confirms whether a shared key genuinely exists, using list() rather
+   than get()'s throw-on-missing behaviour. Returns true/false when we
+   can tell, or null when list() itself failed (connection issue) —
+   in that case we don't know, so callers should treat it as "not
+   safe to overwrite". */
+async function sharedKeyExists(key){
+  try{
+    const res = await window.storage.list('', true);
+    if(res && Array.isArray(res.keys)) return res.keys.includes(key);
+    return null;
+  }catch(e){
+    return null;
+  }
 }
 
 /* Merge any patient records a teammate has added that we don't have
@@ -385,24 +414,57 @@ function mergeRemotePatients(remoteJson){
 
 async function pullRemote(){
   setSyncStatus('Syncing…', 'busy');
-  const remoteJson = await fetchShared(PATIENTS_KEY);
-  const changed = mergeRemotePatients(remoteJson);
-  const remoteOrg = await fetchShared(ORG_KEY);
-  if(remoteOrg && document.activeElement !== orgInput) orgInput.value = remoteOrg;
+  const result = await fetchShared(PATIENTS_KEY);
+  if(!result.found){
+    // Could not read shared data this cycle. Do NOT touch local state
+    // or push anything — just report the failure and try again on the
+    // next interval / manual sync.
+    setSyncStatus('Sync failed — retrying…', 'err');
+    return;
+  }
+  const changed = mergeRemotePatients(result.value);
+  const orgResult = await fetchShared(ORG_KEY);
+  if(orgResult.found && orgResult.value && document.activeElement !== orgInput){
+    orgInput.value = orgResult.value;
+  }
   if(changed) renderAll();
   setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
 }
 
+/* IMPORTANT: this is the fix for the "data disappears" bug.
+   Previously, ANY failure to read the shared "patients" key (including
+   a transient network error, not just a genuinely-empty store) caused
+   this function to seed 2 demo patients and PUSH them to shared
+   storage — overwriting whatever the team had already entered.
+   Now we only seed+push when sharedKeyExists() has positively
+   confirmed the key has never been created. Any other failure throws,
+   so the caller (initLoad) falls back to a LOCAL-ONLY seed and does
+   not touch shared storage. */
 async function loadData(){
-  const remoteJson = await fetchShared(PATIENTS_KEY);
-  if(remoteJson){
-    try{ return JSON.parse(remoteJson); }catch(e){ /* fall through to seed */ }
+  const result = await fetchShared(PATIENTS_KEY);
+  if(result.found){
+    if(result.value){
+      try{ return JSON.parse(result.value); }
+      catch(e){ throw new Error('Shared roster data is corrupted; refusing to overwrite it.'); }
+    }
+    // found:true with an empty value shouldn't normally happen for
+    // get(), but treat it the same as "confirmed empty" below.
   }
-  // Nothing in shared storage yet — this is the first person to open it.
-  const seed = seedData();
-  await pushShared(PATIENTS_KEY, JSON.stringify(seed));
-  return seed;
+
+  const exists = await sharedKeyExists(PATIENTS_KEY);
+  if(exists === false){
+    // Confirmed: nobody has ever saved a roster here. Safe to seed.
+    const seed = seedData();
+    await pushShared(PATIENTS_KEY, JSON.stringify(seed));
+    return seed;
+  }
+
+  // exists === true  -> data is there but we failed to read it (error)
+  // exists === null  -> couldn't even confirm (connection issue)
+  // Either way, do not push anything to shared storage.
+  throw new Error('Could not confirm shared roster is empty — working locally to avoid overwriting teammates\' data.');
 }
+
 async function saveData(){
   renderAll();
   try{
@@ -949,17 +1011,22 @@ async function initLoad(){
   groupsContainer.innerHTML = `<div class="empty-state">Loading shared roster…</div>`;
   try{
     state.patients = await loadData();
-    const remoteOrg = await fetchShared(ORG_KEY);
-    if(remoteOrg) orgInput.value = remoteOrg;
+    const orgResult = await fetchShared(ORG_KEY);
+    if(orgResult.found && orgResult.value) orgInput.value = orgResult.value;
     setSyncStatus('Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   }catch(e){
-    console.error("Initial load failed, starting local-only", e);
-    state.patients = seedData();
-    setSyncStatus('Offline — changes not shared', 'err');
+    // Safe fallback: show something on screen locally, but never push
+    // this fallback data to shared storage. Keep retrying via the
+    // periodic sync below so the real data appears once the read
+    // succeeds — without ever having been overwritten.
+    console.error("Initial load could not confirm shared data, working locally for now", e);
+    state.patients = [];
+    setSyncStatus('Offline — retrying…', 'err');
   }
   renderAll();
   // Pick up teammates' additions and re-check missed-claim deadlines
-  // regularly, without needing a page reload.
+  // regularly, without needing a page reload. This is also what
+  // recovers automatically from the "Offline — retrying…" state above.
   setInterval(()=>{ pullRemote(); }, 15000);
   setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
 }
