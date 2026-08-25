@@ -512,6 +512,41 @@ function renderAll(){
     `;
     groupsContainer.appendChild(wrap);
   });
+
+  autosizeBadgeSelects();
+}
+
+/* Native <select> elements size themselves to their widest <option>,
+   not the currently selected one — which makes short statuses like
+   "Registered" look stretched. This measures just the selected
+   option's text and sets the select's width to match it. */
+function measureTextWidth(text, refEl){
+  const span = document.createElement('span');
+  const cs = getComputedStyle(refEl);
+  span.style.visibility = 'hidden';
+  span.style.position = 'absolute';
+  span.style.whiteSpace = 'nowrap';
+  span.style.fontSize = cs.fontSize;
+  span.style.fontFamily = cs.fontFamily;
+  span.style.fontWeight = cs.fontWeight;
+  span.style.letterSpacing = cs.letterSpacing;
+  span.style.textTransform = cs.textTransform;
+  span.textContent = text;
+  document.body.appendChild(span);
+  const width = span.offsetWidth;
+  document.body.removeChild(span);
+  const paddingLeft = parseFloat(cs.paddingLeft) || 0;
+  const paddingRight = parseFloat(cs.paddingRight) || 0;
+  const borderLeft = parseFloat(cs.borderLeftWidth) || 0;
+  const borderRight = parseFloat(cs.borderRightWidth) || 0;
+  return Math.ceil(width + paddingLeft + paddingRight + borderLeft + borderRight + 4);
+}
+function autosizeBadgeSelects(){
+  document.querySelectorAll('select.badge-select').forEach(sel=>{
+    const opt = sel.options[sel.selectedIndex];
+    const text = opt ? opt.textContent : '';
+    sel.style.width = measureTextWidth(text, sel) + 'px';
+  });
 }
 
 function facilityCellHtml(p){
