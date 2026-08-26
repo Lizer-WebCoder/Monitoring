@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Field Roster — Divine Rays Mobile Operations Tracker</title>
+<title>DR CARE — Divine Rays Mobile Operations Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
@@ -58,10 +60,33 @@
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
   /* ---------- Header ---------- */
-  header{ background:linear-gradient(180deg, var(--teal-deep), var(--teal)); color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30; box-shadow:0 4px 14px rgba(11,54,48,0.25); }
-  .header-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  header{
+    background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30;
+    box-shadow:0 4px 14px rgba(11,54,48,0.25);
+    position:relative; overflow:hidden;
+  }
+  header::before{
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(circle at 92% -20%, rgba(255,255,255,0.14), transparent 42%),
+      radial-gradient(circle at 6% 130%, rgba(255,255,255,0.10), transparent 45%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 26px);
+  }
+  header::after{
+    content:''; position:absolute; right:-30px; top:-30px; width:220px; height:220px; z-index:0; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='4'%3E%3Cpath d='M50 20v60M20 50h60'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-size:contain; opacity:0.9;
+  }
+  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
   .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
-  .brand-title{ font-size:24px; font-weight:800; letter-spacing:-0.01em; margin:0; display:flex; align-items:center; gap:10px; }
+  .brand-title{
+    font-family:'Sora', 'Inter', sans-serif; font-size:28px; font-weight:800; letter-spacing:.01em; margin:0;
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(100deg, #ffffff 10%, #bfe8da 55%, #ffffff 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 2px 18px rgba(0,0,0,0.15);
+  }
   .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
   .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
   .org-input::placeholder{ color:rgba(242,237,224,0.55); }
@@ -74,13 +99,14 @@
   .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
   .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
 
-  .stat-strip{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
   .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
   .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
   .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
 
   /* ---------- Toolbar ---------- */
-  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; flex-direction:column; gap:10px; }
+  .toolbar-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
   .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
@@ -121,7 +147,7 @@
   .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; text-align:center; }
   input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--teal); cursor:pointer; }
 
-  .badge-select{ border:none; border-radius:20px; padding:5px 10px 5px 9px; font-size:11.5px; font-weight:700; cursor:pointer; appearance:none; -webkit-appearance:none; text-align:left; background-position:right 7px center; background-repeat:no-repeat; background-size:9px; padding-right:22px; }
+  .badge-select{ border:none; border-radius:20px; padding:5px 10px 5px 9px; font-size:11.5px; font-weight:700; cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center; text-align-last:center; background-position:right 7px center; background-repeat:no-repeat; background-size:9px; padding-right:22px; }
   .st-registered{ background:var(--amber-bg); color:var(--amber); }
   .st-registered-other{ background:var(--purple-bg); color:var(--purple); }
   .fac-select{ background:var(--table-head); color:var(--ink); }
@@ -180,7 +206,7 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-card">
-    <h1>Field Roster — Sign in</h1>
+    <h1>DR CARE — Sign in</h1>
     <p>Divine Rays Mobile Operations · shared team login</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
@@ -196,7 +222,7 @@
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
+      <h1 class="brand-title">DR CARE <span class="tag">Patient Tracker</span></h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
@@ -208,28 +234,31 @@
 </header>
 
 <div class="toolbar">
-  <input type="month" id="monthFilter" title="Choose which month's mobile/team records to view">
-  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
-  <button class="btn" id="themeToggle">🌙 Dark mode</button>
-  <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
-  <select id="filterStatus">
-    <option value="">All statuses</option>
-    <option value="registered">Registered</option>
-    <option value="registered_other">Registered to other DR facility</option>
-  </select>
-  <select id="filterBenefit">
-    <option value="">All benefit states</option>
-    <option value="rice-yes">Rice availed</option>
-    <option value="rice-no">Rice not yet availed</option>
-    <option value="lab-yes">Lab availed</option>
-    <option value="lab-no">Lab not yet availed</option>
-  </select>
-  <div class="spacer"></div>
-  <button class="btn" id="syncNowBtn">🔄 Sync now</button>
-  <button class="btn" id="exportBtn">⬇ Export CSV</button>
-  <button class="btn" id="importBtn">⬆ Import CSV</button>
-  <input type="file" id="importFile" accept=".csv">
-  <button class="btn" id="printBtn">🖨 Print</button>
+  <div class="toolbar-row">
+    <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
+    <button class="btn" id="addTeamBtn">+ Add Mobile</button>
+    <button class="btn" id="themeToggle">🌙 Dark mode</button>
+    <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
+    <select id="filterStatus">
+      <option value="">All statuses</option>
+      <option value="registered">Registered</option>
+      <option value="registered_other">Registered to other DR facility</option>
+    </select>
+    <select id="filterBenefit">
+      <option value="">All benefit states</option>
+      <option value="rice-yes">Rice availed</option>
+      <option value="rice-no">Rice not yet availed</option>
+      <option value="lab-yes">Lab availed</option>
+      <option value="lab-no">Lab not yet availed</option>
+    </select>
+  </div>
+  <div class="toolbar-row">
+    <button class="btn" id="syncNowBtn">🔄 Sync now</button>
+    <button class="btn" id="exportBtn">⬇ Export CSV</button>
+    <button class="btn" id="importBtn">⬆ Import CSV</button>
+    <input type="file" id="importFile" accept=".csv">
+    <button class="btn" id="printBtn">🖨 Print</button>
+  </div>
 </div>
 
 <div id="groupsContainer"></div>
@@ -304,11 +333,11 @@
 <!-- Team / Site Modal -->
 <div class="modal-backdrop" id="teamModalBackdrop">
   <div class="modal">
-    <h3 id="teamModalTitle">Add Team / Site</h3>
+    <h3 id="teamModalTitle">Add Mobile</h3>
     <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
     <div class="form-grid">
       <div class="full">
-        <label>Team / Site name</label>
+        <label>Mobile name</label>
         <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
       </div>
       <div class="full">
@@ -457,6 +486,18 @@ function loadTeamStaffCache(){
   catch(e){ teamStaff = {}; }
 }
 function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
+/* Some previously-saved staff entries may be plain strings, others may
+   be {name, position}-style objects (or something else entirely) —
+   this always turns any of those into safe display text instead of
+   ever letting a raw object hit .join() and print "[object Object]". */
+function staffEntryToText(s){
+  if(typeof s === 'string') return s;
+  if(s && typeof s === 'object'){
+    if(s.name && s.position) return `${s.name} (${s.position})`;
+    if(s.name) return String(s.name);
+  }
+  return s == null ? '' : String(s);
+}
 async function pushTeamStaff(){
   saveTeamStaffCache();
   if(!navigator.onLine) return;
@@ -656,8 +697,8 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`
-      : `No patients yet. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`;
+      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`
+      : `No patients yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -672,14 +713,14 @@ function renderAll(){
         <span class="chev">▾</span>
         <div class="team-title-block">
           <h2>${escapeHtml(team)}</h2>
-          ${(teamStaff[team] && teamStaff[team].length) ? `<div class="team-staff-line">Managed by: ${escapeHtml(teamStaff[team].join(', '))}</div>` : ''}
+          ${(teamStaff[team] && teamStaff[team].length) ? `<div class="team-staff-line">Managed by: ${escapeHtml(teamStaff[team].map(staffEntryToText).filter(Boolean).join(', '))}</div>` : ''}
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
           <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">🖨 print</button>
-          <button data-edit-team="${escapeAttr(team)}">edit team</button>
-          <button data-delete-team="${escapeAttr(team)}">delete team</button>
+          <button data-edit-team="${escapeAttr(team)}">edit mobile</button>
+          <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -746,7 +787,7 @@ function rowHtml(p){
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
-      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px;"></td>
+      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
@@ -937,9 +978,9 @@ document.getElementById('tm_staffList').addEventListener('click', e=>{
 
 function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
-  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Team / Site' : 'Add Team / Site';
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
   document.getElementById('tm_name').value = existingName || '';
-  renderStaffRows(existingName ? teamStaff[existingName] : []);
+  renderStaffRows(existingName ? (teamStaff[existingName]||[]).map(staffEntryToText) : []);
   teamModalBackdrop.classList.add('open');
   document.getElementById('tm_name').focus();
 }
@@ -949,7 +990,7 @@ teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop
 
 document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
-  if(!name){ alert("Team / site name is required."); return; }
+  if(!name){ alert("Mobile name is required."); return; }
   const staffNames = [...document.querySelectorAll('.tm-staff-input')].map(i=>i.value.trim()).filter(Boolean);
 
   if(editingTeamOriginalName && editingTeamOriginalName !== name){
