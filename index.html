@@ -140,6 +140,7 @@
   .field-hint{ font-size:11px; color:var(--muted); margin-top:4px; }
   .legend{ max-width:1400px; margin:26px auto 0; padding:16px 26px; font-size:12px; color:var(--muted); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
   .legend b{ color:var(--ink); }
+  .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
 
   @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
   @media print{ header, .toolbar, .row-actions, .legend, th:last-child, td:last-child{ display:none !important; } }
@@ -179,7 +180,7 @@
 
 <div class="toolbar">
   <input type="month" id="monthFilter" title="Choose which month's mobile/team records to view">
-  <button class="btn" id="addTeamBtn">+ Add Mobile</button>
+  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
   <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
   <select id="filterStatus">
     <option value="">All statuses</option>
@@ -203,6 +204,7 @@
 
 <div id="groupsContainer"></div>
 <div class="legend" id="legend"></div>
+<div class="app-footer">Built by Lizerzxc · © 2026 All rights reserved</div>
 
 <!-- Patient Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
@@ -220,7 +222,7 @@
         <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
-        <label>Mobile</label>
+        <label>Team / Site</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -468,7 +470,7 @@ function filteredPatients(){
 function isDuplicate(phid, excludeId){
   return state.patients.some(p => !p.deleted && p.phid.trim() === phid.trim() && p.phid.trim() !== "" && p.id !== excludeId);
 }
-/* Searches every mobile in the whole roster (not just the current
+/* Searches every team/site in the whole roster (not just the current
    one) for another patient sharing this PhilHealth ID, and returns
    the team name that record belongs to — or null if none. */
 function duplicateTeam(phid, excludeId){
@@ -573,8 +575,8 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`
-      : `No patients yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
+      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`
+      : `No patients yet. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -698,7 +700,7 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.dataset.rename){
     const oldName = e.target.dataset.rename;
-    const newName = prompt("Rename mobile:", oldName);
+    const newName = prompt("Rename team / site:", oldName);
     if(newName && newName.trim() && newName !== oldName){
       state.patients.forEach(p=>{ if(p.team===oldName){ p.team=newName.trim(); pendingIds.add(p.id); } });
       savePending(); saveLocalCache(); renderAll(); flushPending();
@@ -826,7 +828,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=>{
-  const name = prompt("New mobile name (e.g. “Mobile Staff — Site B”):");
+  const name = prompt("New team / site name (e.g. “Mobile Staff — Site B”):");
   if(name && name.trim() && !getTeams().includes(name.trim())){ pendingEmptyTeams.add(name.trim()); renderAll(); }
 });
 
