@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Field Roster — Divine Rays Mobile Operations Tracker</title>
+<title>DR Care — Divine Rays Mobile Operations Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -65,8 +65,29 @@
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
   /* ---------- Header ---------- */
-  header{ background:linear-gradient(180deg, var(--teal-deep), var(--teal)); color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30; box-shadow:0 4px 14px rgba(11,54,48,0.25); }
-  .header-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  header{ background:linear-gradient(180deg, var(--teal-deep), var(--teal)); color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30; box-shadow:0 4px 14px rgba(11,54,48,0.25); overflow:hidden; isolation:isolate; }
+  /* Fine dot grid — quiet texture across the whole band */
+  header::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image: radial-gradient(rgba(242,237,224,0.10) 1px, transparent 1px);
+    background-size: 15px 15px;
+    -webkit-mask-image: linear-gradient(115deg, transparent, rgba(0,0,0,0.9) 40%, transparent 85%);
+    mask-image: linear-gradient(115deg, transparent, rgba(0,0,0,0.9) 40%, transparent 85%);
+  }
+  /* Minimalist "rays" signature — concentric arcs fanning from the
+     top-right, a literal but understated nod to Divine Rays */
+  header::after{
+    content:''; position:absolute; top:-55%; right:-8%; z-index:0; pointer-events:none;
+    width:640px; height:640px; border-radius:50%;
+    background:
+      repeating-conic-gradient(from 200deg at 50% 50%,
+        rgba(242,237,224,0.09) 0deg 1.1deg,
+        transparent 1.1deg 9deg),
+      radial-gradient(circle at 50% 50%, rgba(200,134,43,0.16), transparent 62%);
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 72%);
+    mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 72%);
+  }
+  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
   .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
   .brand-title{ font-size:24px; font-weight:800; letter-spacing:-0.01em; margin:0; display:flex; align-items:center; gap:10px; }
   .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
@@ -187,7 +208,7 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-card">
-    <h1>Field Roster — Sign in</h1>
+    <h1>DR Care — Sign in</h1>
     <p>Divine Rays Mobile Operations · shared team login</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
@@ -203,7 +224,7 @@
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
+      <h1 class="brand-title">DR Care <span class="tag">Patient Tracker</span></h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
@@ -1128,7 +1149,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `field-roster-${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = `dr-care-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
 });
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
