@@ -563,12 +563,28 @@ function monthPatients(){
     return (p.dateEncoded||'').slice(0,7) === month;
   });
 }
-/* If viewing a specific month, default a new patient's encoded date to
-   the 1st of that month (instead of today) so they show up immediately
-   on the page you're looking at, rather than seeming to vanish. */
+/* Local (not UTC) YYYY-MM-DD, so date math matches the browser's
+   actual "today" — using toISOString() here would shift the date
+   near midnight in timezones ahead of UTC (e.g. Manila, UTC+8). */
+function localDateStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+/* If viewing a PAST or FUTURE month, default a new patient's encoded
+   date to the 1st of that month (instead of today) so they show up
+   immediately on the page you're looking at, rather than seeming to
+   vanish. But if you're viewing the CURRENT month (the normal case),
+   default to today's actual date — defaulting to the 1st here was
+   silently backdating every new patient, which pushed their 24h claim
+   deadline into the past and made Status of claim show "Missed 24h"
+   immediately instead of "Pending". */
 function defaultEncodedDate(){
+  const today = localDateStr(new Date());
   const month = document.getElementById('monthFilter').value;
-  return month ? (month + '-01') : new Date().toISOString().slice(0,10);
+  if(!month || month === today.slice(0,7)) return today;
+  return month + '-01';
 }
 
 function filteredPatients(){
@@ -800,7 +816,7 @@ function rowHtml(p){
       <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><span class="claim-badge ${claimClass[p.claim]}" title="Automatic — based on Date encoded and Date validated &amp; submitted">${claimLabel[p.claim]}</span></td>
-      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">OK</span>`}</td>
+      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
@@ -1071,7 +1087,7 @@ document.getElementById('search').addEventListener('input', renderAll);
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
-monthFilterEl.value = new Date().toISOString().slice(0,7);
+monthFilterEl.value = localDateStr(new Date()).slice(0,7);
 monthFilterEl.addEventListener('change', renderAll);
 
 /* ---------------- Theme (light / dark) ---------------- */
