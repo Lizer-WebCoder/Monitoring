@@ -74,7 +74,8 @@
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
   .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
   .btn-ghost{ box-shadow:none; }
-  input[type="text"], input[type="date"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
   #search{ min-width:220px; flex:1; }
   .spacer{ flex:1; }
   input[type="file"]{ display:none; }
@@ -177,6 +178,7 @@
 </header>
 
 <div class="toolbar">
+  <input type="month" id="monthFilter" title="Choose which month's mobile/team records to view">
   <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
   <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
   <select id="filterStatus">
@@ -422,12 +424,37 @@ function getTeams(){
 }
 const pendingEmptyTeams = new Set();
 
+function monthLabel(ym){
+  if(!ym) return '';
+  const [y,m] = ym.split('-').map(Number);
+  if(!y || !m) return ym;
+  return new Date(y, m-1, 1).toLocaleString('default', {month:'long', year:'numeric'});
+}
+/* Every patient's "Date encoded" determines which month/year page they
+   belong to. This returns just the non-deleted patients for whichever
+   month is currently selected in the picker (or everyone if no month
+   is chosen). */
+function monthPatients(){
+  const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
+  return state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(!month) return true;
+    return (p.dateEncoded||'').slice(0,7) === month;
+  });
+}
+/* If viewing a specific month, default a new patient's encoded date to
+   the 1st of that month (instead of today) so they show up immediately
+   on the page you're looking at, rather than seeming to vanish. */
+function defaultEncodedDate(){
+  const month = document.getElementById('monthFilter').value;
+  return month ? (month + '-01') : new Date().toISOString().slice(0,10);
+}
+
 function filteredPatients(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const st = document.getElementById('filterStatus').value;
   const bf = document.getElementById('filterBenefit').value;
-  return state.patients.filter(p=>{
-    if(p.deleted) return false;
+  return monthPatients().filter(p=>{
     if(q && !((p.name||'').toLowerCase().includes(q) || (p.phid||'').toLowerCase().includes(q))) return false;
     if(st && p.status !== st) return false;
     if(bf === 'rice-yes' && !p.rice) return false;
@@ -482,7 +509,7 @@ function normalizeFacility(p){
 }
 
 function renderStats(){
-  const all = state.patients.filter(p=>!p.deleted);
+  const all = monthPatients();
   const stats = [
     ["Total", all.length],
     ["Registered", all.filter(p=>p.status==='registered').length],
@@ -497,6 +524,7 @@ function renderStats(){
 
 function renderLegend(){
   legend.innerHTML = `
+    <span><b>Month view:</b> the picker at the top filters everything to one month, based on each patient's Date encoded — switch months to page between mobile missions</span>
     <span><b>Status:</b> Registered → Registered to other DR facility</span>
     <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
@@ -535,17 +563,24 @@ function renderAll(){
   renderStats();
   renderLegend();
   const teams = getTeams();
+  const monthList = monthPatients();
   const list = filteredPatients();
   populateTeamSelect(teams);
 
+  const monthVal = document.getElementById('monthFilter').value;
+  const teamsToShow = teams.filter(team => monthList.some(p=>p.team===team) || pendingEmptyTeams.has(team));
+
   groupsContainer.innerHTML = '';
-  if(teams.length === 0){
-    groupsContainer.innerHTML = `<div class="empty-state">No patients yet. Click “Add Patient” to start today's roster.</div>`;
+  if(teamsToShow.length === 0){
+    const msg = monthVal
+      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`
+      : `No patients yet. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`;
+    groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
-  teams.forEach(team=>{
+  teamsToShow.forEach(team=>{
     const rows = list.filter(p=>p.team === team);
-    const totalInTeam = state.patients.filter(p=>p.team===team && !p.deleted).length;
+    const totalInTeam = monthList.filter(p=>p.team===team).length;
     const wrap = document.createElement('div');
     wrap.className = 'team-group';
     const collapsed = collapsedTeams.has(team);
@@ -738,7 +773,7 @@ function openModal(id, presetTeam){
   document.getElementById('f_status').value = p ? p.status : 'registered';
   updateFacilityField(p ? p.facility : HOME_FACILITY);
   document.getElementById('f_claim').value = p ? p.claim : 'pending';
-  document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : new Date().toISOString().slice(0,10);
+  document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
   document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
   document.getElementById('f_mca').checked = p ? p.mca : false;
   document.getElementById('f_within24').checked = p ? p.within24 : false;
@@ -798,6 +833,9 @@ document.getElementById('addTeamBtn').addEventListener('click', ()=>{
 document.getElementById('search').addEventListener('input', renderAll);
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
+const monthFilterEl = document.getElementById('monthFilter');
+monthFilterEl.value = new Date().toISOString().slice(0,7);
+monthFilterEl.addEventListener('change', renderAll);
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
