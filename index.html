@@ -87,7 +87,10 @@
   .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
 
   /* ---------- Toolbar ---------- */
-  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px 8px; display:flex; gap:10px; flex-wrap:nowrap; align-items:center; overflow-x:auto; }
+  .toolbar::-webkit-scrollbar{ height:6px; }
+  .toolbar::-webkit-scrollbar-thumb{ background:var(--line); border-radius:10px; }
+  .toolbar > *{ flex:none; }
   .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
   .btn:hover{ border-color:var(--teal); color:var(--accent-text); transform:translateY(-1px); }
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
@@ -95,7 +98,7 @@
   .btn-ghost{ box-shadow:none; }
   input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
   #monthFilter{ font-weight:700; color:var(--accent-text); cursor:pointer; }
-  #search{ min-width:220px; flex:1; }
+  #search{ min-width:200px; flex:1 1 200px; }
   .spacer{ flex:1; }
   input[type="file"]{ display:none; }
 
@@ -108,8 +111,8 @@
   .team-title-block{ display:flex; flex-direction:column; gap:1px; }
   .team-staff-line{ font-size:11px; color:var(--muted); font-weight:400; }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; }
-  .staff-row input{ flex:1; min-width:0; }
-  .staff-row select{ flex:none; width:132px; }
+  #tm_staffList .staff-row input.tm-staff-input{ flex:1 1 0%; min-width:0; width:auto; }
+  #tm_staffList .staff-row select.tm-staff-position{ flex:0 0 132px; width:132px; }
   .staff-view-modal{ max-width:400px; }
   .staff-view-group{ margin-bottom:16px; }
   .staff-view-group:last-child{ margin-bottom:0; }
@@ -255,7 +258,7 @@
         <div class="dup-warning" id="dupWarning"><svg class="icon" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span>This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</span></div>
       </div>
       <div>
-        <label>Team / Site</label>
+        <label>Mobile</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -978,7 +981,7 @@ document.getElementById('tm_staffList').addEventListener('click', e=>{
 
 function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
-  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Team / Site' : 'Add Team / Site';
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
   document.getElementById('tm_name').value = existingName || '';
   renderStaffRows(existingName ? teamStaff[existingName] : []);
   teamModalBackdrop.classList.add('open');
