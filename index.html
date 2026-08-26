@@ -177,7 +177,6 @@
 </header>
 
 <div class="toolbar">
-  <button class="btn btn-primary" id="addPatientBtn">+ Add Patient</button>
   <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
   <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
   <select id="filterStatus">
@@ -556,6 +555,7 @@ function renderAll(){
         <h2>${escapeHtml(team)}</h2>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
+          <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
           <button data-rename="${escapeAttr(team)}">rename</button>
           <button data-delete-team="${escapeAttr(team)}">delete team</button>
         </div>
@@ -565,13 +565,13 @@ function renderAll(){
           <thead>
             <tr>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>Date encoded</th><th>Date validated<br>&amp; submitted</th>
+              <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
               <th>Rice availed</th><th>Lab availed</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="13" class="empty-state">No matching patients in this team.</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="12" class="empty-state">No matching patients in this team.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -624,8 +624,7 @@ function rowHtml(p){
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
-      <td class="datecell">${p.dateEncoded||'—'}</td>
-      <td class="datecell">${p.dateSubmitted||'—'}</td>
+      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
@@ -656,6 +655,10 @@ groupsContainer.addEventListener('click', e=>{
     const team = teamHead.dataset.team;
     if(collapsedTeams.has(team)) collapsedTeams.delete(team); else collapsedTeams.add(team);
     renderAll();
+    return;
+  }
+  if(e.target.dataset.addPatient){
+    openModal(null, e.target.dataset.addPatient);
     return;
   }
   if(e.target.dataset.rename){
@@ -724,14 +727,14 @@ function updateFacilityField(preferredValue){
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
 
-function openModal(id){
+function openModal(id, presetTeam){
   editingId = id || null;
   const p = id ? state.patients.find(p=>p.id===id) : null;
   document.getElementById('modalTitle').textContent = p ? "Edit Patient" : "Add Patient";
   populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
   document.getElementById('f_name').value = p ? p.name : '';
   document.getElementById('f_phid').value = p ? p.phid : '';
-  document.getElementById('f_team').value = p ? p.team : (getTeams()[0]||'');
+  document.getElementById('f_team').value = p ? p.team : (presetTeam || getTeams()[0] || '');
   document.getElementById('f_status').value = p ? p.status : 'registered';
   updateFacilityField(p ? p.facility : HOME_FACILITY);
   document.getElementById('f_claim').value = p ? p.claim : 'pending';
@@ -748,10 +751,6 @@ function openModal(id){
 }
 function closeModal(){ backdrop.classList.remove('open'); editingId = null; }
 
-document.getElementById('addPatientBtn').addEventListener('click', ()=>{
-  if(getTeams().length === 0){ alert("Add a team / site first (top toolbar → “+ Add Team / Site”)."); return; }
-  openModal(null);
-});
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeModal(); });
 document.getElementById('f_phid').addEventListener('input', e=>{
