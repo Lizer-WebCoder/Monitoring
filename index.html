@@ -180,7 +180,7 @@
 
 <div class="toolbar">
   <input type="month" id="monthFilter" title="Choose which month's mobile/team records to view">
-  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
+  <button class="btn" id="addTeamBtn">+ Add Mobile</button>
   <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
   <select id="filterStatus">
     <option value="">All statuses</option>
@@ -222,7 +222,7 @@
         <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
-        <label>Team / Site</label>
+        <label>Mobile</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -575,8 +575,8 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`
-      : `No patients yet. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`;
+      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`
+      : `No patients yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -700,7 +700,7 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.dataset.rename){
     const oldName = e.target.dataset.rename;
-    const newName = prompt("Rename team / site:", oldName);
+    const newName = prompt("Rename mobile:", oldName);
     if(newName && newName.trim() && newName !== oldName){
       state.patients.forEach(p=>{ if(p.team===oldName){ p.team=newName.trim(); pendingIds.add(p.id); } });
       savePending(); saveLocalCache(); renderAll(); flushPending();
@@ -828,7 +828,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=>{
-  const name = prompt("New team / site name (e.g. “Mobile Staff — Site B”):");
+  const name = prompt("New mobile name (e.g. “Mobile Staff — Site B”):");
   if(name && name.trim() && !getTeams().includes(name.trim())){ pendingEmptyTeams.add(name.trim()); renderAll(); }
 });
 
