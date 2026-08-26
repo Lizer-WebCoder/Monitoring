@@ -98,6 +98,10 @@
   .team-head .chev{ transition:transform .15s ease; font-size:12px; color:var(--muted); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
   .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
+  .team-title-block{ display:flex; flex-direction:column; gap:1px; }
+  .team-staff-line{ font-size:11px; color:var(--muted); font-weight:400; }
+  .staff-row{ display:flex; gap:6px; margin-bottom:6px; }
+  .staff-row input{ flex:1; }
   .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
   .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
   .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
@@ -284,6 +288,29 @@
   </div>
 </div>
 
+<!-- Team / Site Modal -->
+<div class="modal-backdrop" id="teamModalBackdrop">
+  <div class="modal">
+    <h3 id="teamModalTitle">Add Team / Site</h3>
+    <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Team / Site name</label>
+        <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
+      </div>
+      <div class="full">
+        <label>Managing staff / employees</label>
+        <div id="tm_staffList"></div>
+        <button class="btn btn-ghost" id="tm_addStaffBtn" type="button">+ Add staff member</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="tm_cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="tm_saveBtn">Save team</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    STEP 1 — PASTE YOUR SUPABASE KEYS HERE
@@ -402,6 +429,34 @@ async function pullOrg(){
     if(data && data.value && document.activeElement !== orgInput){
       orgInput.value = data.value;
       localStorage.setItem(ORG_CACHE_KEY, data.value);
+    }
+  }catch(e){ /* ignore, offline or not set up yet */ }
+}
+
+/* ---------------- Team staff (who manages each site) ----------------
+   Stored as one JSON blob { teamName: [staff names] } in the same
+   "settings" table used for orgName, under key "teamStaff". Cached
+   locally so it's available offline too. */
+const TEAM_STAFF_CACHE_KEY = "roster_team_staff_v1";
+let teamStaff = {};
+function loadTeamStaffCache(){
+  try{ teamStaff = JSON.parse(localStorage.getItem(TEAM_STAFF_CACHE_KEY) || "{}"); }
+  catch(e){ teamStaff = {}; }
+}
+function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
+async function pushTeamStaff(){
+  saveTeamStaffCache();
+  if(!navigator.onLine) return;
+  try{ await sb.from('settings').upsert({ key: 'teamStaff', value: JSON.stringify(teamStaff) }); }catch(e){ /* retried indirectly */ }
+}
+async function pullTeamStaff(){
+  loadTeamStaffCache();
+  if(!navigator.onLine) return;
+  try{
+    const { data } = await sb.from('settings').select('value').eq('key','teamStaff').maybeSingle();
+    if(data && data.value){
+      teamStaff = JSON.parse(data.value);
+      saveTeamStaffCache();
     }
   }catch(e){ /* ignore, offline or not set up yet */ }
 }
@@ -602,11 +657,14 @@ function renderAll(){
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
         <span class="chev">▾</span>
-        <h2>${escapeHtml(team)}</h2>
+        <div class="team-title-block">
+          <h2>${escapeHtml(team)}</h2>
+          ${(teamStaff[team] && teamStaff[team].length) ? `<div class="team-staff-line">Managed by: ${escapeHtml(teamStaff[team].join(', '))}</div>` : ''}
+        </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
-          <button data-rename="${escapeAttr(team)}">rename</button>
+          <button data-edit-team="${escapeAttr(team)}">edit team</button>
           <button data-delete-team="${escapeAttr(team)}">delete team</button>
         </div>
       </div>
@@ -711,13 +769,8 @@ groupsContainer.addEventListener('click', e=>{
     openModal(null, e.target.dataset.addPatient);
     return;
   }
-  if(e.target.dataset.rename){
-    const oldName = e.target.dataset.rename;
-    const newName = prompt("Rename team / site:", oldName);
-    if(newName && newName.trim() && newName !== oldName){
-      state.patients.forEach(p=>{ if(p.team===oldName){ p.team=newName.trim(); pendingIds.add(p.id); } });
-      savePending(); saveLocalCache(); renderAll(); flushPending();
-    }
+  if(e.target.dataset.editTeam){
+    openTeamModal(e.target.dataset.editTeam);
     return;
   }
   if(e.target.dataset.deleteTeam){
@@ -725,6 +778,9 @@ groupsContainer.addEventListener('click', e=>{
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
       state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
+      delete teamStaff[team];
+      pendingEmptyTeams.delete(team);
+      pushTeamStaff();
       savePending(); saveLocalCache(); renderAll(); flushPending();
     }
     return;
@@ -840,10 +896,60 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   closeModal();
 });
 
-document.getElementById('addTeamBtn').addEventListener('click', ()=>{
-  const name = prompt("New team / site name (e.g. “Mobile Staff — Site B”):");
-  if(name && name.trim() && !getTeams().includes(name.trim())){ pendingEmptyTeams.add(name.trim()); renderAll(); }
+/* ---------------- Team / Site modal ---------------- */
+const teamModalBackdrop = document.getElementById('teamModalBackdrop');
+let editingTeamOriginalName = null;
+
+function addStaffRow(value=''){
+  const list = document.getElementById('tm_staffList');
+  const row = document.createElement('div');
+  row.className = 'staff-row';
+  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(value)}"><button class="icon-btn" data-remove-staff title="Remove">🗑</button>`;
+  list.appendChild(row);
+}
+function renderStaffRows(names){
+  const list = document.getElementById('tm_staffList');
+  list.innerHTML = '';
+  (names && names.length ? names : ['']).forEach(name => addStaffRow(name));
+}
+document.getElementById('tm_addStaffBtn').addEventListener('click', ()=> addStaffRow());
+document.getElementById('tm_staffList').addEventListener('click', e=>{
+  if(e.target.dataset.removeStaff !== undefined) e.target.closest('.staff-row').remove();
 });
+
+function openTeamModal(existingName){
+  editingTeamOriginalName = existingName || null;
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Team / Site' : 'Add Team / Site';
+  document.getElementById('tm_name').value = existingName || '';
+  renderStaffRows(existingName ? teamStaff[existingName] : []);
+  teamModalBackdrop.classList.add('open');
+  document.getElementById('tm_name').focus();
+}
+function closeTeamModal(){ teamModalBackdrop.classList.remove('open'); editingTeamOriginalName = null; }
+document.getElementById('tm_cancelBtn').addEventListener('click', closeTeamModal);
+teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop) closeTeamModal(); });
+
+document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('tm_name').value.trim();
+  if(!name){ alert("Team / site name is required."); return; }
+  const staffNames = [...document.querySelectorAll('.tm-staff-input')].map(i=>i.value.trim()).filter(Boolean);
+
+  if(editingTeamOriginalName && editingTeamOriginalName !== name){
+    // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
+    state.patients.forEach(p=>{ if(p.team === editingTeamOriginalName){ p.team = name; pendingIds.add(p.id); } });
+    if(pendingEmptyTeams.has(editingTeamOriginalName)){ pendingEmptyTeams.delete(editingTeamOriginalName); pendingEmptyTeams.add(name); }
+    delete teamStaff[editingTeamOriginalName];
+    savePending(); saveLocalCache(); flushPending();
+  } else if(!editingTeamOriginalName && !getTeams().includes(name)){
+    pendingEmptyTeams.add(name);
+  }
+  teamStaff[name] = staffNames;
+  pushTeamStaff();
+  renderAll();
+  closeTeamModal();
+});
+
+document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
 document.getElementById('search').addEventListener('input', renderAll);
 document.getElementById('filterStatus').addEventListener('change', renderAll);
@@ -972,13 +1078,16 @@ async function onSignedIn(session){
 async function initApp(){
   setSyncStatus('Loading…', 'busy');
   state.patients = loadLocalCache();
+  loadTeamStaffCache();
   if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
   renderAll();
   await pullOrg();
+  await pullTeamStaff();
+  renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
 
-  setInterval(()=>{ flushPending().then(pullRemote); }, 20000);
+  setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
   setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
   window.addEventListener('online', ()=>{ flushPending().then(pullRemote); });
   window.addEventListener('offline', ()=> setSyncStatus('Offline — saved on this device', 'err'));
