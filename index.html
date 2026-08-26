@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DR Care — Divine Rays Mobile Operations Tracker</title>
+<title>Field Roster — Divine Rays Mobile Operations Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -18,7 +18,6 @@
     --purple:#6b3fa0; --purple-bg:#efe3fb;
     --muted:#6c7570;
     --table-head:#eef0e8;
-    --accent-text:#14524a;
     --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
     --radius: 10px;
   }
@@ -33,16 +32,10 @@
     --red:#e2907d; --red-bg:#3a221d;
     --purple:#bda2e0; --purple-bg:#2a2038;
     --muted:#9aa39c; --table-head:#1e2d28;
-    --accent-text:#6fcab2;
     --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.3);
   }
   body{ background:var(--paper); color:var(--ink); font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; padding-bottom:60px; }
   .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
-
-  /* ---------- Icons ---------- */
-  .icon{ width:14px; height:14px; flex:none; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; vertical-align:-2px; }
-  .icon-lg{ width:16px; height:16px; }
-  .btn .icon{ margin-right:1px; }
 
   /* ---------- Login overlay ---------- */
   #loginOverlay{
@@ -56,8 +49,8 @@
   }
   .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
   .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
-  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--accent-text); display:block; margin:12px 0 4px; }
-  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-deep); display:block; margin:12px 0 4px; }
+  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
   .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
   .login-card button:hover{ background:var(--teal-deep); }
   .login-card button:disabled{ opacity:0.6; cursor:default; }
@@ -65,29 +58,8 @@
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
   /* ---------- Header ---------- */
-  header{ background:linear-gradient(180deg, var(--teal-deep), var(--teal)); color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30; box-shadow:0 4px 14px rgba(11,54,48,0.25); overflow:hidden; isolation:isolate; }
-  /* Fine dot grid — quiet texture across the whole band */
-  header::before{
-    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
-    background-image: radial-gradient(rgba(242,237,224,0.10) 1px, transparent 1px);
-    background-size: 15px 15px;
-    -webkit-mask-image: linear-gradient(115deg, transparent, rgba(0,0,0,0.9) 40%, transparent 85%);
-    mask-image: linear-gradient(115deg, transparent, rgba(0,0,0,0.9) 40%, transparent 85%);
-  }
-  /* Minimalist "rays" signature — concentric arcs fanning from the
-     top-right, a literal but understated nod to Divine Rays */
-  header::after{
-    content:''; position:absolute; top:-55%; right:-8%; z-index:0; pointer-events:none;
-    width:640px; height:640px; border-radius:50%;
-    background:
-      repeating-conic-gradient(from 200deg at 50% 50%,
-        rgba(242,237,224,0.09) 0deg 1.1deg,
-        transparent 1.1deg 9deg),
-      radial-gradient(circle at 50% 50%, rgba(200,134,43,0.16), transparent 62%);
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 72%);
-    mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 72%);
-  }
-  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  header{ background:linear-gradient(180deg, var(--teal-deep), var(--teal)); color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30; box-shadow:0 4px 14px rgba(11,54,48,0.25); }
+  .header-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
   .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
   .brand-title{ font-size:24px; font-weight:800; letter-spacing:-0.01em; margin:0; display:flex; align-items:center; gap:10px; }
   .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
@@ -108,54 +80,42 @@
   .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
 
   /* ---------- Toolbar ---------- */
-  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px 8px; display:flex; gap:10px; flex-wrap:nowrap; align-items:center; overflow-x:auto; }
-  .toolbar::-webkit-scrollbar{ height:6px; }
-  .toolbar::-webkit-scrollbar-thumb{ background:var(--line); border-radius:10px; }
-  .toolbar > *{ flex:none; }
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
-  .btn:hover{ border-color:var(--teal); color:var(--accent-text); transform:translateY(-1px); }
+  .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
   .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
   .btn-ghost{ box-shadow:none; }
   input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
-  #monthFilter{ font-weight:700; color:var(--accent-text); cursor:pointer; }
-  #search{ min-width:200px; flex:1 1 200px; }
+  #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
+  #search{ min-width:220px; flex:1; }
   .spacer{ flex:1; }
   input[type="file"]{ display:none; }
 
   /* ---------- Groups ---------- */
   .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
   .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
-  .team-head .chev{ display:inline-flex; color:var(--muted); transition:transform .15s ease; }
+  .team-head .chev{ transition:transform .15s ease; font-size:12px; color:var(--muted); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
   .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
   .team-title-block{ display:flex; flex-direction:column; gap:1px; }
   .team-staff-line{ font-size:11px; color:var(--muted); font-weight:400; }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; }
-  #tm_staffList .staff-row input.tm-staff-input{ flex:1 1 0%; min-width:0; width:auto; }
-  #tm_staffList .staff-row select.tm-staff-position{ flex:0 0 132px; width:132px; }
-  .staff-view-modal{ max-width:400px; }
-  .staff-view-group{ margin-bottom:16px; }
-  .staff-view-group:last-child{ margin-bottom:0; }
-  .staff-view-group h4{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-text); margin:0 0 6px; font-weight:700; }
-  .staff-view-item{ display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--ink); }
-  .staff-view-item:last-child{ border-bottom:none; }
-  .staff-btn{ display:inline-flex; align-items:center; gap:5px; }
-  .staff-count{ font-size:10.5px; font-weight:700; background:var(--line); color:var(--muted); border-radius:20px; padding:1px 7px; }
+  .staff-row input{ flex:1; }
   .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
-  .team-head .team-tools{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
   .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
 
   /* ---------- Table ---------- */
   .table-wrap{ overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:var(--card); margin-top:8px; }
   table{ width:100%; border-collapse:collapse; min-width:1260px; }
-  thead th{ position:sticky; top:0; background:var(--table-head); color:var(--accent-text); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th{ position:sticky; top:0; background:var(--table-head); color:var(--teal-deep); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
   thead th:first-child{ text-align:left; }
-  tbody tr{ border-bottom:1px solid var(--line); }
-  tbody tr:hover{ background:var(--table-head); }
+  tbody tr{ border-bottom:1px solid #ece8dc; }
+  tbody tr:hover{ background:#fbfaf6; }
   tbody tr.dup-row{ background:var(--red-bg); }
   tbody tr.pending-row{ box-shadow:inset 3px 0 0 var(--amber); }
-  td{ padding:9px 10px; font-size:13px; vertical-align:middle; color:var(--ink); }
+  td{ padding:9px 10px; font-size:13px; vertical-align:middle; }
   td.name{ font-weight:600; min-width:190px; }
   .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
   .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; text-align:center; }
@@ -169,14 +129,13 @@
   .cl-pending{ background:var(--amber-bg); color:var(--amber); }
   .cl-t1{ background:var(--blue-bg); color:var(--blue); }
   .cl-missed24{ background:var(--red-bg); color:var(--red); }
-  .claim-badge{ font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:20px; display:inline-block; }
   .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
   .dup-new{ background:var(--green-bg); color:var(--green); }
   .dup-flag{ background:var(--red-bg); color:var(--red); }
   .sync-tag{ font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:var(--amber-bg); color:var(--amber); margin-left:6px; }
 
   .row-actions{ display:flex; gap:6px; }
-  .icon-btn{ border:none; background:none; cursor:pointer; color:var(--muted); padding:4px 5px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; }
+  .icon-btn{ border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:3px 5px; border-radius:6px; }
   .icon-btn:hover{ background:var(--line); color:var(--ink); }
   .empty-state{ text-align:center; padding:50px 20px; color:var(--muted); font-size:13px; }
 
@@ -184,23 +143,36 @@
   .modal-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:100; padding:40px 16px; overflow-y:auto; }
   .modal-backdrop.open{ display:flex; }
   .modal{ background:var(--card); border-radius:14px; max-width:640px; width:100%; padding:26px 28px 22px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
-  .modal h3{ margin:0 0 4px; font-size:17px; color:var(--ink); }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
   .modal .modal-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
   .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
   .form-grid .full{ grid-column:1/-1; }
-  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--accent-text); display:block; margin-bottom:4px; }
+  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-deep); display:block; margin-bottom:4px; }
   .form-grid input, .form-grid select{ width:100%; }
   .check-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
   .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); }
   .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
-  .dup-warning{ background:var(--red-bg); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-top:4px; display:none; align-items:center; gap:6px; }
+  .dup-warning{ background:var(--red-bg); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-top:4px; display:none; }
   .field-hint{ font-size:11px; color:var(--muted); margin-top:4px; }
   .legend{ max-width:1400px; margin:26px auto 0; padding:16px 26px; font-size:12px; color:var(--muted); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
   .legend b{ color:var(--ink); }
-  .app-footer{ text-align:center; font-size:11px; color:var(--muted); padding:18px 20px 4px; letter-spacing:.02em; }
+  .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
 
   @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
-  @media print{ header, .toolbar, .row-actions, .legend, th:last-child, td:last-child{ display:none !important; } }
+  @media print{
+    header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
+    #loginOverlay, th:last-child, td:last-child{ display:none !important; }
+    body{ padding-bottom:0; background:#fff; }
+    .team-group{ max-width:none; margin:0 0 22px; padding:0; page-break-inside:avoid; break-inside:avoid; }
+    .team-group.print-hide{ display:none !important; }
+    .team-head{ border-bottom:2px solid #000; }
+    .table-wrap{ overflow:visible; box-shadow:none; border-radius:0; }
+    table{ min-width:0; width:100%; font-size:10px; }
+    th, td{ padding:4px 5px; }
+    thead{ display:table-header-group; }
+    tr{ page-break-inside:avoid; break-inside:avoid; }
+    .badge-select, .fac-fixed, .dup-tag, .sync-tag{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
 </style>
 </head>
 <body>
@@ -208,7 +180,7 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-card">
-    <h1>DR Care — Sign in</h1>
+    <h1>Field Roster — Sign in</h1>
     <p>Divine Rays Mobile Operations · shared team login</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
@@ -224,7 +196,7 @@
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-      <h1 class="brand-title">DR Care <span class="tag">Patient Tracker</span></h1>
+      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
@@ -237,8 +209,8 @@
 
 <div class="toolbar">
   <input type="month" id="monthFilter" title="Choose which month's mobile/team records to view">
-  <button class="btn" id="addTeamBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Mobile</button>
-  <button class="btn" id="themeToggle"></button>
+  <button class="btn" id="addTeamBtn">+ Add Team / Site</button>
+  <button class="btn" id="themeToggle">🌙 Dark mode</button>
   <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
   <select id="filterStatus">
     <option value="">All statuses</option>
@@ -253,11 +225,11 @@
     <option value="lab-no">Lab not yet availed</option>
   </select>
   <div class="spacer"></div>
-  <button class="btn" id="syncNowBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16M3 21v-5h5"/></svg>Sync now</button>
-  <button class="btn" id="exportBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Export CSV</button>
-  <button class="btn" id="importBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4-4 4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Import CSV</button>
+  <button class="btn" id="syncNowBtn">🔄 Sync now</button>
+  <button class="btn" id="exportBtn">⬇ Export CSV</button>
+  <button class="btn" id="importBtn">⬆ Import CSV</button>
   <input type="file" id="importFile" accept=".csv">
-  <button class="btn" id="printBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v7H6z"/></svg>Print</button>
+  <button class="btn" id="printBtn">🖨 Print</button>
 </div>
 
 <div id="groupsContainer"></div>
@@ -277,10 +249,10 @@
       <div>
         <label>PhilHealth ID</label>
         <input type="text" id="f_phid" placeholder="1234-5678-9012">
-        <div class="dup-warning" id="dupWarning"><svg class="icon" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span>This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</span></div>
+        <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
-        <label>Mobile</label>
+        <label>Team / Site</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -297,8 +269,11 @@
       </div>
       <div>
         <label>Status of claim</label>
-        <div><span id="f_claimPreview" class="claim-badge"></span></div>
-        <div class="field-hint">Automatic — based on Date encoded and Date validated &amp; submitted below.</div>
+        <select id="f_claim">
+          <option value="pending">Pending</option>
+          <option value="t1">T1 Submitted</option>
+          <option value="missed24">Missed 24h</option>
+        </select>
       </div>
       <div>
         <label>Date encoded</label>
@@ -329,34 +304,22 @@
 <!-- Team / Site Modal -->
 <div class="modal-backdrop" id="teamModalBackdrop">
   <div class="modal">
-    <h3 id="teamModalTitle">Add Mobile</h3>
-    <div class="modal-sub">Name the mobile site and add the employees assigned to it, with each one's role.</div>
+    <h3 id="teamModalTitle">Add Team / Site</h3>
+    <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
     <div class="form-grid">
       <div class="full">
-        <label>Mobile name</label>
+        <label>Team / Site name</label>
         <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
       </div>
       <div class="full">
-        <label>Employees</label>
+        <label>Managing staff / employees</label>
         <div id="tm_staffList"></div>
-        <button class="btn btn-ghost" id="tm_addStaffBtn" type="button"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add employee</button>
+        <button class="btn btn-ghost" id="tm_addStaffBtn" type="button">+ Add staff member</button>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" id="tm_cancelBtn">Cancel</button>
-      <button class="btn btn-primary" id="tm_saveBtn">Save mobile</button>
-    </div>
-  </div>
-</div>
-
-<!-- Staff View Modal -->
-<div class="modal-backdrop" id="staffViewBackdrop">
-  <div class="modal staff-view-modal">
-    <h3 id="staffViewTitle">Staff</h3>
-    <div class="modal-sub">Employees assigned to this mobile site.</div>
-    <div id="staffViewList"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="staffViewCloseBtn">Close</button>
+      <button class="btn btn-primary" id="tm_saveBtn">Save team</button>
     </div>
   </div>
 </div>
@@ -372,18 +335,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 /* ========================================================================= */
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* Icon glyphs (minimal line icons, inherit currentColor) */
-const ICONS = {
-  moon: '<svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
-  sun: '<svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
-  edit: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
-  users: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-};
-
-/* Fixed list of field-mission roles employees can be assigned to */
-const STAFF_POSITIONS = ["Doctor","Medtech","Nurse","Encoder","Receiving","Driver","Radtech","Phlebo"];
 
 /* Facility lists */
 const HOME_FACILITY = "Abucay";
@@ -504,15 +455,6 @@ let teamStaff = {};
 function loadTeamStaffCache(){
   try{ teamStaff = JSON.parse(localStorage.getItem(TEAM_STAFF_CACHE_KEY) || "{}"); }
   catch(e){ teamStaff = {}; }
-  normalizeTeamStaff();
-}
-/* Older saves stored staff as a plain array of name strings. Upgrade
-   any of those in place to {name, position} objects so the rest of
-   the app can rely on a single shape. */
-function normalizeTeamStaff(){
-  Object.keys(teamStaff).forEach(team=>{
-    teamStaff[team] = (teamStaff[team]||[]).map(s => typeof s === 'string' ? {name:s, position:STAFF_POSITIONS[0]} : s);
-  });
 }
 function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
 async function pushTeamStaff(){
@@ -527,7 +469,6 @@ async function pullTeamStaff(){
     const { data } = await sb.from('settings').select('value').eq('key','teamStaff').maybeSingle();
     if(data && data.value){
       teamStaff = JSON.parse(data.value);
-      normalizeTeamStaff();
       saveTeamStaffCache();
     }
   }catch(e){ /* ignore, offline or not set up yet */ }
@@ -584,28 +525,12 @@ function monthPatients(){
     return (p.dateEncoded||'').slice(0,7) === month;
   });
 }
-/* Local (not UTC) YYYY-MM-DD, so date math matches the browser's
-   actual "today" — using toISOString() here would shift the date
-   near midnight in timezones ahead of UTC (e.g. Manila, UTC+8). */
-function localDateStr(d){
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-/* If viewing a PAST or FUTURE month, default a new patient's encoded
-   date to the 1st of that month (instead of today) so they show up
-   immediately on the page you're looking at, rather than seeming to
-   vanish. But if you're viewing the CURRENT month (the normal case),
-   default to today's actual date — defaulting to the 1st here was
-   silently backdating every new patient, which pushed their 24h claim
-   deadline into the past and made Status of claim show "Missed 24h"
-   immediately instead of "Pending". */
+/* If viewing a specific month, default a new patient's encoded date to
+   the 1st of that month (instead of today) so they show up immediately
+   on the page you're looking at, rather than seeming to vanish. */
 function defaultEncodedDate(){
-  const today = localDateStr(new Date());
   const month = document.getElementById('monthFilter').value;
-  if(!month || month === today.slice(0,7)) return today;
-  return month + '-01';
+  return month ? (month + '-01') : new Date().toISOString().slice(0,10);
 }
 
 function filteredPatients(){
@@ -642,28 +567,14 @@ function claimDeadline(dateEncoded){
   d.setDate(d.getDate() + 1);
   return d;
 }
-/* Status of claim is never hand-picked — it's always derived:
-   - No "Date validated & submitted" yet -> Pending, unless the 24h
-     deadline (12am the day after Date encoded) has already passed
-     with nothing submitted -> Missed 24h.
-   - A submitted date on or before that deadline -> T1 Submitted.
-   - A submitted date after that deadline -> Missed 24h. */
-function computeClaimStatus(p){
-  const deadline = claimDeadline(p.dateEncoded);
-  if(p.dateSubmitted){
-    if(!deadline) return 't1';
-    const submitted = new Date(p.dateSubmitted + "T00:00:00");
-    return submitted <= deadline ? 't1' : 'missed24';
-  }
-  if(deadline && new Date() >= deadline) return 'missed24';
-  return 'pending';
-}
-function refreshClaimStatuses(){
+function autoFlagMissedClaims(){
+  const now = new Date();
   let changed = false;
   state.patients.forEach(p=>{
-    if(p.deleted) return;
-    const next = computeClaimStatus(p);
-    if(p.claim !== next){ p.claim = next; pendingIds.add(p.id); changed = true; }
+    if(p.claim === 'pending' && !p.deleted){
+      const deadline = claimDeadline(p.dateEncoded);
+      if(deadline && now >= deadline){ p.claim = 'missed24'; pendingIds.add(p.id); changed = true; }
+    }
   });
   if(changed){ savePending(); saveLocalCache(); flushPending(); }
   return changed;
@@ -699,7 +610,7 @@ function renderLegend(){
     <span><b>Month view:</b> the picker at the top filters everything to one month, based on each patient's Date encoded — switch months to page between mobile missions</span>
     <span><b>Status:</b> Registered → Registered to other DR facility</span>
     <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
-    <span><b>Claim:</b> Automatic — Pending until a "Date validated &amp; submitted" is entered; that date becomes "T1 Submitted" if it's on or before 12am the day after encoding, otherwise "Missed 24h" (still-pending records also auto-flag to "Missed 24h" once that deadline passes)</span>
+    <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced badge:</b> row was changed on this device and hasn't reached the shared database yet — it'll sync automatically once online</span>
     <span><b>Backup:</b> Export CSV any time for a copy outside the app</span>
   `;
@@ -730,7 +641,7 @@ function restoreScrollPositions(positions){
 
 function renderAll(){
   const savedScroll = captureScrollPositions();
-  refreshClaimStatuses();
+  autoFlagMissedClaims();
   state.patients.forEach(normalizeFacility);
   renderStats();
   renderLegend();
@@ -745,8 +656,8 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`
-      : `No patients yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
+      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`
+      : `No patients yet. Click “+ Add Team / Site” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -758,16 +669,17 @@ function renderAll(){
     const collapsed = collapsedTeams.has(team);
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
-        <span class="chev"><svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span class="chev">▾</span>
         <div class="team-title-block">
           <h2>${escapeHtml(team)}</h2>
+          ${(teamStaff[team] && teamStaff[team].length) ? `<div class="team-staff-line">Managed by: ${escapeHtml(teamStaff[team].join(', '))}</div>` : ''}
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
-          <button class="btn btn-ghost staff-btn" style="padding:5px 10px; font-size:12px;" data-view-staff="${escapeAttr(team)}">${ICONS.users}Staff<span class="staff-count">${(teamStaff[team]||[]).length}</span></button>
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
-          <button data-edit-team="${escapeAttr(team)}">edit mobile</button>
-          <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
+          <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">🖨 print</button>
+          <button data-edit-team="${escapeAttr(team)}">edit team</button>
+          <button data-delete-team="${escapeAttr(team)}">delete team</button>
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -836,13 +748,15 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
       <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
-      <td style="text-align:center"><span class="claim-badge ${claimClass[p.claim]}" title="Automatic — based on Date encoded and Date validated &amp; submitted">${claimLabel[p.claim]}</span></td>
-      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">New record</span>`}</td>
+      <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
+        ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">OK</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
-        <button class="icon-btn" data-edit="${p.id}" title="Edit">${ICONS.edit}</button>
-        <button class="icon-btn" data-remove="${p.id}" title="Delete">${ICONS.trash}</button>
+        <button class="icon-btn" data-edit="${p.id}" title="Edit">✎</button>
+        <button class="icon-btn" data-remove="${p.id}" title="Delete">🗑</button>
       </td>
     </tr>`;
 }
@@ -865,12 +779,12 @@ groupsContainer.addEventListener('click', e=>{
     renderAll();
     return;
   }
-  if(e.target.closest('[data-view-staff]')){
-    openStaffView(e.target.closest('[data-view-staff]').dataset.viewStaff);
-    return;
-  }
   if(e.target.dataset.addPatient){
     openModal(null, e.target.dataset.addPatient);
+    return;
+  }
+  if(e.target.dataset.printTeam){
+    printSingleTeam(e.target.dataset.printTeam);
     return;
   }
   if(e.target.dataset.editTeam){
@@ -880,7 +794,7 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.dataset.deleteTeam){
     const team = e.target.dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
-    if(confirm(`Delete mobile "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
+    if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
       state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
       delete teamStaff[team];
       pendingEmptyTeams.delete(team);
@@ -908,7 +822,6 @@ groupsContainer.addEventListener('change', e=>{
   if(!field) return;
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
-  p.claim = computeClaimStatus(p);
   persistChange(p);
 });
 
@@ -938,17 +851,6 @@ function updateFacilityField(preferredValue){
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
 
-function updateClaimPreview(){
-  const dateEncoded = document.getElementById('f_dateEncoded').value;
-  const dateSubmitted = document.getElementById('f_dateSubmitted').value;
-  const status = computeClaimStatus({dateEncoded, dateSubmitted});
-  const el = document.getElementById('f_claimPreview');
-  el.textContent = claimLabel[status];
-  el.className = 'claim-badge ' + claimClass[status];
-}
-document.getElementById('f_dateEncoded').addEventListener('input', updateClaimPreview);
-document.getElementById('f_dateSubmitted').addEventListener('input', updateClaimPreview);
-
 function openModal(id, presetTeam){
   editingId = id || null;
   const p = id ? state.patients.find(p=>p.id===id) : null;
@@ -959,9 +861,9 @@ function openModal(id, presetTeam){
   document.getElementById('f_team').value = p ? p.team : (presetTeam || getTeams()[0] || '');
   document.getElementById('f_status').value = p ? p.status : 'registered';
   updateFacilityField(p ? p.facility : HOME_FACILITY);
+  document.getElementById('f_claim').value = p ? p.claim : 'pending';
   document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
   document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
-  updateClaimPreview();
   document.getElementById('f_mca').checked = p ? p.mca : false;
   document.getElementById('f_within24').checked = p ? p.within24 : false;
   document.getElementById('f_rice').checked = p ? p.rice : false;
@@ -979,8 +881,8 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   const dupTeam = duplicateTeam(e.target.value, editingId);
   const warn = document.getElementById('dupWarning');
   if(dupTeam){
-    warn.querySelector('span').textContent = `This PhilHealth ID already exists — Duplicate at ${dupTeam}.`;
-    warn.style.display = 'flex';
+    warn.textContent = `⚠ This PhilHealth ID already exists — Duplicate at ${dupTeam}.`;
+    warn.style.display = 'block';
   } else {
     warn.style.display = 'none';
   }
@@ -994,6 +896,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     team: document.getElementById('f_team').value, name, phid,
     status: document.getElementById('f_status').value,
     facility: document.getElementById('f_facility').value,
+    claim: document.getElementById('f_claim').value,
     dateEncoded: document.getElementById('f_dateEncoded').value,
     dateSubmitted: document.getElementById('f_dateSubmitted').value,
     mca: document.getElementById('f_mca').checked,
@@ -1003,7 +906,6 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     notes: document.getElementById('f_notes').value.trim(),
     deleted: false
   };
-  data.claim = computeClaimStatus(data);
   let p;
   if(editingId){ p = state.patients.find(p=>p.id===editingId); Object.assign(p, data); }
   else { p = Object.assign({id:cryptoId()}, data); state.patients.push(p); }
@@ -1016,31 +918,26 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 const teamModalBackdrop = document.getElementById('teamModalBackdrop');
 let editingTeamOriginalName = null;
 
-function addStaffRow(name='', position=''){
+function addStaffRow(value=''){
   const list = document.getElementById('tm_staffList');
   const row = document.createElement('div');
   row.className = 'staff-row';
-  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(name)}">
-    <select class="tm-staff-position">${STAFF_POSITIONS.map(pos=>`<option value="${pos}" ${pos===position?'selected':''}>${pos}</option>`).join('')}</select>
-    <button class="icon-btn" data-remove-staff title="Remove">${ICONS.trash}</button>`;
+  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(value)}"><button class="icon-btn" data-remove-staff title="Remove">🗑</button>`;
   list.appendChild(row);
 }
-/* Accepts an array of {name, position}. Also tolerates the older
-   plain-string format from before positions existed. */
-function renderStaffRows(entries){
+function renderStaffRows(names){
   const list = document.getElementById('tm_staffList');
   list.innerHTML = '';
-  const normalized = (entries && entries.length) ? entries.map(e => typeof e === 'string' ? {name:e, position:STAFF_POSITIONS[0]} : e) : [{name:'', position:STAFF_POSITIONS[0]}];
-  normalized.forEach(e => addStaffRow(e.name, e.position));
+  (names && names.length ? names : ['']).forEach(name => addStaffRow(name));
 }
 document.getElementById('tm_addStaffBtn').addEventListener('click', ()=> addStaffRow());
 document.getElementById('tm_staffList').addEventListener('click', e=>{
-  if(e.target.closest('[data-remove-staff]')) e.target.closest('.staff-row').remove();
+  if(e.target.dataset.removeStaff !== undefined) e.target.closest('.staff-row').remove();
 });
 
 function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
-  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Team / Site' : 'Add Team / Site';
   document.getElementById('tm_name').value = existingName || '';
   renderStaffRows(existingName ? teamStaff[existingName] : []);
   teamModalBackdrop.classList.add('open');
@@ -1053,11 +950,7 @@ teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop
 document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
   if(!name){ alert("Team / site name is required."); return; }
-  const staffEntries = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>{
-    const empName = row.querySelector('.tm-staff-input').value.trim();
-    const position = row.querySelector('.tm-staff-position').value;
-    return empName ? { name: empName, position } : null;
-  }).filter(Boolean);
+  const staffNames = [...document.querySelectorAll('.tm-staff-input')].map(i=>i.value.trim()).filter(Boolean);
 
   if(editingTeamOriginalName && editingTeamOriginalName !== name){
     // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
@@ -1068,7 +961,7 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   } else if(!editingTeamOriginalName && !getTeams().includes(name)){
     pendingEmptyTeams.add(name);
   }
-  teamStaff[name] = staffEntries;
+  teamStaff[name] = staffNames;
   pushTeamStaff();
   renderAll();
   closeTeamModal();
@@ -1076,39 +969,11 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
-/* ---------------- Staff view popup ---------------- */
-const staffViewBackdrop = document.getElementById('staffViewBackdrop');
-function openStaffView(team){
-  document.getElementById('staffViewTitle').textContent = team;
-  const staff = teamStaff[team] || [];
-  const list = document.getElementById('staffViewList');
-  if(!staff.length){
-    list.innerHTML = `<div class="empty-state">No employees added yet. Use “edit mobile” to add some.</div>`;
-  } else {
-    const groups = {};
-    staff.forEach(s=>{
-      const pos = s.position || 'Unassigned';
-      (groups[pos] = groups[pos] || []).push(s.name);
-    });
-    const order = STAFF_POSITIONS.filter(pos => groups[pos]);
-    Object.keys(groups).forEach(pos => { if(!order.includes(pos)) order.push(pos); });
-    list.innerHTML = order.map(pos => `
-      <div class="staff-view-group">
-        <h4>${escapeHtml(pos)} · ${groups[pos].length}</h4>
-        ${groups[pos].map(n=>`<div class="staff-view-item">${escapeHtml(n)}</div>`).join('')}
-      </div>`).join('');
-  }
-  staffViewBackdrop.classList.add('open');
-}
-function closeStaffView(){ staffViewBackdrop.classList.remove('open'); }
-document.getElementById('staffViewCloseBtn').addEventListener('click', closeStaffView);
-staffViewBackdrop.addEventListener('click', e=>{ if(e.target===staffViewBackdrop) closeStaffView(); });
-
 document.getElementById('search').addEventListener('input', renderAll);
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
-monthFilterEl.value = localDateStr(new Date()).slice(0,7);
+monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', renderAll);
 
 /* ---------------- Theme (light / dark) ---------------- */
@@ -1116,7 +981,7 @@ const THEME_KEY = 'roster_theme_v1';
 function applyTheme(theme){
   document.body.classList.toggle('dark', theme === 'dark');
   const btn = document.getElementById('themeToggle');
-  if(btn) btn.innerHTML = theme === 'dark' ? (ICONS.sun + 'Light mode') : (ICONS.moon + 'Dark mode');
+  if(btn) btn.textContent = theme === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
 }
 (function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
@@ -1149,7 +1014,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `dr-care-${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = `field-roster-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
 });
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
@@ -1199,6 +1064,21 @@ function parseCsvLine(line){
 }
 
 document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+/* Prints just one mobile team's table instead of the whole page: every
+   other team-group is hidden (print-only, via .print-hide) right
+   before printing, then restored once the print dialog closes. */
+function printSingleTeam(team){
+  document.querySelectorAll('.team-group').forEach(g=>{
+    const head = g.querySelector('.team-head');
+    if(head && head.dataset.team !== team) g.classList.add('print-hide');
+  });
+  window.print();
+}
+function clearPrintIsolation(){
+  document.querySelectorAll('.team-group.print-hide').forEach(g=> g.classList.remove('print-hide'));
+}
+window.addEventListener('afterprint', clearPrintIsolation);
 document.getElementById('syncNowBtn').addEventListener('click', ()=>{ flushPending().then(pullRemote); });
 
 /* ---------------- Auth ---------------- */
@@ -1241,7 +1121,7 @@ async function initApp(){
   else setSyncStatus('Offline — saved on this device', 'err');
 
   setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
-  setInterval(()=>{ if(refreshClaimStatuses()) renderAll(); }, 60000);
+  setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
   window.addEventListener('online', ()=>{ flushPending().then(pullRemote); });
   window.addEventListener('offline', ()=> setSyncStatus('Offline — saved on this device', 'err'));
 }
