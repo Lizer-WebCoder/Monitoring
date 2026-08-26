@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Field Roster — Divine Rays Mobile Operations Tracker</title>
+<title>DR Care — Divine Rays Mobile Operations Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -151,7 +151,7 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-card">
-    <h1>Field Roster — Sign in</h1>
+    <h1>DR Care — Sign in</h1>
     <p>Divine Rays Mobile Operations · shared team login</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
@@ -167,7 +167,7 @@
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-      <h1 class="brand-title">Field Roster <span class="tag">Patient Tracker</span></h1>
+      <h1 class="brand-title">DR Care <span class="tag">Patient Tracker</span></h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
@@ -470,7 +470,7 @@ function filteredPatients(){
 function isDuplicate(phid, excludeId){
   return state.patients.some(p => !p.deleted && p.phid.trim() === phid.trim() && p.phid.trim() !== "" && p.id !== excludeId);
 }
-/* Searches every team/site in the whole roster (not just the current
+/* Searches every mobile in the whole roster (not just the current
    one) for another patient sharing this PhilHealth ID, and returns
    the team name that record belongs to — or null if none. */
 function duplicateTeam(phid, excludeId){
