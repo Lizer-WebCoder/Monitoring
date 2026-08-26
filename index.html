@@ -21,6 +21,7 @@
     --muted:#6c7570;
     --table-head:#eef0e8;
     --row-hover:#fbfaf6;
+    --label-accent:#14524a;
     --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
     --radius: 10px;
   }
@@ -34,9 +35,12 @@
     --green:#84c495; --green-bg:#1b3021;
     --red:#e2907d; --red-bg:#3a221d;
     --purple:#bda2e0; --purple-bg:#2a2038;
-    --muted:#9aa39c; --table-head:#1e2d28; --row-hover:#1d2925;
+    --muted:#9aa39c; --table-head:#1e2d28;
+    --row-hover:#1c2924; --label-accent:#8fd9c4;
     --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.3);
   }
+  body.dark input, body.dark select{ color-scheme: dark; }
+  body.dark #monthFilter{ color: var(--teal); }
   body{ background:var(--paper); color:var(--ink); font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; padding-bottom:60px; }
   .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
 
@@ -52,7 +56,7 @@
   }
   .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
   .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
-  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-deep); display:block; margin:12px 0 4px; }
+  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
   .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
   .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
   .login-card button:hover{ background:var(--teal-deep); }
@@ -79,54 +83,49 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='4'%3E%3Cpath d='M50 20v60M20 50h60'/%3E%3C/g%3E%3C/svg%3E");
     background-repeat:no-repeat; background-size:contain; opacity:0.9;
   }
-  .header-row{ position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
-  .brand-block{ display:flex; flex-direction:column; gap:10px; }
-  .brand-top{ display:flex; align-items:center; gap:13px; }
-  .brand-mark{
-    flex:none; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-    color:#d9f0e6; background:linear-gradient(155deg, rgba(255,255,255,0.20), rgba(255,255,255,0.05));
-    border:1px solid rgba(255,255,255,0.25); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.15);
-  }
-  .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:3px; font-weight:600; }
+  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
   .brand-title{
-    font-family:'Sora', 'Inter', sans-serif; font-size:26px; font-weight:800; letter-spacing:.01em; margin:0;
+    font-family:'Sora', 'Inter', sans-serif; font-size:28px; font-weight:800; letter-spacing:.01em; margin:0;
     display:flex; align-items:center; gap:10px;
     background:linear-gradient(100deg, #ffffff 10%, #bfe8da 55%, #ffffff 90%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
     text-shadow:0 2px 18px rgba(0,0,0,0.15);
   }
-  .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; -webkit-text-fill-color:#f2ede0; }
-  .org-field{ display:flex; align-items:center; gap:7px; color:rgba(242,237,224,0.5); }
-  .org-field svg{ flex:none; }
-  .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.3); color:#f2ede0; font-size:12.5px; padding:2px 0; width:250px; font-family:inherit; }
-  .org-input::placeholder{ color:rgba(242,237,224,0.5); }
+  .pulse-badge{
+    flex:none; width:38px; height:30px; border-radius:9px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.14); color:#bfe8da;
+  }
+  .pulse-line{ stroke-dasharray:100; stroke-dashoffset:0; animation:pulse-travel 2.2s linear infinite; }
+  @keyframes pulse-travel{ 0%{ stroke-dashoffset:100; } 100%{ stroke-dashoffset:0; } }
+  .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
+  .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
+  .org-input::placeholder{ color:rgba(242,237,224,0.55); }
   .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
-  .sync-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .sync-row{ display:flex; align-items:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
   .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#c7dcd5; }
-  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; box-shadow:0 0 0 3px rgba(127,214,160,0.18); }
-  .sync-pill.err::before{ background:#e2897a; box-shadow:0 0 0 3px rgba(226,137,122,0.18); }
-  .sync-pill.busy::before{ background:#e0c479; box-shadow:0 0 0 3px rgba(224,196,121,0.18); }
-  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; padding-left:14px; border-left:1px solid rgba(255,255,255,0.18); }
+  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; }
+  .sync-pill.err::before{ background:#e2897a; }
+  .sync-pill.busy::before{ background:#e0c479; }
+  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
   .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
 
-  .stat-strip{ position:relative; z-index:1; display:flex; gap:8px; flex-wrap:wrap; }
-  .stat{ background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 16px; min-width:88px; text-align:center; backdrop-filter:blur(2px); transition:background .15s ease; }
-  .stat:hover{ background:rgba(255,255,255,0.11); }
-  .stat .num{ font-size:19px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; color:#f2ede0; }
-  .stat .lbl{ font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:#a9c9bf; margin-top:4px; }
+  .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
+  .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
+  .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
 
   /* ---------- Toolbar ---------- */
-  .toolbar{ max-width:1400px; margin:18px auto 10px; padding:14px 26px; display:flex; flex-direction:column; gap:10px;
-    background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; flex-direction:column; gap:10px; }
   .toolbar-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-  .toolbar-row + .toolbar-row{ padding-top:10px; border-top:1px solid var(--line); }
-  .btn svg{ flex:none; }
   .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
   .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
   .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
   .btn-ghost{ box-shadow:none; }
   input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  select{ text-align:center; text-align-last:center; }
   #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
   #search{ min-width:220px; flex:1; }
   .spacer{ flex:1; }
@@ -135,29 +134,24 @@
   /* ---------- Groups ---------- */
   .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
   .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
-  .team-head .chev{ display:inline-flex; transition:transform .15s ease; color:var(--muted); }
+  .team-head .chev{ transition:transform .15s ease; font-size:12px; color:var(--muted); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
   .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
   .team-title-block{ display:flex; flex-direction:column; gap:1px; }
+  .team-staff-line{ font-size:11px; color:var(--muted); font-weight:400; }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; }
   .staff-row input{ flex:1; }
+  .staff-row select{ flex:none; width:130px; text-align:center; text-align-last:center; }
   .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
-  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
-  .team-head .team-tools button{
-    background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:11.5px; font-weight:600;
-    cursor:pointer; padding:5px 10px; border-radius:7px; display:inline-flex; align-items:center; gap:5px; transition:all .12s ease;
-  }
-  .team-head .team-tools button:hover{ border-color:var(--teal); color:var(--teal-deep); background:var(--table-head); }
-  .team-head .team-tools button.btn-primary{ background:var(--teal); border-color:var(--teal); color:#fff; }
-  .team-head .team-tools button.btn-primary:hover{ background:var(--teal-deep); border-color:var(--teal-deep); color:#fff; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
+  .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
 
   /* ---------- Table ---------- */
   .table-wrap{ overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:var(--card); margin-top:8px; }
   table{ width:100%; border-collapse:collapse; min-width:1260px; }
-  thead th{ position:sticky; top:0; background:var(--table-head); color:var(--teal-deep); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th{ position:sticky; top:0; background:var(--table-head); color:var(--label-accent); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
   thead th:first-child{ text-align:left; }
-  tbody tr{ border-bottom:1px solid #ece8dc; }
-  body.dark tbody tr{ border-bottom-color:var(--line); }
+  tbody tr{ border-bottom:1px solid var(--line); }
   tbody tr:hover{ background:var(--row-hover); }
   tbody tr.dup-row{ background:var(--red-bg); }
   tbody tr.pending-row{ box-shadow:inset 3px 0 0 var(--amber); }
@@ -180,11 +174,9 @@
   .dup-flag{ background:var(--red-bg); color:var(--red); }
   .sync-tag{ font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:var(--amber-bg); color:var(--amber); margin-left:6px; }
 
-  .row-actions{ display:flex; gap:4px; }
-  .icon-btn{ border:none; background:none; cursor:pointer; color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:6px; border-radius:6px; }
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{ border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:3px 5px; border-radius:6px; }
   .icon-btn:hover{ background:var(--line); color:var(--ink); }
-  .icon-btn svg{ vertical-align:middle !important; }
-  .dup-tag{ display:inline-flex; align-items:center; gap:4px; }
   .empty-state{ text-align:center; padding:50px 20px; color:var(--muted); font-size:13px; }
 
   /* ---------- Modal ---------- */
@@ -195,7 +187,7 @@
   .modal .modal-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
   .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
   .form-grid .full{ grid-column:1/-1; }
-  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-deep); display:block; margin-bottom:4px; }
+  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin-bottom:4px; }
   .form-grid input, .form-grid select{ width:100%; }
   .check-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
   .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); }
@@ -206,7 +198,7 @@
   .legend b{ color:var(--ink); }
   .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
 
-  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ margin-left:14px; margin-right:14px; padding:12px 14px; } .team-group{ padding:0 14px; } }
+  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
   @media print{
     header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
     #loginOverlay, th:last-child, td:last-child{ display:none !important; }
@@ -242,18 +234,17 @@
 
 <header>
   <div class="header-row">
-    <div class="brand-block">
-      <div class="brand-top">
-        <span class="brand-mark"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-        <div>
-          <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
-          <h1 class="brand-title">DR CARE <span class="tag">Patient Tracker</span></h1>
-        </div>
-      </div>
-      <div class="org-field">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        <input class="org-input" id="orgName" placeholder="Organization / mission name">
-      </div>
+    <div>
+      <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
+      <h1 class="brand-title">
+        <span class="pulse-badge" aria-hidden="true">
+          <svg viewBox="0 0 60 24" width="34" height="18" fill="none">
+            <polyline class="pulse-line" points="0,12 14,12 18,4 22,20 26,8 30,12 60,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        DR CARE <span class="tag">Patient Tracker</span>
+      </h1>
+      <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
         <div class="who-row"><span id="whoAmI"></span><button id="logoutBtn">Sign out</button></div>
@@ -266,7 +257,7 @@
 <div class="toolbar">
   <div class="toolbar-row">
     <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
-    <button class="btn btn-primary" id="addTeamBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Mobile</button>
+    <button class="btn" id="addTeamBtn">+ Add Mobile</button>
     <button class="btn" id="themeToggle"></button>
     <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
     <select id="filterStatus">
@@ -283,11 +274,11 @@
     </select>
   </div>
   <div class="toolbar-row">
-    <button class="btn" id="syncNowBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync now</button>
-    <button class="btn" id="exportBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV</button>
-    <button class="btn" id="importBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import CSV</button>
+    <button class="btn" id="syncNowBtn"></button>
+    <button class="btn" id="exportBtn"></button>
+    <button class="btn" id="importBtn"></button>
     <input type="file" id="importFile" accept=".csv">
-    <button class="btn" id="printBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+    <button class="btn" id="printBtn"></button>
   </div>
 </div>
 
@@ -308,7 +299,7 @@
       <div>
         <label>PhilHealth ID</label>
         <input type="text" id="f_phid" placeholder="1234-5678-9012">
-        <div class="dup-warning" id="dupWarning"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
+        <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
         <label>Team / Site</label>
@@ -383,24 +374,6 @@
   </div>
 </div>
 
-<!-- Assigned Staff (view-only) Modal -->
-<div class="modal-backdrop" id="staffViewBackdrop">
-  <div class="modal" style="max-width:420px;">
-    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-      <div>
-        <h3 id="staffViewTitle">Assigned Staff</h3>
-        <div class="modal-sub" style="margin-bottom:0;">Staff currently managing this mobile team.</div>
-      </div>
-      <button class="icon-btn" id="staffViewCloseX" title="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div id="staffViewList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0 4px;"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="staffViewEditBtn">Edit staff list</button>
-      <button class="btn btn-primary" id="staffViewCloseBtn">Close</button>
-    </div>
-  </div>
-</div>
-
 <script>
 /* =========================================================================
    STEP 1 — PASTE YOUR SUPABASE KEYS HERE
@@ -412,21 +385,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 /* ========================================================================= */
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ---------------- Icon set (inline SVG, replaces emoji throughout) ---------------- */
-const ICONS = {
-  moon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-  sun: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
-  printer: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
-  edit: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
-  warning: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-  check: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-  alertCircle: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-  chevron: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
-  users: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-  x: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
-};
 
 /* Facility lists */
 const HOME_FACILITY = "Abucay";
@@ -773,17 +731,17 @@ function renderAll(){
     const collapsed = collapsedTeams.has(team);
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
-        <span class="chev">${ICONS.chevron}</span>
+        <span class="chev">▾</span>
         <div class="team-title-block">
           <h2>${escapeHtml(team)}</h2>
+          ${(teamStaff[team] && teamStaff[team].length) ? `<div class="team-staff-line">Managed by: ${escapeHtml(teamStaff[team].map(staffEntryToText).filter(Boolean).join(', '))}</div>` : ''}
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
-          <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Patient</button>
-          <button data-show-staff="${escapeAttr(team)}" title="View assigned staff">${ICONS.users} Staff</button>
-          <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${ICONS.printer} Print</button>
-          <button data-edit-team="${escapeAttr(team)}" title="Edit mobile">${ICONS.edit} Edit</button>
-          <button data-delete-team="${escapeAttr(team)}" title="Delete mobile">${ICONS.trash} Delete</button>
+          <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
+          <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} print</button>
+          <button data-edit-team="${escapeAttr(team)}">edit mobile</button>
+          <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -855,18 +813,36 @@ function rowHtml(p){
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
-      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">${ICONS.alertCircle} Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${ICONS.check} OK</span>`}</td>
+      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
-        <button class="icon-btn" data-edit="${p.id}" title="Edit">${ICONS.edit}</button>
-        <button class="icon-btn" data-remove="${p.id}" title="Delete">${ICONS.trash}</button>
+        <button class="icon-btn" data-edit="${p.id}" title="Edit">${icon('edit',14)}</button>
+        <button class="icon-btn" data-remove="${p.id}" title="Delete">${icon('trash',14)}</button>
       </td>
     </tr>`;
 }
 
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function escapeAttr(s){ return escapeHtml(s); }
+
+/* Small, consistent inline-SVG icon set (stroke=currentColor, so they
+   automatically match light/dark theme and button text color) used in
+   place of emoji throughout the toolbar and row actions. */
+const ICON_PATHS = {
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  printer: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>'
+};
+function icon(name, size=15, extraStyle=''){
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;${extraStyle}">${ICON_PATHS[name]||''}</svg>`;
+}
 
 function populateTeamSelect(teams){
   const sel = document.getElementById('f_team');
@@ -883,17 +859,20 @@ groupsContainer.addEventListener('click', e=>{
     renderAll();
     return;
   }
-  let btn = e.target.closest('[data-add-patient]');
-  if(btn){ openModal(null, btn.dataset.addPatient); return; }
-  btn = e.target.closest('[data-show-staff]');
-  if(btn){ openStaffView(btn.dataset.showStaff); return; }
-  btn = e.target.closest('[data-print-team]');
-  if(btn){ printSingleTeam(btn.dataset.printTeam); return; }
-  btn = e.target.closest('[data-edit-team]');
-  if(btn){ openTeamModal(btn.dataset.editTeam); return; }
-  btn = e.target.closest('[data-delete-team]');
-  if(btn){
-    const team = btn.dataset.deleteTeam;
+  if(e.target.dataset.addPatient){
+    openModal(null, e.target.dataset.addPatient);
+    return;
+  }
+  if(e.target.dataset.printTeam){
+    printSingleTeam(e.target.dataset.printTeam);
+    return;
+  }
+  if(e.target.dataset.editTeam){
+    openTeamModal(e.target.dataset.editTeam);
+    return;
+  }
+  if(e.target.dataset.deleteTeam){
+    const team = e.target.dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
       state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
@@ -904,12 +883,10 @@ groupsContainer.addEventListener('click', e=>{
     }
     return;
   }
-  btn = e.target.closest('[data-edit]');
-  if(btn){ openModal(btn.dataset.edit); return; }
-  btn = e.target.closest('[data-remove]');
-  if(btn){
+  if(e.target.dataset.edit){ openModal(e.target.dataset.edit); return; }
+  if(e.target.dataset.remove){
     if(confirm("Delete this patient record?")){
-      const p = state.patients.find(p=>p.id===btn.dataset.remove);
+      const p = state.patients.find(p=>p.id===e.target.dataset.remove);
       if(p){ p.deleted = true; persistChange(p); }
     }
     return;
@@ -984,7 +961,7 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   const dupTeam = duplicateTeam(e.target.value, editingId);
   const warn = document.getElementById('dupWarning');
   if(dupTeam){
-    warn.innerHTML = `${ICONS.warning} This PhilHealth ID already exists — Duplicate at ${escapeHtml(dupTeam)}.`;
+    warn.textContent = `⚠ This PhilHealth ID already exists — Duplicate at ${dupTeam}.`;
     warn.style.display = 'block';
   } else {
     warn.style.display = 'none';
@@ -1021,17 +998,29 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 const teamModalBackdrop = document.getElementById('teamModalBackdrop');
 let editingTeamOriginalName = null;
 
-function addStaffRow(value=''){
+const STAFF_POSITIONS = ['DR','Medtech','Radtech','Phlebo','Encoder','Driver','Receiving'];
+function staffEntryToObj(s){
+  if(typeof s === 'string') return { name:s, position:'' };
+  if(s && typeof s === 'object') return { name:s.name||'', position:s.position||'' };
+  return { name:'', position:'' };
+}
+function addStaffRow(person){
+  const p = staffEntryToObj(person || {});
   const list = document.getElementById('tm_staffList');
   const row = document.createElement('div');
   row.className = 'staff-row';
-  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(value)}"><button class="icon-btn" data-remove-staff title="Remove">${ICONS.trash}</button>`;
+  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(p.name)}">
+    <select class="tm-staff-position">
+      <option value="">Position…</option>
+      ${STAFF_POSITIONS.map(pos=>`<option value="${pos}" ${p.position===pos?'selected':''}>${pos}</option>`).join('')}
+    </select>
+    <button class="icon-btn" data-remove-staff title="Remove">${icon('trash',14)}</button>`;
   list.appendChild(row);
 }
-function renderStaffRows(names){
+function renderStaffRows(entries){
   const list = document.getElementById('tm_staffList');
   list.innerHTML = '';
-  (names && names.length ? names : ['']).forEach(name => addStaffRow(name));
+  (entries && entries.length ? entries : [{}]).forEach(entry => addStaffRow(entry));
 }
 document.getElementById('tm_addStaffBtn').addEventListener('click', ()=> addStaffRow());
 document.getElementById('tm_staffList').addEventListener('click', e=>{
@@ -1042,7 +1031,7 @@ function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
   document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
   document.getElementById('tm_name').value = existingName || '';
-  renderStaffRows(existingName ? (teamStaff[existingName]||[]).map(staffEntryToText) : []);
+  renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
   teamModalBackdrop.classList.add('open');
   document.getElementById('tm_name').focus();
 }
@@ -1053,7 +1042,10 @@ teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop
 document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
   if(!name){ alert("Mobile name is required."); return; }
-  const staffNames = [...document.querySelectorAll('.tm-staff-input')].map(i=>i.value.trim()).filter(Boolean);
+  const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
+    name: row.querySelector('.tm-staff-input').value.trim(),
+    position: row.querySelector('.tm-staff-position').value
+  })).filter(s=>s.name);
 
   if(editingTeamOriginalName && editingTeamOriginalName !== name){
     // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
@@ -1072,29 +1064,6 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
-/* ---------------- Assigned staff (view-only) modal ---------------- */
-const staffViewBackdrop = document.getElementById('staffViewBackdrop');
-let staffViewTeam = null;
-function openStaffView(team){
-  staffViewTeam = team;
-  document.getElementById('staffViewTitle').textContent = `Assigned Staff — ${team}`;
-  const list = document.getElementById('staffViewList');
-  const names = (teamStaff[team] || []).map(staffEntryToText).filter(Boolean);
-  list.innerHTML = names.length
-    ? names.map(n=>`<div style="display:flex; align-items:center; gap:9px; padding:9px 11px; background:var(--table-head); border-radius:8px; font-size:13px; font-weight:600; color:var(--ink);">${ICONS.users}${escapeHtml(n)}</div>`).join('')
-    : `<div class="empty-state" style="padding:22px 0;">No staff assigned to this mobile yet.</div>`;
-  staffViewBackdrop.classList.add('open');
-}
-function closeStaffView(){ staffViewBackdrop.classList.remove('open'); staffViewTeam = null; }
-document.getElementById('staffViewCloseBtn').addEventListener('click', closeStaffView);
-document.getElementById('staffViewCloseX').addEventListener('click', closeStaffView);
-staffViewBackdrop.addEventListener('click', e=>{ if(e.target===staffViewBackdrop) closeStaffView(); });
-document.getElementById('staffViewEditBtn').addEventListener('click', ()=>{
-  const team = staffViewTeam;
-  closeStaffView();
-  openTeamModal(team);
-});
-
 document.getElementById('search').addEventListener('input', renderAll);
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
@@ -1107,7 +1076,9 @@ const THEME_KEY = 'roster_theme_v1';
 function applyTheme(theme){
   document.body.classList.toggle('dark', theme === 'dark');
   const btn = document.getElementById('themeToggle');
-  if(btn) btn.innerHTML = theme === 'dark' ? `${ICONS.sun} Light mode` : `${ICONS.moon} Dark mode`;
+  if(btn) btn.innerHTML = theme === 'dark'
+    ? `${icon('sun')} Light mode`
+    : `${icon('moon')} Dark mode`;
 }
 (function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
@@ -1119,6 +1090,10 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
 });
+document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
+document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
+document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
+document.getElementById('printBtn').innerHTML = `${icon('printer')} Print`;
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
