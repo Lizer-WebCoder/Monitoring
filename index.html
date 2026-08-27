@@ -226,8 +226,8 @@
   .form-grid .full{ grid-column:1/-1; }
   label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin-bottom:4px; }
   .form-grid input, .form-grid select{ width:100%; }
-  .check-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
-  .check-row{ display:flex; align-items:flex-start; gap:10px; background:var(--table-head); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .check-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px 12px; }
+  .check-row{ display:flex; align-items:flex-start; gap:10px; background:var(--table-head); border:1px solid var(--line); border-radius:10px; padding:10px 12px; min-width:0; }
   .check-row input[type="checkbox"]{ flex:none; margin-top:2px; }
   .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); line-height:1.35; cursor:pointer; min-width:0; flex:1 1 auto; word-wrap:break-word; }
   .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
