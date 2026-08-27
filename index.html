@@ -139,9 +139,10 @@
   .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
   .team-title-block{ display:flex; flex-direction:column; gap:1px; }
   .team-staff-line{ font-size:11px; color:var(--muted); font-weight:400; }
-  .staff-row{ display:flex; gap:6px; margin-bottom:6px; }
-  .staff-row input{ flex:1; }
-  .staff-row select{ flex:none; width:130px; text-align:center; text-align-last:center; }
+  .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
+  .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
+  .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
   .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
   .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
   .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
