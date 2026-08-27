@@ -1,0 +1,8 @@
+{
+  "name": "DR CARE — Divine Rays Mobile Operations Tracker",
+  "short_name": "DR CARE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#14524a"
+}
