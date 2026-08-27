@@ -272,7 +272,7 @@
   .dash-trend-bar{ fill:var(--teal); }
   .dash-trend-bar.dtb-current{ fill:var(--amber); }
   .dash-trend-label{ font-size:9.5px; fill:var(--muted); font-family:'IBM Plex Mono',monospace; }
-  .dash-trend-num{ font-size:9.5px; fill:var(--ink); font-weight:700; font-family:'IBM Plex Mono',monospace; }
+  .dash-trend-num{ font-size:11px; fill:var(--ink); font-weight:700; font-family:'IBM Plex Mono',monospace; }
   .dash-table-wrap{ overflow-x:auto; border-radius:8px; border:1px solid var(--line); }
   .dash-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
   .dash-table th{ background:var(--table-head); color:var(--label-accent); text-transform:uppercase; letter-spacing:.03em; font-size:10px; font-weight:700; padding:8px 10px; text-align:center; white-space:nowrap; }
@@ -364,6 +364,7 @@
     <button class="btn" id="syncNowBtn"></button>
     <button class="btn" id="exportBtn"></button>
     <button class="btn" id="importBtn"></button>
+    <button class="btn btn-ghost" id="csvTemplateBtn"></button>
     <input type="file" id="importFile" accept=".csv">
   </div>
 </div>
@@ -804,7 +805,8 @@ function renderLegend(){
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced badge:</b> row was changed on this device and hasn't reached the shared database yet — it'll sync automatically once online</span>
     <span><b>Staff:</b> click the "N staff" pill under a mobile's name to see who's managing it</span>
-    <span><b>Backup:</b> Export CSV any time for a copy outside the app</span>
+    <span><b>Backup:</b> Export CSV any time for a copy outside the app. Use each mobile's own "export"/"import" buttons to work with just that mobile's patients</span>
+    <span><b>CSV format:</b> download "CSV template" for the exact columns Import CSV expects</span>
   `;
 }
 
@@ -872,6 +874,8 @@ function renderAll(){
         <div class="team-tools">
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
           <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} print</button>
+          <button data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} export</button>
+          <button data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} import</button>
           <button data-edit-team="${escapeAttr(team)}">edit mobile</button>
           <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
         </div>
@@ -974,7 +978,8 @@ const ICON_PATHS = {
   check: '<polyline points="20 6 9 17 4 12"/>',
   users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'
 };
 function icon(name, size=15, extraStyle=''){
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;${extraStyle}">${ICON_PATHS[name]||''}</svg>`;
@@ -1022,6 +1027,15 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.closest('[data-print-team]')){
     printSingleTeam(e.target.closest('[data-print-team]').dataset.printTeam);
+    return;
+  }
+  if(e.target.closest('[data-export-team]')){
+    exportPatients(e.target.closest('[data-export-team]').dataset.exportTeam);
+    return;
+  }
+  if(e.target.closest('[data-import-team]')){
+    importTargetTeam = e.target.closest('[data-import-team]').dataset.importTeam;
+    document.getElementById('importFile').click();
     return;
   }
   if(e.target.closest('[data-edit-team]')){
@@ -1263,6 +1277,7 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
 document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
 document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
+document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
 
 /* ---------------- Org name ---------------- */
@@ -1275,9 +1290,14 @@ orgInput.addEventListener('input', ()=>{
 
 /* ---------------- CSV export / import ---------------- */
 const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
-document.getElementById('exportBtn').addEventListener('click', ()=>{
+function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+
+/* Exports either every mobile (scopeTeam omitted/null, used by the
+   toolbar's "Export CSV") or just one mobile's patients (scopeTeam
+   set, used by a mobile's own "export" button). */
+function exportPatients(scopeTeam){
   const rows = [CSV_HEADERS.join(',')];
-  state.patients.filter(p=>!p.deleted).forEach(p=>{
+  state.patients.filter(p=>!p.deleted && (!scopeTeam || p.team === scopeTeam)).forEach(p=>{
     rows.push([csvSafe(p.team), csvSafe(p.name), csvSafe(p.phid), statusLabel[p.status], csvSafe(p.facility||''),
       p.mca?"YES":"NO", p.dateEncoded||'', p.dateSubmitted||'', p.within24?"YES":"NO",
       claimLabel[p.claim], p.rice?"YES":"NO", p.lab?"YES":"NO", csvSafe(p.notes||'')].join(','));
@@ -1285,15 +1305,39 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `field-roster-${new Date().toISOString().slice(0,10)}.csv`;
+  const namePart = scopeTeam ? '-' + scopeTeam.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') : '';
+  a.href = url; a.download = `field-roster${namePart}-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
-});
-function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+}
+document.getElementById('exportBtn').addEventListener('click', ()=> exportPatients(null));
 
-document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+/* Downloads a blank starting-point CSV (headers + one filled-in
+   example row) in exactly the format Import CSV expects, so a mobile
+   team can fill it out in Excel/Sheets and re-import it. */
+function downloadCsvTemplate(){
+  const example = ["Mobile Staff — Site A","DELA CRUZ, JUAN, SANTOS","1300-0004-937","Registered","Abucay",
+    "YES","2026-08-12","2026-08-12","NO","T1 Submitted","YES","NO","Optional remarks"];
+  const rows = [CSV_HEADERS.join(','), example.map(csvSafe).join(',')];
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'dr-care-import-template.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+document.getElementById('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
+
+/* When set (by a mobile's own "import" button), every row from the
+   next CSV import is forced into this team regardless of what its
+   "Team" column says — that's what makes import "per mobile". Reset
+   to null after each import so the toolbar's global Import CSV goes
+   back to reading each row's own Team column. */
+let importTargetTeam = null;
+
+document.getElementById('importBtn').addEventListener('click', ()=>{ importTargetTeam = null; document.getElementById('importFile').click(); });
 document.getElementById('importFile').addEventListener('change', e=>{
   const file = e.target.files[0];
-  if(!file) return;
+  if(!file){ importTargetTeam = null; return; }
+  const targetTeam = importTargetTeam;
   const reader = new FileReader();
   reader.onload = evt=>{
     try{
@@ -1307,7 +1351,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
         if(cols.length < 13) return;
         const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
         const resolvedStatus = statusRev[(status||'').toLowerCase()] || 'registered';
-        const p = { id: cryptoId(), team: team||'Imported', name, phid, status: resolvedStatus,
+        const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
           facility: facility || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
           mca: (mca||'').toUpperCase()==='YES', dateEncoded: dateEnc||'', dateSubmitted: dateSub||'',
           within24: (within24||'').toUpperCase()==='YES', claim: claimRev[(claim||'').toLowerCase()] || 'pending',
@@ -1317,9 +1361,10 @@ document.getElementById('importFile').addEventListener('change', e=>{
         added++;
       });
       savePending(); saveLocalCache(); renderAll(); flushPending();
-      alert(`Imported ${added} record(s).`);
-    }catch(err){ alert("Could not read that CSV file. Make sure it was exported from this tool."); console.error(err); }
+      alert(`Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`);
+    }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the Template button)."); console.error(err); }
     e.target.value = '';
+    importTargetTeam = null;
   };
   reader.readAsText(file);
 });
@@ -1514,21 +1559,27 @@ function renderTrendChart(selectedMonth){
 
   const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
   const maxCount = Math.max(...counts, 1);
-  const barW = 46, gap = 14, chartH = 140, leftPad = 6;
+  /* topPad reserves headroom above the tallest possible bar so the
+     count label sitting above it always has room to render — without
+     this, a bar scaled to the full chart height pushes its label's
+     text right up against (or past) the top edge of the viewBox and
+     it gets visually clipped in half. */
+  const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
+  const barAreaH = chartH - topPad - bottomPad;
   const svgW = months.length * (barW + gap) + leftPad;
 
   let bars = '';
   months.forEach((m, i)=>{
     const c = counts[i];
-    const h = Math.round((c / maxCount) * (chartH - 30));
+    const h = Math.round((c / maxCount) * barAreaH);
     const x = leftPad + i * (barW + gap);
-    const y = chartH - h - 20;
+    const y = chartH - bottomPad - h;
     const isCurrent = m === selectedMonth;
     const shortLabel = monthLabel(m).replace(' ', '\u00A0').slice(0, 3) + ' ' + m.slice(2,4);
     bars += `
-      <text class="dash-trend-num" x="${x + barW/2}" y="${y - 5}" text-anchor="middle">${c}</text>
+      <text class="dash-trend-num" x="${x + barW/2}" y="${y - 7}" text-anchor="middle">${c}</text>
       <rect class="dash-trend-bar ${isCurrent?'dtb-current':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4"></rect>
-      <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 4}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
+      <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 6}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
     `;
   });
 
