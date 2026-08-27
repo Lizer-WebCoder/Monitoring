@@ -471,7 +471,7 @@ function cryptoId(){
 
 function toRemote(p){
   return {
-    id: p.id, team: p.team, name: p.name, phid: p.phid, status: p.status, facility: p.facility,
+    id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
     mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateSubmitted || null,
     within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab, notes: p.notes || '',
     deleted: !!p.deleted, updated_at: new Date().toISOString()
@@ -479,7 +479,7 @@ function toRemote(p){
 }
 function fromRemote(r){
   return {
-    id: r.id, team: r.team, name: r.name, phid: r.phid, status: r.status, facility: r.facility,
+    id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
     mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
     within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab, notes: r.notes || '',
     deleted: !!r.deleted
@@ -672,7 +672,9 @@ function filteredPatients(){
 }
 
 function isDuplicate(phid, excludeId){
-  return state.patients.some(p => !p.deleted && p.phid.trim() === phid.trim() && p.phid.trim() !== "" && p.id !== excludeId);
+  const clean = (phid||'').trim();
+  if(!clean) return false;
+  return state.patients.some(p => !p.deleted && (p.phid||'').trim() === clean && p.id !== excludeId);
 }
 /* Searches every team/site in the whole roster (not just the current
    one) for another patient sharing this PhilHealth ID, and returns
@@ -945,20 +947,20 @@ groupsContainer.addEventListener('click', e=>{
     renderAll();
     return;
   }
-  if(e.target.dataset.addPatient){
-    openModal(null, e.target.dataset.addPatient);
+  if(e.target.closest('[data-add-patient]')){
+    openModal(null, e.target.closest('[data-add-patient]').dataset.addPatient);
     return;
   }
-  if(e.target.dataset.printTeam){
-    printSingleTeam(e.target.dataset.printTeam);
+  if(e.target.closest('[data-print-team]')){
+    printSingleTeam(e.target.closest('[data-print-team]').dataset.printTeam);
     return;
   }
-  if(e.target.dataset.editTeam){
-    openTeamModal(e.target.dataset.editTeam);
+  if(e.target.closest('[data-edit-team]')){
+    openTeamModal(e.target.closest('[data-edit-team]').dataset.editTeam);
     return;
   }
-  if(e.target.dataset.deleteTeam){
-    const team = e.target.dataset.deleteTeam;
+  if(e.target.closest('[data-delete-team]')){
+    const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
       state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
@@ -969,10 +971,10 @@ groupsContainer.addEventListener('click', e=>{
     }
     return;
   }
-  if(e.target.dataset.edit){ openModal(e.target.dataset.edit); return; }
-  if(e.target.dataset.remove){
+  if(e.target.closest('[data-edit]')){ openModal(e.target.closest('[data-edit]').dataset.edit); return; }
+  if(e.target.closest('[data-remove]')){
     if(confirm("Delete this patient record?")){
-      const p = state.patients.find(p=>p.id===e.target.dataset.remove);
+      const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
       if(p){ p.deleted = true; persistChange(p); }
     }
     return;
@@ -1123,7 +1125,7 @@ function renderStaffRows(entries){
 }
 document.getElementById('tm_addStaffBtn').addEventListener('click', ()=> addStaffRow());
 document.getElementById('tm_staffList').addEventListener('click', e=>{
-  if(e.target.dataset.removeStaff !== undefined) e.target.closest('.staff-row').remove();
+  if(e.target.closest('[data-remove-staff]')) e.target.closest('.staff-row').remove();
 });
 
 function openTeamModal(existingName){
