@@ -145,6 +145,7 @@
   .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
   .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
   .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .btn-primary:disabled{ opacity:0.45; cursor:not-allowed; transform:none; background:var(--teal); color:#fff; }
   .btn-ghost{ box-shadow:none; }
   input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
   select{ text-align:center; text-align-last:center; }
@@ -162,8 +163,6 @@
   .team-title-block{ display:flex; flex-direction:column; gap:4px; }
   .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; }
   .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
-  .staff-panel{ max-width:1400px; margin:0 auto; padding:2px 4px 10px; display:flex; flex-wrap:wrap; gap:6px; }
-  .staff-chip{ background:var(--card); border:1px solid var(--line); color:var(--ink); padding:4px 10px; border-radius:20px; font-size:12px; box-shadow:var(--shadow); }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
   .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
   .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
@@ -171,6 +170,18 @@
   .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
   .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
   .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
+
+  /* ---------- Staff popup ---------- */
+  .staff-popup-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.4); display:none; align-items:center; justify-content:center; z-index:150; padding:20px; }
+  .staff-popup-backdrop.open{ display:flex; }
+  .staff-popup{ background:var(--card); border-radius:14px; width:100%; max-width:320px; max-height:80vh; overflow-y:auto; padding:18px 20px 16px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
+  .staff-popup h4{ margin:0 0 2px; font-size:14px; }
+  .staff-popup .staff-popup-sub{ font-size:11px; color:var(--muted); margin-bottom:12px; }
+  .staff-popup-list{ display:flex; flex-direction:column; gap:8px; }
+  .staff-popup-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--table-head); border-radius:8px; padding:8px 10px; }
+  .staff-popup-item .sp-name{ font-size:13px; font-weight:600; }
+  .staff-popup-item .sp-pos{ font-size:11px; font-weight:700; color:var(--teal-deep); background:var(--card); border:1px solid var(--line); padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .staff-popup-close{ display:block; margin:14px auto 0; }
 
   /* ---------- Table ---------- */
   .table-wrap{ overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:var(--card); margin-top:8px; }
@@ -183,7 +194,7 @@
   tbody tr.pending-row{ box-shadow:inset 3px 0 0 var(--amber); }
   td{ padding:9px 10px; font-size:13px; vertical-align:middle; }
   td.name{ font-weight:600; min-width:190px; }
-  .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; }
+  .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:center; }
   .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; text-align:center; }
   input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--teal); cursor:pointer; }
 
@@ -215,8 +226,9 @@
   .form-grid .full{ grid-column:1/-1; }
   label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin-bottom:4px; }
   .form-grid input, .form-grid select{ width:100%; }
-  .check-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
-  .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); }
+  .check-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  .check-row{ display:flex; align-items:center; gap:8px; }
+  .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); line-height:1.3; }
   .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
   .dup-warning{ background:var(--red-bg); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-top:4px; display:none; }
   .field-hint{ font-size:11px; color:var(--muted); margin-top:4px; }
@@ -224,7 +236,7 @@
   .legend b{ color:var(--ink); }
   .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
 
-  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
+  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
   @media print{
     header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
     #loginOverlay, #offlineBanner, th:last-child, td:last-child{ display:none !important; }
@@ -306,7 +318,6 @@
     <button class="btn" id="exportBtn"></button>
     <button class="btn" id="importBtn"></button>
     <input type="file" id="importFile" accept=".csv">
-    <button class="btn" id="printBtn"></button>
   </div>
 </div>
 
@@ -361,7 +372,7 @@
         <label>Date validated &amp; submitted</label>
         <input type="date" id="f_dateSubmitted">
       </div>
-      <div class="full" style="display:flex; gap:24px; flex-wrap:wrap;">
+      <div class="full check-grid">
         <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA attachment on file</label></div>
         <div class="check-row"><input type="checkbox" id="f_within24"><label for="f_within24">Submitted within 24 hours</label></div>
         <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
@@ -374,7 +385,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-      <button class="btn btn-primary" id="saveBtn">Save patient</button>
+      <button class="btn btn-primary" id="saveBtn" disabled>Save patient</button>
     </div>
   </div>
 </div>
@@ -399,6 +410,16 @@
       <button class="btn btn-ghost" id="tm_cancelBtn">Cancel</button>
       <button class="btn btn-primary" id="tm_saveBtn">Save team</button>
     </div>
+  </div>
+</div>
+
+<!-- Staff Popup -->
+<div class="staff-popup-backdrop" id="staffPopupBackdrop">
+  <div class="staff-popup">
+    <h4 id="staffPopupTitle">Staff</h4>
+    <div class="staff-popup-sub">Managing this mobile mission</div>
+    <div class="staff-popup-list" id="staffPopupList"></div>
+    <button class="btn staff-popup-close" id="staffPopupClose">Close</button>
   </div>
 </div>
 
@@ -601,7 +622,6 @@ const groupsContainer = document.getElementById('groupsContainer');
 const statStrip = document.getElementById('statStrip');
 const legend = document.getElementById('legend');
 const collapsedTeams = new Set();
-const expandedStaff = new Set();
 
 function getTeams(){
   const t = new Set(state.patients.map(p=>p.team));
@@ -715,7 +735,7 @@ function renderLegend(){
     <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced badge:</b> row was changed on this device and hasn't reached the shared database yet — it'll sync automatically once online</span>
-    <span><b>Staff:</b> click the "N staff" pill under a mobile's name to show or hide who's managing it</span>
+    <span><b>Staff:</b> click the "N staff" pill under a mobile's name to see who's managing it</span>
     <span><b>Backup:</b> Export CSV any time for a copy outside the app</span>
   `;
 }
@@ -773,13 +793,12 @@ function renderAll(){
     const wrap = document.createElement('div');
     wrap.className = 'team-group';
     const collapsed = collapsedTeams.has(team);
-    const staffOpen = expandedStaff.has(team);
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
         <span class="chev">▾</span>
         <div class="team-title-block">
           <h2>${escapeHtml(team)}</h2>
-          ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-toggle="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff <span style="font-size:9px;">${staffOpen?'▲':'▼'}</span></button>` : ''}
+          ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
         <div class="team-tools">
@@ -789,7 +808,6 @@ function renderAll(){
           <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
         </div>
       </div>
-      ${staffList.length && staffOpen ? `<div class="staff-panel">${staffList.map(s=>`<span class="staff-chip">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
         <table>
           <thead>
@@ -898,12 +916,26 @@ function populateTeamSelect(teams){
   if(teams.includes(current)) sel.value = current;
 }
 
+/* ---------------- Staff popup ---------------- */
+const staffPopupBackdrop = document.getElementById('staffPopupBackdrop');
+const staffPopupTitle = document.getElementById('staffPopupTitle');
+const staffPopupList = document.getElementById('staffPopupList');
+function openStaffPopup(team){
+  const staffList = (teamStaff[team] || []).map(staffEntryToObj);
+  staffPopupTitle.textContent = team;
+  staffPopupList.innerHTML = staffList.length
+    ? staffList.map(s=>`<div class="staff-popup-item"><span class="sp-name">${escapeHtml(s.name)}</span>${s.position?`<span class="sp-pos">${escapeHtml(s.position)}</span>`:''}</div>`).join('')
+    : `<div class="empty-state" style="padding:10px 0;">No staff listed.</div>`;
+  staffPopupBackdrop.classList.add('open');
+}
+function closeStaffPopup(){ staffPopupBackdrop.classList.remove('open'); }
+document.getElementById('staffPopupClose').addEventListener('click', closeStaffPopup);
+staffPopupBackdrop.addEventListener('click', e=>{ if(e.target===staffPopupBackdrop) closeStaffPopup(); });
+
 groupsContainer.addEventListener('click', e=>{
-  const staffToggle = e.target.closest('[data-staff-toggle]');
-  if(staffToggle){
-    const team = staffToggle.dataset.staffToggle;
-    if(expandedStaff.has(team)) expandedStaff.delete(team); else expandedStaff.add(team);
-    renderAll();
+  const staffBtn = e.target.closest('[data-staff-popup]');
+  if(staffBtn){
+    openStaffPopup(staffBtn.dataset.staffPopup);
     return;
   }
   const teamHead = e.target.closest('.team-head');
@@ -985,6 +1017,17 @@ function updateFacilityField(preferredValue){
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
 
+/* Save is only enabled once both patient name and PhilHealth ID have
+   something typed in — keeps incomplete records from being saved. */
+const saveBtnEl = document.getElementById('saveBtn');
+function updateSaveEnabled(){
+  const hasName = document.getElementById('f_name').value.trim().length > 0;
+  const hasPhid = document.getElementById('f_phid').value.trim().length > 0;
+  saveBtnEl.disabled = !(hasName && hasPhid);
+}
+document.getElementById('f_name').addEventListener('input', updateSaveEnabled);
+document.getElementById('f_phid').addEventListener('input', updateSaveEnabled);
+
 function openModal(id, presetTeam){
   editingId = id || null;
   const p = id ? state.patients.find(p=>p.id===id) : null;
@@ -1004,6 +1047,7 @@ function openModal(id, presetTeam){
   document.getElementById('f_lab').checked = p ? p.lab : false;
   document.getElementById('f_notes').value = p ? (p.notes||'') : '';
   document.getElementById('dupWarning').style.display = 'none';
+  updateSaveEnabled();
   backdrop.classList.add('open');
   document.getElementById('f_name').focus();
 }
@@ -1023,9 +1067,10 @@ document.getElementById('f_phid').addEventListener('input', e=>{
 });
 
 document.getElementById('saveBtn').addEventListener('click', ()=>{
+  if(saveBtnEl.disabled) return;
   const name = document.getElementById('f_name').value.trim();
   const phid = document.getElementById('f_phid').value.trim();
-  if(!name){ alert("Patient name is required."); return; }
+  if(!name || !phid){ return; }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
     status: document.getElementById('f_status').value,
@@ -1147,7 +1192,6 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
 document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
 document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
-document.getElementById('printBtn').innerHTML = `${icon('printer')} Print`;
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
@@ -1217,8 +1261,6 @@ function parseCsvLine(line){
   out.push(cur);
   return out;
 }
-
-document.getElementById('printBtn').addEventListener('click', ()=> window.print());
 
 /* Prints just one mobile team's table instead of the whole page: every
    other team-group is hidden (print-only, via .print-hide) right
