@@ -236,6 +236,52 @@
   .legend b{ color:var(--ink); }
   .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
 
+  /* ---------- Dashboard ---------- */
+  .dash-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:120; padding:30px 16px; overflow-y:auto; }
+  .dash-backdrop.open{ display:flex; }
+  .dash-modal{ background:var(--card); border-radius:14px; max-width:1180px; width:100%; padding:24px 26px 26px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
+  .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
+  .dash-head h3{ margin:0 0 4px; font-size:18px; }
+  .dash-head .modal-sub{ margin-bottom:0; }
+  .dash-close{ border:none; background:var(--table-head); color:var(--muted); border-radius:8px; padding:6px 8px; cursor:pointer; flex:none; }
+  .dash-close:hover{ color:var(--ink); background:var(--line); }
+  .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
+  .dash-controls select{ min-width:190px; }
+  .dash-scope-note{ font-size:11px; color:var(--muted); }
+  .dash-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:22px; }
+  .dash-card{ background:var(--table-head); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .dash-card .dc-num{ font-size:22px; font-weight:800; font-family:'IBM Plex Mono',monospace; line-height:1; color:var(--teal-deep); }
+  body.dark .dash-card .dc-num{ color:var(--teal); }
+  .dash-card .dc-lbl{ font-size:11px; color:var(--muted); margin-top:5px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .dash-card.accent-amber .dc-num{ color:var(--amber); }
+  .dash-card.accent-purple .dc-num{ color:var(--purple); }
+  .dash-card.accent-green .dc-num{ color:var(--green); }
+  .dash-card.accent-blue .dc-num{ color:var(--blue); }
+  .dash-card.accent-red .dc-num{ color:var(--red); }
+  .dash-section{ margin-bottom:24px; }
+  .dash-section h4{ font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--label-accent); margin:0 0 12px; }
+  .dash-bar-row{ display:grid; grid-template-columns:170px 1fr 42px; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px; }
+  .dash-bar-row .dbr-label{ color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-bar-track{ background:var(--table-head); border-radius:20px; height:14px; overflow:hidden; }
+  .dash-bar-fill{ height:100%; border-radius:20px; background:var(--teal); transition:width .2s ease; }
+  .dash-bar-fill.accent-purple-fill{ background:var(--purple); }
+  .dash-bar-row .dbr-num{ text-align:right; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+  .dash-two-col{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .dash-trend-wrap{ overflow-x:auto; }
+  .dash-trend-svg{ display:block; }
+  .dash-trend-bar{ fill:var(--teal); }
+  .dash-trend-bar.dtb-current{ fill:var(--amber); }
+  .dash-trend-label{ font-size:9.5px; fill:var(--muted); font-family:'IBM Plex Mono',monospace; }
+  .dash-trend-num{ font-size:9.5px; fill:var(--ink); font-weight:700; font-family:'IBM Plex Mono',monospace; }
+  .dash-table-wrap{ overflow-x:auto; border-radius:8px; border:1px solid var(--line); }
+  .dash-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
+  .dash-table th{ background:var(--table-head); color:var(--label-accent); text-transform:uppercase; letter-spacing:.03em; font-size:10px; font-weight:700; padding:8px 10px; text-align:center; white-space:nowrap; }
+  .dash-table th:first-child{ text-align:left; }
+  .dash-table td{ padding:8px 10px; text-align:center; border-top:1px solid var(--line); }
+  .dash-table td:first-child{ text-align:left; font-weight:600; }
+  .dash-empty{ text-align:center; padding:30px 20px; color:var(--muted); font-size:13px; }
+  @media (max-width: 720px){ .dash-two-col{ grid-template-columns:1fr; } }
+
   @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
   @media print{
     header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
@@ -298,6 +344,7 @@
   <div class="toolbar-row">
     <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
     <button class="btn" id="addTeamBtn">+ Add Mobile</button>
+    <button class="btn" id="dashboardBtn"></button>
     <button class="btn" id="themeToggle"></button>
     <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
     <select id="filterStatus">
@@ -420,6 +467,25 @@
     <div class="staff-popup-sub">Managing this mobile mission</div>
     <div class="staff-popup-list" id="staffPopupList"></div>
     <button class="btn staff-popup-close" id="staffPopupClose">Close</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dash-backdrop" id="dashBackdrop">
+  <div class="dash-modal">
+    <div class="dash-head">
+      <div>
+        <h3>Metrics Dashboard</h3>
+        <div class="modal-sub">Totals for registration status, facility, and rice/lab availment across your mobiles.</div>
+      </div>
+      <button class="dash-close" id="dashCloseBtn" title="Close"></button>
+    </div>
+    <div class="dash-controls">
+      <select id="dashMonthSelect"></select>
+      <select id="dashTeamSelect"></select>
+      <span class="dash-scope-note" id="dashScopeNote"></span>
+    </div>
+    <div id="dashBody"></div>
   </div>
 </div>
 
@@ -830,6 +896,7 @@ function renderAll(){
   });
   autosizeBadgeSelects();
   restoreScrollPositions(savedScroll);
+  if(typeof dashBackdrop !== 'undefined' && dashBackdrop.classList.contains('open')) renderDashboard();
 }
 
 function measureTextWidth(text, refEl){
@@ -905,7 +972,9 @@ const ICON_PATHS = {
   trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
   edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
   check: '<polyline points="20 6 9 17 4 12"/>',
-  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
 };
 function icon(name, size=15, extraStyle=''){
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;${extraStyle}">${ICON_PATHS[name]||''}</svg>`;
@@ -1194,6 +1263,7 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
 document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
 document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
+document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
@@ -1279,6 +1349,203 @@ function clearPrintIsolation(){
 }
 window.addEventListener('afterprint', clearPrintIsolation);
 document.getElementById('syncNowBtn').addEventListener('click', ()=>{ flushPending().then(pullRemote); });
+
+/* ---------------- Dashboard ---------------- */
+const dashBackdrop = document.getElementById('dashBackdrop');
+const dashMonthSelect = document.getElementById('dashMonthSelect');
+const dashTeamSelect = document.getElementById('dashTeamSelect');
+const dashBody = document.getElementById('dashBody');
+document.getElementById('dashCloseBtn').innerHTML = icon('x', 15);
+
+/* Every distinct "Date encoded" month present in the (non-deleted)
+   roster, newest first — this is what fills the dashboard's month
+   picker, independent of whichever month the main table is on. */
+function getAllEncodedMonths(){
+  const set = new Set();
+  state.patients.forEach(p=>{ if(!p.deleted && p.dateEncoded) set.add(p.dateEncoded.slice(0,7)); });
+  return [...set].sort().reverse();
+}
+
+function populateDashboardControls(){
+  const months = getAllEncodedMonths();
+  const mainMonth = document.getElementById('monthFilter').value;
+  const preferredMonth = months.includes(mainMonth) ? mainMonth : 'all';
+  const prevMonthVal = dashMonthSelect.value || preferredMonth;
+  dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
+    months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : 'all';
+
+  const teams = getTeams();
+  const prevTeamVal = dashTeamSelect.value || 'all';
+  dashTeamSelect.innerHTML = `<option value="all">All mobiles / sites</option>` +
+    teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
+}
+
+/* Patients within the dashboard's own month + team scope (separate
+   from the main table's month filter, so you can browse metrics for
+   a different period without disturbing what's on screen behind it). */
+function dashboardScopePatients(){
+  const month = dashMonthSelect.value;
+  const team = dashTeamSelect.value;
+  return state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(month !== 'all' && (p.dateEncoded||'').slice(0,7) !== month) return false;
+    if(team !== 'all' && p.team !== team) return false;
+    return true;
+  });
+}
+
+function dashBarRow(label, count, total, extraClass){
+  const pct = total > 0 ? Math.round((count/total)*100) : 0;
+  return `<div class="dash-bar-row">
+    <div class="dbr-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div>
+    <div class="dash-bar-track"><div class="dash-bar-fill ${extraClass||''}" style="width:${pct}%"></div></div>
+    <div class="dbr-num">${count}</div>
+  </div>`;
+}
+
+function renderDashboard(){
+  populateDashboardControls();
+  const scoped = dashboardScopePatients();
+  const total = scoped.length;
+  const registered = scoped.filter(p=>p.status==='registered').length;
+  const registeredOther = scoped.filter(p=>p.status==='registered_other').length;
+  const riceCount = scoped.filter(p=>p.rice).length;
+  const labCount = scoped.filter(p=>p.lab).length;
+  const bothCount = scoped.filter(p=>p.rice && p.lab).length;
+  const neitherCount = scoped.filter(p=>!p.rice && !p.lab).length;
+  const dupCount = scoped.filter(p=>isDuplicate(p.phid, p.id)).length;
+  const missed24 = scoped.filter(p=>p.claim==='missed24').length;
+
+  const monthVal = dashMonthSelect.value;
+  const teamVal = dashTeamSelect.value;
+  document.getElementById('dashScopeNote').textContent =
+    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles' : teamVal}`;
+
+  if(total === 0){
+    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope yet. Try "All months" / "All mobiles / sites".</div>`;
+    return;
+  }
+
+  const cardsHtml = `
+    <div class="dash-cards">
+      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Total patients</div></div>
+      <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
+      <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Registered — other facility</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice availed</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab availed</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${bothCount}</div><div class="dc-lbl">Availed both</div></div>
+      <div class="dash-card"><div class="dc-num">${neitherCount}</div><div class="dc-lbl">Availed neither</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${dupCount}</div><div class="dc-lbl">Duplicates</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${missed24}</div><div class="dc-lbl">Missed 24h claim</div></div>
+    </div>`;
+
+  // Facility breakdown (across the scoped set)
+  const facilityRows = facilityOptionsAll.map(f=>{
+    const c = scoped.filter(p=>p.facility===f).length;
+    return dashBarRow(f, c, total, f===HOME_FACILITY ? '' : 'accent-purple-fill');
+  }).join('');
+
+  // Rice / lab availment breakdown
+  const benefitRows = [
+    dashBarRow('Rice availed', riceCount, total),
+    dashBarRow('Lab availed', labCount, total),
+    dashBarRow('Both availed', bothCount, total),
+    dashBarRow('Neither availed', neitherCount, total)
+  ].join('');
+
+  // Per-mobile/site table (only meaningful when "All mobiles" is selected)
+  const teamsInScope = [...new Set(scoped.map(p=>p.team))];
+  const teamTableHtml = teamVal === 'all' ? `
+    <div class="dash-section">
+      <h4>Breakdown by mobile / site</h4>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead><tr><th>Mobile / site</th><th>Total</th><th>Registered</th><th>Other facility</th><th>Rice</th><th>Lab</th><th>Duplicates</th></tr></thead>
+          <tbody>
+            ${teamsInScope.map(t=>{
+              const rows = scoped.filter(p=>p.team===t);
+              return `<tr>
+                <td>${escapeHtml(t)}</td>
+                <td>${rows.length}</td>
+                <td>${rows.filter(p=>p.status==='registered').length}</td>
+                <td>${rows.filter(p=>p.status==='registered_other').length}</td>
+                <td>${rows.filter(p=>p.rice).length}</td>
+                <td>${rows.filter(p=>p.lab).length}</td>
+                <td>${rows.filter(p=>isDuplicate(p.phid,p.id)).length}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : '';
+
+  dashBody.innerHTML = `
+    ${cardsHtml}
+    <div class="dash-two-col">
+      <div class="dash-section">
+        <h4>By facility</h4>
+        ${facilityRows}
+      </div>
+      <div class="dash-section">
+        <h4>Rice &amp; lab availment</h4>
+        ${benefitRows}
+      </div>
+    </div>
+    ${teamTableHtml}
+    <div class="dash-section">
+      <h4>Patients encoded per month (all mobiles)</h4>
+      <div class="dash-trend-wrap" id="dashTrendWrap"></div>
+    </div>
+  `;
+  renderTrendChart(monthVal);
+}
+
+/* Simple hand-drawn SVG bar chart (no external chart library, so it
+   still works fully offline) showing total non-deleted patients
+   encoded per month across the whole roster. The bar for whichever
+   month is selected in the dashboard's month picker is highlighted. */
+function renderTrendChart(selectedMonth){
+  const months = getAllEncodedMonths().slice().sort(); // ascending
+  const wrap = document.getElementById('dashTrendWrap');
+  if(!wrap) return;
+  if(months.length === 0){ wrap.innerHTML = `<div class="dash-empty">No dated records yet.</div>`; return; }
+
+  const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
+  const maxCount = Math.max(...counts, 1);
+  const barW = 46, gap = 14, chartH = 140, leftPad = 6;
+  const svgW = months.length * (barW + gap) + leftPad;
+
+  let bars = '';
+  months.forEach((m, i)=>{
+    const c = counts[i];
+    const h = Math.round((c / maxCount) * (chartH - 30));
+    const x = leftPad + i * (barW + gap);
+    const y = chartH - h - 20;
+    const isCurrent = m === selectedMonth;
+    const shortLabel = monthLabel(m).replace(' ', '\u00A0').slice(0, 3) + ' ' + m.slice(2,4);
+    bars += `
+      <text class="dash-trend-num" x="${x + barW/2}" y="${y - 5}" text-anchor="middle">${c}</text>
+      <rect class="dash-trend-bar ${isCurrent?'dtb-current':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4"></rect>
+      <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 4}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
+    `;
+  });
+
+  wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+function openDashboard(){
+  populateDashboardControls();
+  renderDashboard();
+  dashBackdrop.classList.add('open');
+}
+function closeDashboard(){ dashBackdrop.classList.remove('open'); }
+document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
+document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
+dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
+dashMonthSelect.addEventListener('change', renderDashboard);
+dashTeamSelect.addEventListener('change', renderDashboard);
 
 /* ---------------- Auth ---------------- */
 const loginOverlay = document.getElementById('loginOverlay');
