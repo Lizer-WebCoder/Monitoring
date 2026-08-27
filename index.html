@@ -8,7 +8,22 @@
 <meta name="theme-color" content="#14524a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!--
+  STEP 0 — WHY THIS CHANGED
+  This used to load the Supabase library from a CDN (cdn.jsdelivr.net)
+  on every single page open. That's exactly why the app couldn't open
+  offline: with no signal, that script fails to load, and the app
+  crashes before it can draw anything on screen — a blank/stuck page.
+
+  Fix: download that library ONCE and save it next to this HTML file
+  as "supabase.js", so the browser never needs the network for it again.
+    1. Open this URL in a browser tab:
+       https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js
+    2. Save the page as "supabase.js" (Ctrl/Cmd+S), in the SAME folder
+       as this HTML file (and sw.js, manifest.json — see below).
+    3. That's it — the line below will pick it up automatically.
+-->
+<script src="./supabase.js"></script>
 <style>
   :root{
     --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
@@ -397,6 +412,13 @@ const SUPABASE_URL = "https://xuaieokstfsxghgvgtzb.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1YWllb2tzdGZzeGdoZ3ZndHpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTMyODEsImV4cCI6MjEwMzE4OTI4MX0.2hWJFMkQeDF4loT2aP32kBJynKMb5Kk_3QKwyg6MFsQ";
 /* ========================================================================= */
 
+if(!window.supabase){
+  document.body.innerHTML = `<div style="max-width:480px;margin:60px auto;padding:24px;font-family:sans-serif;background:#fbeed9;color:#a8402f;border-radius:12px;">
+    <h2 style="margin-top:0;">Can't start DR CARE</h2>
+    <p>The <code>supabase.js</code> library file wasn't found next to this page. See the STEP&nbsp;0 comment near the top of this file's source for how to add it — once it's in place this screen won't appear again, including offline.</p>
+  </div>`;
+  throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
+}
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* Facility lists */
