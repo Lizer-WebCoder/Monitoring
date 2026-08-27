@@ -4,24 +4,22 @@
    serve the page without asking the network first — so on a fully
    offline device it can show a blank/stuck screen even though your
    patient data itself is safely sitting in localStorage.
-
    HOW TO USE:
    1. Save this file as "sw.js" in the exact same folder as your
       HTML file, supabase.js, and manifest.json.
    2. If your HTML file is not named "index.html", add its real
       filename to APP_SHELL below (e.g. "dr-care-tracker.html").
-   3. Bump CACHE_NAME (e.g. "dr-care-v2") any time you replace these
+   3. Bump CACHE_NAME (e.g. "dr-care-v3") any time you replace these
       files with a new version, so returning devices pick up the
       update instead of serving a stale copy forever.
 */
-const CACHE_NAME = 'dr-care-v1';
+const CACHE_NAME = 'dr-care-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './supabase.js',
   './manifest.json'
 ];
-
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -35,7 +33,6 @@ self.addEventListener('install', event => {
       .then(() => self.skipWaiting())
   );
 });
-
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(names =>
@@ -43,7 +40,6 @@ self.addEventListener('activate', event => {
     ).then(() => self.clients.claim())
   );
 });
-
 /* Cache-first for the app shell itself (so it always opens instantly
    and offline); network-first with a cache fallback for everything
    else (so Supabase API calls still go live when online, but don't
@@ -53,18 +49,31 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
 
+  /* Only step in for plain http/https requests to our own origin.
+     Browser extensions (ad blockers, dev-tool overlays, etc.) can
+     inject their own requests — e.g. "chrome-extension://…" URLs —
+     that happen to fire a fetch event while this page is open. The
+     Fetch API can't fetch() those schemes at all, so trying would
+     always reject and crash with "Failed to convert value to
+     'Response'". Leaving them alone lets the browser handle them
+     normally instead. */
+  let url;
+  try{ url = new URL(event.request.url); }catch(e){ return; }
+  if(url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if(url.origin !== self.location.origin) return;
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       if(cached) return cached;
       return fetch(event.request)
         .then(response => {
-          if(response && response.ok && event.request.url.startsWith(self.location.origin)){
+          if(response && response.ok){
             const copy = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
     })
   );
 });
