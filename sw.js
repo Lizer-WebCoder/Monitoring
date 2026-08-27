@@ -9,11 +9,14 @@
       HTML file, supabase.js, and manifest.json.
    2. If your HTML file is not named "index.html", add its real
       filename to APP_SHELL below (e.g. "dr-care-tracker.html").
-   3. Bump CACHE_NAME (e.g. "dr-care-v3") any time you replace these
-      files with a new version, so returning devices pick up the
-      update instead of serving a stale copy forever.
+   3. The HTML page itself is always fetched fresh from the network
+      first (falling back to the cached copy only when offline), so
+      editing index.html and re-uploading it is enough — you do NOT
+      need to bump CACHE_NAME just for HTML changes anymore. Only
+      bump it (e.g. "dr-care-v4") if you change supabase.js or
+      manifest.json, since those are still cache-first.
 */
-const CACHE_NAME = 'dr-care-v2';
+const CACHE_NAME = 'dr-care-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -40,12 +43,11 @@ self.addEventListener('activate', event => {
     ).then(() => self.clients.claim())
   );
 });
-/* Cache-first for the app shell itself (so it always opens instantly
-   and offline); network-first with a cache fallback for everything
-   else (so Supabase API calls still go live when online, but don't
-   crash the page if a stray request happens while offline). Supabase
-   API/auth calls themselves are unaffected — this only decides what
-   happens if a *file* request fails. */
+/* Network-first for the HTML page itself, so any edit you upload
+   shows up the next time the page loads — no manual cache-clearing
+   needed. Falls back to the cached copy only if there's no
+   connection at all. Everything else in the app shell (supabase.js,
+   manifest.json) stays cache-first for instant offline loading. */
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
 
@@ -61,6 +63,23 @@ self.addEventListener('fetch', event => {
   try{ url = new URL(event.request.url); }catch(e){ return; }
   if(url.protocol !== 'http:' && url.protocol !== 'https:') return;
   if(url.origin !== self.location.origin) return;
+
+  const isHtml = event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
+
+  if(isHtml){
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if(response && response.ok){
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(cached => {
