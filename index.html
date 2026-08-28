@@ -190,7 +190,10 @@
   .st-registered{ background:var(--green-bg); color:var(--green); }
   .st-registered-other{ background:var(--purple-bg); color:var(--purple); }
   .fac-select{ background:var(--table-head); color:var(--ink); }
+  .fac-select.fac-home{ background:var(--green-bg); color:var(--green); }
+  .fac-select.fac-other{ background:var(--purple-bg); color:var(--purple); }
   .fac-fixed{ font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:20px; background:var(--green-bg); color:var(--green); display:inline-block; }
+  .fac-fixed.fac-other{ background:var(--purple-bg); color:var(--purple); }
   .cl-pending{ background:var(--amber-bg); color:var(--amber); }
   .cl-t1{ background:var(--blue-bg); color:var(--blue); }
   .cl-missed24{ background:var(--red-bg); color:var(--red); }
@@ -377,7 +380,6 @@
     <button class="btn" id="importBtn"></button>
     <button class="btn btn-ghost" id="csvTemplateBtn"></button>
     <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
-    <button class="btn btn-ghost" id="memeBtn" type="button" title="Open meme generator">Tutorial</button>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
@@ -1089,9 +1091,19 @@ function autosizeBadgeSelects(){
 }
 
 function facilityCellHtml(p){
-  if(p.status === 'registered') return `<td style="text-align:center"><span class="fac-fixed">${HOME_FACILITY}</span></td>`;
-  const opts = p.status === 'registered_other' ? facilityOptionsOther : facilityOptionsAll;
-  return `<td style="text-align:center"><select class="badge-select fac-select" data-field="facility">
+  // Colors match status: Registered/Abucay = green, other facility = purple
+  if(p.status === 'registered'){
+    return `<td style="text-align:center"><span class="fac-fixed">${HOME_FACILITY}</span></td>`;
+  }
+  if(p.status === 'registered_other'){
+    const opts = facilityOptionsOther;
+    return `<td style="text-align:center"><select class="badge-select fac-select fac-other" data-field="facility">
+      ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
+    </select></td>`;
+  }
+  const opts = facilityOptionsAll;
+  const facClass = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
+  return `<td style="text-align:center"><select class="badge-select fac-select ${facClass}" data-field="facility">
     ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
   </select></td>`;
 }
@@ -1483,12 +1495,7 @@ document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
-document.getElementById('memeBtn').textContent = 'Tutorial';
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
-
-document.getElementById('memeBtn').addEventListener('click', ()=>{
-  window.open('https://imgflip.com/memegenerator/90133015/2-gay-black-mens-kissing', '_blank', 'noopener,noreferrer');
-});
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
