@@ -24,6 +24,21 @@
     3. That's it — the line below will pick it up automatically.
 -->
 <script src="./supabase.js"></script>
+<!--
+  STEP 0b — EXCEL (.xlsx) IMPORT SUPPORT
+  Same idea as supabase.js above: this library reads .xlsx files in the
+  browser so patients can be imported straight from an Excel workbook,
+  not just CSV. Download it ONCE and save it next to this HTML file as
+  "xlsx.full.min.js" so it works offline too:
+    1. Open this URL in a browser tab:
+       https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
+    2. Save the page as "xlsx.full.min.js", in the SAME folder as this
+       HTML file (and supabase.js, sw.js, manifest.json).
+    3. That's it — the line below will pick it up automatically. If
+       this file is missing, CSV import still works fine; only the
+       "Excel (.xlsx)" import option is affected.
+-->
+<script src="./xlsx.full.min.js"></script>
 <style>
   :root{
     --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
@@ -365,7 +380,8 @@
     <button class="btn" id="exportBtn"></button>
     <button class="btn" id="importBtn"></button>
     <button class="btn btn-ghost" id="csvTemplateBtn"></button>
-    <input type="file" id="importFile" accept=".csv">
+    <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
+    <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
 
@@ -691,7 +707,16 @@ const legend = document.getElementById('legend');
 const collapsedTeams = new Set();
 
 function getTeams(){
-  const t = new Set(state.patients.map(p=>p.team));
+  /* Only non-deleted patients count toward "this team still exists".
+     Deleting a mobile marks its patients p.deleted=true locally, but
+     those records aren't actually removed from state.patients until
+     they've finished syncing away (pullRemote() drops a deleted
+     record only once it's no longer pending). If deleted patients
+     were still counted here, a team you just deleted — or one whose
+     sync is slow/stuck (e.g. offline, or a record Supabase rejects) —
+     would keep reappearing in the list every render, looking "stuck"
+     and undeletable, even though the delete itself worked locally. */
+  const t = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
   pendingEmptyTeams.forEach(x=>t.add(x));
   /* teamStaff is saved to localStorage (and Supabase) the moment a
      mobile is created via "+ Add Mobile" — even before it has any
@@ -1321,6 +1346,7 @@ document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
 document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
+document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
 
 /* ---------------- Org name ---------------- */
@@ -1363,13 +1389,14 @@ function exportPatients(scopeTeam){
 }
 document.getElementById('exportBtn').addEventListener('click', ()=> exportPatients(null));
 
+const TEMPLATE_EXAMPLE_ROW = ["Mobile Staff — Site A","DELA CRUZ, JUAN, SANTOS","1300-0004-937","Registered","Abucay",
+  "YES","2026-08-12","2026-08-12","NO","T1 Submitted","YES","NO","Optional remarks"];
+
 /* Downloads a blank starting-point CSV (headers + one filled-in
    example row) in exactly the format Import CSV expects, so a mobile
    team can fill it out in Excel/Sheets and re-import it. */
 function downloadCsvTemplate(){
-  const example = ["Mobile Staff — Site A","DELA CRUZ, JUAN, SANTOS","1300-0004-937","Registered","Abucay",
-    "YES","2026-08-12","2026-08-12","NO","T1 Submitted","YES","NO","Optional remarks"];
-  const rows = [CSV_HEADERS.join(','), example.map(csvSafe).join(',')];
+  const rows = [CSV_HEADERS.join(','), TEMPLATE_EXAMPLE_ROW.map(csvSafe).join(',')];
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1378,6 +1405,25 @@ function downloadCsvTemplate(){
 }
 document.getElementById('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
 
+/* Same template, but as a real .xlsx workbook (built client-side with
+   the SheetJS library — see the STEP 0b comment near the top of this
+   file for how to add it) so a mobile team can fill it out directly
+   in Excel/Google Sheets and re-import that .xlsx straight into DR
+   CARE, without ever having to "Save As CSV" first. */
+function downloadXlsxTemplate(){
+  if(!window.XLSX){
+    alert("Excel template needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. The CSV template works without it in the meantime.");
+    return;
+  }
+  const wsData = [CSV_HEADERS, TEMPLATE_EXAMPLE_ROW];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [22,30,18,30,12,12,14,22,12,16,12,12,26].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Patients");
+  XLSX.writeFile(wb, "dr-care-import-template.xlsx");
+}
+document.getElementById('xlsxTemplateBtn').addEventListener('click', downloadXlsxTemplate);
+
 /* When set (by a mobile's own "import" button), every row from the
    next CSV import is forced into this team regardless of what its
    "Team" column says — that's what makes import "per mobile". Reset
@@ -1385,55 +1431,87 @@ document.getElementById('csvTemplateBtn').addEventListener('click', downloadCsvT
    back to reading each row's own Team column. */
 let importTargetTeam = null;
 
+/* Shared by both CSV and Excel import: given rows already split into
+   an array of string cells (header row still included), applies all
+   the same validation/normalization and adds the resulting patients.
+   Keeping this in one place means CSV and Excel imports can never
+   silently drift apart in behavior. */
+function processImportRows(allRows, targetTeam){
+  if(allRows.length) allRows.shift(); // drop the header row
+  const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
+  const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
+  let added = 0;
+  let skipped = 0;
+  let firstSkippedCount = null;
+  let badDates = 0;
+  allRows.forEach(rawCols=>{
+    const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
+    if(cols.length < 13 || cols.every(c=>c==='')){
+      if(cols.some(c=>c!=='')){
+        skipped++;
+        if(firstSkippedCount === null) firstSkippedCount = cols.length;
+      }
+      return;
+    }
+    const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
+    const resolvedStatus = statusRev[status.toLowerCase()] || 'registered';
+    if((dateEnc && !isValidDateStr(dateEnc)) || (dateSub && !isValidDateStr(dateSub))) badDates++;
+    const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
+      facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
+      mca: isYesValue(mca), dateEncoded: isValidDateStr(dateEnc) ? dateEnc : '', dateSubmitted: isValidDateStr(dateSub) ? dateSub : '',
+      within24: isYesValue(within24), claim: claimRev[claim.toLowerCase()] || 'pending',
+      rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
+    state.patients.push(p);
+    pendingIds.add(p.id);
+    added++;
+  });
+  savePending(); saveLocalCache(); renderAll(); flushPending();
+  let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
+  if(skipped > 0){
+    msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the template's column order and try again.`;
+  }
+  if(badDates > 0){
+    msg += `\n\n${badDates} row(s) had a date that wasn't in YYYY-MM-DD format, so that date was left blank rather than imported as-is. Fix the dates in your spreadsheet and re-import if needed.`;
+  }
+  alert(msg);
+}
+
 document.getElementById('importBtn').addEventListener('click', ()=>{ importTargetTeam = null; document.getElementById('importFile').click(); });
 document.getElementById('importFile').addEventListener('change', e=>{
   const file = e.target.files[0];
   if(!file){ importTargetTeam = null; return; }
   const targetTeam = importTargetTeam;
+  const isXlsx = /\.xlsx$/i.test(file.name);
   const reader = new FileReader();
-  reader.onload = evt=>{
-    try{
-      const allRows = parseCsvRows(evt.target.result);
-      if(allRows.length) allRows.shift(); // drop the header row
-      const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
-      const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
-      let added = 0;
-      let skipped = 0;
-      let firstSkippedCount = null;
-      let badDates = 0;
-      allRows.forEach(rawCols=>{
-        const cols = rawCols.map(c => (c||'').trim());
-        if(cols.length < 13){
-          skipped++;
-          if(firstSkippedCount === null) firstSkippedCount = cols.length;
-          return;
-        }
-        const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
-        const resolvedStatus = statusRev[status.toLowerCase()] || 'registered';
-        if((dateEnc && !isValidDateStr(dateEnc)) || (dateSub && !isValidDateStr(dateSub))) badDates++;
-        const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
-          facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
-          mca: isYesValue(mca), dateEncoded: isValidDateStr(dateEnc) ? dateEnc : '', dateSubmitted: isValidDateStr(dateSub) ? dateSub : '',
-          within24: isYesValue(within24), claim: claimRev[claim.toLowerCase()] || 'pending',
-          rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
-        state.patients.push(p);
-        pendingIds.add(p.id);
-        added++;
-      });
-      savePending(); saveLocalCache(); renderAll(); flushPending();
-      let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
-      if(skipped > 0){
-        msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the CSV template's column order and try again.`;
-      }
-      if(badDates > 0){
-        msg += `\n\n${badDates} row(s) had a date that wasn't in YYYY-MM-DD format, so that date was left blank rather than imported as-is. Fix the dates in your spreadsheet and re-import if needed.`;
-      }
-      alert(msg);
-    }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the Template button)."); console.error(err); }
-    e.target.value = '';
-    importTargetTeam = null;
-  };
-  reader.readAsText(file);
+
+  if(isXlsx){
+    if(!window.XLSX){
+      alert("Excel (.xlsx) import needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. In the meantime, save your workbook as CSV (File > Save As > CSV) and import that instead.");
+      e.target.value = ''; importTargetTeam = null; return;
+    }
+    reader.onload = evt=>{
+      try{
+        const wb = XLSX.read(evt.target.result, {type:'array', cellDates:false});
+        const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        processImportRows(allRows, targetTeam);
+      }catch(err){ alert("Could not read that Excel file. Make sure it matches the DR CARE import format (see the Excel template button)."); console.error(err); }
+      e.target.value = '';
+      importTargetTeam = null;
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = evt=>{
+      try{
+        const allRows = parseCsvRows(evt.target.result);
+        processImportRows(allRows, targetTeam);
+      }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the CSV template button)."); console.error(err); }
+      e.target.value = '';
+      importTargetTeam = null;
+    };
+    reader.readAsText(file);
+  }
 });
 
 /* Accepts a few common truthy spellings so a hand-filled spreadsheet
