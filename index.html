@@ -693,6 +693,14 @@ const collapsedTeams = new Set();
 function getTeams(){
   const t = new Set(state.patients.map(p=>p.team));
   pendingEmptyTeams.forEach(x=>t.add(x));
+  /* teamStaff is saved to localStorage (and Supabase) the moment a
+     mobile is created via "+ Add Mobile" — even before it has any
+     patients. Reading its keys here means a brand-new, still-empty
+     mobile keeps showing up after a reload or a background sync,
+     instead of depending only on the in-memory pendingEmptyTeams set
+     (which resets to empty on every page load and was why a freshly
+     added mobile could seem to "vanish"). */
+  Object.keys(teamStaff).forEach(x=>t.add(x));
   return [...t];
 }
 const pendingEmptyTeams = new Set();
@@ -1231,13 +1239,31 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     position: row.querySelector('.tm-staff-position').value
   })).filter(s=>s.name);
 
+  /* Case-insensitive collision check against every OTHER existing
+     mobile. Without this, saving a new mobile with a name that
+     already exists (e.g. a typo matching an existing one exactly)
+     silently overwrote that mobile's staff list below with no
+     warning, and renaming into an existing name would silently merge
+     both mobiles' patients together. */
+  const existingTeams = getTeams();
+  const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
+
+  if(!editingTeamOriginalName && collidesWith){
+    alert(`A mobile named "${collidesWith}" already exists. Choose a different name, or edit that mobile instead of adding a new one.`);
+    return;
+  }
+  if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
+    const proceed = confirm(`A mobile named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
+    if(!proceed) return;
+  }
+
   if(editingTeamOriginalName && editingTeamOriginalName !== name){
     // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
     state.patients.forEach(p=>{ if(p.team === editingTeamOriginalName){ p.team = name; pendingIds.add(p.id); } });
     if(pendingEmptyTeams.has(editingTeamOriginalName)){ pendingEmptyTeams.delete(editingTeamOriginalName); pendingEmptyTeams.add(name); }
     delete teamStaff[editingTeamOriginalName];
     savePending(); saveLocalCache(); flushPending();
-  } else if(!editingTeamOriginalName && !getTeams().includes(name)){
+  } else if(!editingTeamOriginalName && !existingTeams.includes(name)){
     pendingEmptyTeams.add(name);
   }
   teamStaff[name] = staffNames;
@@ -1248,7 +1274,15 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
-document.getElementById('search').addEventListener('input', renderAll);
+/* Debounced so typing a search term doesn't trigger a full table
+   rebuild (including the per-badge width measurement pass) on every
+   single keystroke — noticeable as sluggish typing once a mobile has
+   more than a couple dozen patients. */
+let searchDebounceTimer = null;
+document.getElementById('search').addEventListener('input', ()=>{
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(renderAll, 180);
+});
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
@@ -1341,42 +1375,93 @@ document.getElementById('importFile').addEventListener('change', e=>{
   const reader = new FileReader();
   reader.onload = evt=>{
     try{
-      const lines = evt.target.result.split(/\r?\n/).filter(l=>l.trim());
-      lines.shift();
+      const allRows = parseCsvRows(evt.target.result);
+      if(allRows.length) allRows.shift(); // drop the header row
       const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
       const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
       let added = 0;
-      lines.forEach(line=>{
-        const cols = parseCsvLine(line);
-        if(cols.length < 13) return;
+      let skipped = 0;
+      let firstSkippedCount = null;
+      allRows.forEach(rawCols=>{
+        const cols = rawCols.map(c => (c||'').trim());
+        if(cols.length < 13){
+          skipped++;
+          if(firstSkippedCount === null) firstSkippedCount = cols.length;
+          return;
+        }
         const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
-        const resolvedStatus = statusRev[(status||'').toLowerCase()] || 'registered';
+        const resolvedStatus = statusRev[status.toLowerCase()] || 'registered';
         const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
-          facility: facility || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
-          mca: (mca||'').toUpperCase()==='YES', dateEncoded: dateEnc||'', dateSubmitted: dateSub||'',
-          within24: (within24||'').toUpperCase()==='YES', claim: claimRev[(claim||'').toLowerCase()] || 'pending',
-          rice: (rice||'').toUpperCase()==='YES', lab: (lab||'').toUpperCase()==='YES', notes: notes||'', deleted:false };
+          facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
+          mca: isYesValue(mca), dateEncoded: dateEnc, dateSubmitted: dateSub,
+          within24: isYesValue(within24), claim: claimRev[claim.toLowerCase()] || 'pending',
+          rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
         state.patients.push(p);
         pendingIds.add(p.id);
         added++;
       });
       savePending(); saveLocalCache(); renderAll(); flushPending();
-      alert(`Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`);
+      let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
+      if(skipped > 0){
+        msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the CSV template's column order and try again.`;
+      }
+      alert(msg);
     }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the Template button)."); console.error(err); }
     e.target.value = '';
     importTargetTeam = null;
   };
   reader.readAsText(file);
 });
-function parseCsvLine(line){
-  const out = []; let cur=''; let inQ=false;
-  for(let i=0;i<line.length;i++){
-    const c = line[i];
-    if(inQ){ if(c==='"' && line[i+1]==='"'){ cur+='"'; i++; } else if(c==='"'){ inQ=false; } else cur+=c; }
-    else { if(c==='"') inQ=true; else if(c===','){ out.push(cur); cur=''; } else cur+=c; }
+
+/* Accepts a few common truthy spellings so a hand-filled spreadsheet
+   (Y, TRUE, 1, or plain yes in any case) still registers correctly —
+   previously only an exact "YES" matched and anything else silently
+   became NO. */
+function isYesValue(v){
+  const c = (v||'').trim().toUpperCase();
+  return c === 'YES' || c === 'Y' || c === 'TRUE' || c === '1';
+}
+
+/* Matches an imported Facility value to its canonical spelling
+   case-insensitively (e.g. "abucay" or "CIRIAN" both resolve
+   correctly) instead of silently falling back to a default facility
+   just because the case didn't match exactly. Returns '' if nothing
+   matches, so the caller's own fallback logic still applies. */
+function matchFacility(raw){
+  const clean = (raw||'').trim();
+  if(!clean) return '';
+  const found = facilityOptionsAll.find(f => f.toLowerCase() === clean.toLowerCase());
+  return found || '';
+}
+
+/* Parses an entire CSV file into rows of fields, correctly handling
+   quoted fields that themselves contain commas OR embedded newlines
+   (e.g. a multi-line Notes cell from Excel/Sheets) — a per-line
+   split-then-parse approach breaks on that second case because the
+   newline inside the quotes gets treated as a row boundary before the
+   quote is ever seen. Also strips a leading UTF-8 BOM, which Excel
+   sometimes prepends and would otherwise corrupt the first header
+   cell if a header row is missing. */
+function parseCsvRows(text){
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let row = [], cur = '', inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(inQ){
+      if(c === '"' && text[i+1] === '"'){ cur += '"'; i++; }
+      else if(c === '"'){ inQ = false; }
+      else cur += c;
+    } else {
+      if(c === '"') inQ = true;
+      else if(c === ',') { row.push(cur); cur = ''; }
+      else if(c === '\r') { /* skip, \n below ends the row */ }
+      else if(c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += c;
+    }
   }
-  out.push(cur);
-  return out;
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
 }
 
 /* Prints just one mobile team's table instead of the whole page: every
