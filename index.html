@@ -1899,7 +1899,126 @@ const loginOverlay = document.getElementById('loginOverlay');
 const loginErr = document.getElementById('loginErr');
 const whoAmI = document.getElementById('whoAmI');
 
-document.getElementById('loginBtn').addEventListener('click', async ()=>{
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  co
+async function doLogin(){
+  const emailEl = document.getElementById('loginEmail');
+  const passEl = document.getElementById('loginPassword');
+  const email = (emailEl.value || '').trim().toLowerCase();
+  const password = passEl.value || '';
+  const btn = document.getElementById('loginBtn');
+  loginErr.style.display = 'none';
+  loginErr.textContent = '';
+
+  if(!email || !password){
+    loginErr.textContent = 'Enter email and password.';
+    loginErr.style.display = 'block';
+    return;
+  }
+  if(!navigator.onLine){
+    loginErr.textContent = "You're offline. Connect to the internet once to sign in on this device.";
+    loginErr.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      let msg = error.message || 'Sign in failed';
+      if(/invalid login credentials/i.test(msg)) msg = 'Wrong email or password.';
+      if(/email not confirmed/i.test(msg)) msg = 'Email is not confirmed yet in Supabase.';
+      if(/failed to fetch|network/i.test(msg)) msg = 'Network error — check internet connection and that supabase.js is present.';
+      loginErr.textContent = msg;
+      loginErr.style.display = 'block';
+      return;
+    }
+    if(!data || !data.session){
+      loginErr.textContent = 'Sign in returned no session. Try clearing site data for this page, then sign in again.';
+      loginErr.style.display = 'block';
+      return;
+    }
+    await onSignedIn(data.session);
+  }catch(e){
+    console.error('login error', e);
+    let msg = (e && e.message) ? e.message : 'Sign in failed';
+    if(/quota|storage/i.test(msg)){
+      msg = 'Browser storage is full, so login session could not be saved. Export a CSV backup if needed, clear site data for this page, then try again.';
+    }
+    loginErr.textContent = msg;
+    loginErr.style.display = 'block';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
+});
+document.getElementById('loginEmail').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginPassword').focus(); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+});
+
+async function onSignedIn(session){
+  loginOverlay.classList.add('hidden');
+  whoAmI.textContent = (session.user && session.user.email) || '';
+  try{
+    await initApp();
+  }catch(e){
+    console.error('initApp failed after login', e);
+    setSyncStatus('Loaded with errors — see console', 'err');
+  }
+}
+
+/* ---------------- Init ---------------- */
+async function initApp(){
+  setSyncStatus('Loading…', 'busy');
+  state.patients = loadLocalCache();
+  loadTeamStaffCache();
+  if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
+  renderAll();
+  await pullOrg();
+  await pullTeamStaff();
+  renderAll();
+  if(navigator.onLine){ await flushPending(); await pullRemote(); }
+  else setSyncStatus('Offline — saved on this device', 'err');
+
+  setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
+  setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
+  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
+  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
+}
+
+(async function boot(){
+  updateOfflineBanner();
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){ onSignedIn(data.session); return; }
+  }catch(e){
+    console.error('getSession failed', e);
+  }
+  
+  loginOverlay.classList.remove('hidden');
+  if(!navigator.onLine){
+    loginErr.textContent = "You're offline and this device hasn't signed in before — connect once to sign in, then offline access will work.";
+    loginErr.style.display = 'block';
+  }
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(err=>{
+      console.warn('Service worker registration failed — offline app-shell caching is unavailable:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
