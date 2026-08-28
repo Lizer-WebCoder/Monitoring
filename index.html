@@ -844,8 +844,10 @@ function monthPatients(){
 }
 
 function defaultEncodedDate(){
-  const month = document.getElementById('monthFilter').value;
-  return month ? (month + '-01') : new Date().toISOString().slice(0,10);
+  // Always use today so brand-new / imported patients stay "Pending"
+  // instead of being auto-flagged Missed 24h (which happened when we
+  // defaulted to the 1st of the selected month).
+  return new Date().toISOString().slice(0,10);
 }
 
 function filteredPatients(){
@@ -876,9 +878,10 @@ function duplicateTeam(phid, excludeId){
   return match ? match.team : null;
 }
 
-function claimDeadline(dateEncoded){
-  if(!dateEncoded) return null;
-  const d = new Date(dateEncoded + "T00:00:00");
+function claimDeadline(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if(isNaN(d.getTime())) return null;
   d.setDate(d.getDate() + 1);
   return d;
 }
@@ -886,9 +889,18 @@ function autoFlagMissedClaims(){
   const now = new Date();
   let changed = false;
   state.patients.forEach(p=>{
-    if(p.claim === 'pending' && !p.deleted){
-      const deadline = claimDeadline(p.dateEncoded);
-      if(deadline && now >= deadline){ p.claim = 'missed24'; pendingIds.add(p.id); changed = true; }
+    if(p.deleted) return;
+    if(p.claim !== 'pending') return;
+    // Already marked within 24h — do not force Missed 24h
+    if(p.within24) return;
+    // Prefer date submitted; fall back to date encoded. No date → leave Pending.
+    const base = (p.dateSubmitted || p.dateEncoded || '').trim();
+    if(!base) return;
+    const deadline = claimDeadline(base);
+    if(deadline && now >= deadline){
+      p.claim = 'missed24';
+      pendingIds.add(p.id);
+      changed = true;
     }
   });
   if(changed){ savePending(); saveLocalCache(); flushPending(); }
@@ -1306,8 +1318,8 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     team: document.getElementById('f_team').value, name, phid,
     status: document.getElementById('f_status').value,
     facility: document.getElementById('f_facility').value,
-    claim: document.getElementById('f_claim').value,
-    dateEncoded: document.getElementById('f_dateEncoded').value,
+    claim: document.getElementById('f_claim').value || 'pending',
+    dateEncoded: document.getElementById('f_dateEncoded').value || defaultEncodedDate(),
     dateSubmitted: document.getElementById('f_dateSubmitted').value,
     mca: document.getElementById('f_mca').checked,
     within24: document.getElementById('f_within24').checked,
