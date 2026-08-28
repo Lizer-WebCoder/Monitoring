@@ -377,7 +377,7 @@
     <button class="btn" id="importBtn"></button>
     <button class="btn btn-ghost" id="csvTemplateBtn"></button>
     <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
-    <button class="btn btn-ghost" id="memeBtn" type="button" title="Open meme generator">Memes</button>
+    <button class="btn btn-ghost" id="memeBtn" type="button" title="Open meme generator">Tutorial</button>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
@@ -1483,7 +1483,7 @@ document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
-document.getElementById('memeBtn').textContent = 'Memes';
+document.getElementById('memeBtn').textContent = 'Tutorial';
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
 
 document.getElementById('memeBtn').addEventListener('click', ()=>{
