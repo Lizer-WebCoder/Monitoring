@@ -530,10 +530,42 @@ const CACHE_KEY = "roster_patients_v1";
 const PENDING_KEY = "roster_pending_v1";
 const ORG_CACHE_KEY = "roster_org_v1";
 
-let pendingIds = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || "[]"));
-function savePending(){ localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingIds])); }
-function saveLocalCache(){ localStorage.setItem(CACHE_KEY, JSON.stringify(state.patients)); }
-function loadLocalCache(){ try{ return JSON.parse(localStorage.getItem(CACHE_KEY) || "[]"); }catch(e){ return []; } }
+let pendingIds = new Set();
+try{ pendingIds = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || "[]")); }catch(e){ pendingIds = new Set(); }
+
+function savePending(){
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingIds])); return true; }
+  catch(e){ console.error('savePending failed', e); return false; }
+}
+function saveLocalCache(){
+  try{
+    const payload = JSON.stringify(state.patients);
+    localStorage.setItem(CACHE_KEY, payload);
+    // Verify write actually stuck (catches silent quota / private-mode issues)
+    const check = localStorage.getItem(CACHE_KEY);
+    if(!check || check.length < payload.length * 0.9){
+      throw new Error('localStorage write verification failed');
+    }
+    return true;
+  }catch(e){
+    console.error('saveLocalCache failed', e);
+    try{
+      setSyncStatus('Save failed — storage full?', 'err');
+    }catch(_){}
+    return false;
+  }
+}
+function loadLocalCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    console.error('loadLocalCache failed', e);
+    return [];
+  }
+}
 
 function cryptoId(){
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -577,31 +609,51 @@ async function pushOne(p){
 async function flushPending(){
   if(!navigator.onLine || pendingIds.size === 0) return;
   setSyncStatus('Syncing…', 'busy');
+  let ok = 0, fail = 0;
   for(const id of [...pendingIds]){
     const p = state.patients.find(x => x.id === id);
-    if(p) await pushOne(p);
+    if(!p){ pendingIds.delete(id); continue; }
+    const success = await pushOne(p);
+    if(success) ok++; else fail++;
   }
   savePending();
   saveLocalCache();
+  if(fail > 0) setSyncStatus(`Synced ${ok}, ${fail} still pending`, 'err');
+  else if(ok > 0) setSyncStatus('Synced ' + timeNow());
 }
 
 async function pullRemote(){
   if(!navigator.onLine){ setSyncStatus('Offline — saved on this device', 'err'); return; }
   setSyncStatus('Syncing…', 'busy');
   try{
-    const { data, error } = await sb.from('patients').select('*');
-    if(error) throw error;
-    data.forEach(r=>{
+    // Page through all remote rows (Supabase/PostgREST can cap a single request)
+    const pageSize = 1000;
+    let from = 0;
+    const remoteRows = [];
+    while(true){
+      const { data, error } = await sb.from('patients').select('*').range(from, from + pageSize - 1);
+      if(error) throw error;
+      if(!data || data.length === 0) break;
+      remoteRows.push(...data);
+      if(data.length < pageSize) break;
+      from += pageSize;
+    }
+    remoteRows.forEach(r=>{
       if(pendingIds.has(r.id)) return; // don't overwrite an unsynced local edit
       const remote = fromRemote(r);
       const local = state.patients.find(p => p.id === r.id);
       if(local) Object.assign(local, remote);
       else state.patients.push(remote);
     });
+    // Keep every local non-deleted patient, even if not yet on the server.
+    // Only drop soft-deleted rows that already finished syncing.
     state.patients = state.patients.filter(p => !p.deleted || pendingIds.has(p.id));
     saveLocalCache();
     renderAll();
-    setSyncStatus('Synced ' + timeNow());
+    const pendingCount = pendingIds.size;
+    setSyncStatus(
+      pendingCount ? `Synced ${timeNow()} · ${pendingCount} still uploading` : ('Synced ' + timeNow())
+    );
   }catch(e){
     console.error(e);
     setSyncStatus('Sync failed — will retry', 'err');
@@ -1531,8 +1583,22 @@ function processImportRows(allRows, targetTeam){
       viewNote = '\n\nImported patients span multiple months, so the month filter was cleared to "all months". Use the month picker to focus on one month if needed.';
     }
   }
-  savePending(); saveLocalCache(); renderAll(); flushPending();
+  savePending();
+  const savedOk = saveLocalCache();
+  renderAll();
+  // Upload in background; do not block the import confirmation
+  flushPending().catch(()=>{});
   let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
+  if(!savedOk){
+    msg += `\n\nWARNING: Could not save all patients on this device (storage may be full). They are visible now but may disappear after refresh. Free some browser storage or export a CSV backup immediately.`;
+  } else {
+    // Confirm how many are actually on disk
+    try{
+      const disk = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
+      const alive = Array.isArray(disk) ? disk.filter(p=>!p.deleted).length : 0;
+      msg += `\n\nSaved on this device: ${alive} patient(s) total.`;
+    }catch(e){}
+  }
   if(skipped > 0){
     msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the template's column order and try again.`;
   }
@@ -1836,66 +1902,4 @@ const whoAmI = document.getElementById('whoAmI');
 document.getElementById('loginBtn').addEventListener('click', async ()=>{
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = 'Signing in…'; loginErr.style.display = 'none';
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  btn.disabled = false; btn.textContent = 'Sign in';
-  if(error){ loginErr.textContent = error.message; loginErr.style.display = 'block'; return; }
-  onSignedIn(data.session);
-});
-document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-  await sb.auth.signOut();
-  location.reload();
-});
-
-async function onSignedIn(session){
-  loginOverlay.classList.add('hidden');
-  whoAmI.textContent = session.user.email;
-  await initApp();
-}
-
-/* ---------------- Init ---------------- */
-async function initApp(){
-  setSyncStatus('Loading…', 'busy');
-  state.patients = loadLocalCache();
-  loadTeamStaffCache();
-  if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
-  renderAll();
-  await pullOrg();
-  await pullTeamStaff();
-  renderAll();
-  if(navigator.onLine){ await flushPending(); await pullRemote(); }
-  else setSyncStatus('Offline — saved on this device', 'err');
-
-  setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
-  setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
-  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
-  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
-}
-
-(async function boot(){
-  updateOfflineBanner();
-  try{
-    const { data } = await sb.auth.getSession();
-    if(data && data.session){ onSignedIn(data.session); return; }
-  }catch(e){
-    console.error('getSession failed', e);
-  }
-  
-  loginOverlay.classList.remove('hidden');
-  if(!navigator.onLine){
-    loginErr.textContent = "You're offline and this device hasn't signed in before — connect once to sign in, then offline access will work.";
-    loginErr.style.display = 'block';
-  }
-})();
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(err=>{
-      console.warn('Service worker registration failed — offline app-shell caching is unavailable:', err);
-    });
-  });
-}
-</script>
-</body>
-</html>
+  co
