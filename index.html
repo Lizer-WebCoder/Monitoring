@@ -836,7 +836,10 @@ function monthPatients(){
   return state.patients.filter(p=>{
     if(p.deleted) return false;
     if(!month) return true;
-    return (p.dateEncoded||'').slice(0,7) === month;
+    const enc = (p.dateEncoded||'').trim();
+    // Undated rows stay visible in every month view so imports without dates are not "lost"
+    if(!enc) return true;
+    return enc.slice(0,7) === month;
   });
 }
 
@@ -926,7 +929,7 @@ function renderLegend(){
     <span><b>Unsynced badge:</b> row was changed on this device and hasn't reached the shared database yet — it'll sync automatically once online</span>
     <span><b>Staff:</b> click the "N staff" pill under a mobile's name to see who's managing it</span>
     <span><b>Backup:</b> Export CSV any time for a copy outside the app. Use each mobile's own "export"/"import" buttons to work with just that mobile's patients</span>
-    <span><b>CSV format:</b> download "CSV template" for the exact columns Import CSV expects</span>
+    <span><b>CSV / Excel import:</b> minimum columns — Patient Name, PhilHealth ID, Status, Facility, Digital MCA (Team and other fields optional)</span>
   `;
 }
 
@@ -1478,180 +1481,286 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
+
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+
+function patientToCsvRow(p){
+  return [
+    p.team||'', p.name||'', p.phid||'', statusLabel[p.status]||p.status||'', p.facility||'',
+    p.mca?'YES':'NO', p.dateSubmitted||'', p.within24?'YES':'NO',
+    claimLabel[p.claim]||p.claim||'', p.rice?'YES':'NO', p.lab?'YES':'NO', p.notes||''
+  ].map(csvSafe).join(',');
+}
+
+function exportPatients(teamFilter){
+  const rows = state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(teamFilter && p.team !== teamFilter) return false;
+    return true;
+  });
+  const lines = [CSV_HEADERS.join(',')].concat(rows.map(patientToCsvRow));
+  const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const namePart = teamFilter ? '-' + teamFilter.replace(/[^\w\-]+/g,'_').slice(0,40) : '';
+  a.href = url; a.download = `field-roster${namePart}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportBtn').addEventListener('click', ()=> exportPatients(null));
+
+document.getElementById('csvTemplateBtn').addEventListener('click', ()=>{
+  const sample = [
+    CSV_HEADERS.join(','),
+    ['Mobile Staff — Site A','DELA CRUZ, JUAN','1300-0004-937','Registered','Abucay','YES','','NO','Pending','YES','NO','Optional remarks'].map(csvSafe).join(','),
+    ['','SANTOS, MARIA','','Registered to other DR facility','Cirian','YES','','NO','T1 Submitted','NO','YES',''].map(csvSafe).join(',')
+  ].join('\r\n');
+  const blob = new Blob([sample], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'DRCARE_import_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('xlsxTemplateBtn').addEventListener('click', ()=>{
+  if(!window.XLSX){
+    alert('Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
+    return;
+  }
+  const data = [
+    CSV_HEADERS,
+    ['Mobile Staff — Site A','DELA CRUZ, JUAN','1300-0004-937','Registered','Abucay','YES','','NO','Pending','YES','NO','Optional remarks'],
+    ['','SANTOS, MARIA','','Registered to other DR facility','Cirian','YES','','NO','T1 Submitted','NO','YES','']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Patients');
+  XLSX.writeFile(wb, 'DRCARE_import_template.xlsx');
+});
+
 
 function isValidDateStr(s){ return /^\d{4}-\d{2}-\d{2}$/.test((s||'').trim()); }
 
 function parseImportDate(raw){
-  if(raw == null) return '';
-  const s = String(raw).trim();
+  if(raw == null || raw === '') return '';
+  if(raw instanceof Date && !isNaN(raw.getTime())){
+    const y = raw.getFullYear(), m = String(raw.getMonth()+1).padStart(2,'0'), d = String(raw.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  let s = String(raw).trim();
   if(!s) return '';
-  if(isValidDateStr(s)) return s;
-  // Excel serial number (days since 1899-12-30)
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
   if(/^\d+(\.\d+)?$/.test(s)){
     const n = parseFloat(s);
-    if(n > 20000 && n < 80000){
+    if(n > 20000 && n < 60000){
       const epoch = new Date(Date.UTC(1899, 11, 30));
-      epoch.setUTCDate(epoch.getUTCDate() + Math.floor(n));
-      const y = epoch.getUTCFullYear();
-      const m = String(epoch.getUTCMonth()+1).padStart(2,'0');
-      const d = String(epoch.getUTCDate()).padStart(2,'0');
-      return `${y}-${m}-${d}`;
+      const dt = new Date(epoch.getTime() + Math.round(n) * 86400000);
+      if(!isNaN(dt.getTime())){
+        const y = dt.getUTCFullYear(), m = String(dt.getUTCMonth()+1).padStart(2,'0'), d = String(dt.getUTCDate()).padStart(2,'0');
+        return `${y}-${m}-${d}`;
+      }
     }
   }
-  // ISO-like with time: 2026-08-12T00:00:00
-  const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
-  if(iso) return iso[1];
-  // M/D/YYYY or MM-DD-YYYY or D/M/YYYY (prefer US M/D when both <=12)
-  const slash = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if(slash){
-    let a = parseInt(slash[1],10), b = parseInt(slash[2],10), y = parseInt(slash[3],10);
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){
+    let a = parseInt(m[1],10), b = parseInt(m[2],10), y = parseInt(m[3],10);
     if(y < 100) y += 2000;
     let month, day;
     if(a > 12){ day = a; month = b; }
     else if(b > 12){ month = a; day = b; }
-    else { month = a; day = b; } // default M/D/YYYY
+    else { month = a; day = b; }
     if(month >= 1 && month <= 12 && day >= 1 && day <= 31){
       return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     }
   }
-  // "Aug 12, 2026" / "12 Aug 2026"
-  const parsed = Date.parse(s);
-  if(!isNaN(parsed)){
-    const dt = new Date(parsed);
-    if(dt.getFullYear() > 1990 && dt.getFullYear() < 2100){
-      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-    }
+  const dt = new Date(s);
+  if(!isNaN(dt.getTime()) && dt.getFullYear() > 1990 && dt.getFullYear() < 2100){
+    const y = dt.getFullYear(), mo = String(dt.getMonth()+1).padStart(2,'0'), d = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
   }
   return '';
 }
 
-function exportPatients(scopeTeam){
-  const rows = [CSV_HEADERS.join(',')];
-  state.patients.filter(p=>!p.deleted && (!scopeTeam || p.team === scopeTeam)).forEach(p=>{
-    rows.push([csvSafe(p.team), csvSafe(p.name), csvSafe(p.phid), statusLabel[p.status], csvSafe(p.facility||''),
-      p.mca?"YES":"NO", p.dateEncoded||'', p.dateSubmitted||'', p.within24?"YES":"NO",
-      claimLabel[p.claim], p.rice?"YES":"NO", p.lab?"YES":"NO", csvSafe(p.notes||'')].join(','));
+function normalizeHeader(h){
+  return String(h||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/&/g,'and');
+}
+
+/* Map spreadsheet headers to fields. Date Encoded is optional — not required for monitoring. */
+const IMPORT_HEADER_MAP = {
+  team: ['team','mobile','mobile / site','site'],
+  name: ['patient name','name','patient','patient_name'],
+  phid: ['philhealth id','philhealth','phid','philhealth id no','philhealth no'],
+  status: ['status','registration status'],
+  facility: ['facility'],
+  mca: ['digital mca','mca','digital_mca'],
+  dateEnc: ['date encoded','encoded','date_encoded'],
+  dateSub: ['date validated and submitted','date validated & submitted','date submitted','date validated','date_submitted'],
+  within24: ['within 24h','within 24','within24'],
+  claim: ['status of claim','claim','claim status'],
+  rice: ['rice availed','rice'],
+  lab: ['lab availed','lab'],
+  notes: ['notes','remarks','comment']
+};
+
+function buildColIndex(headerRow){
+  const idx = {};
+  headerRow.forEach((h, i)=>{
+    const n = normalizeHeader(h);
+    if(!n) return;
+    for(const [field, aliases] of Object.entries(IMPORT_HEADER_MAP)){
+      if(aliases.includes(n) && idx[field] === undefined) idx[field] = i;
+    }
   });
-  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const namePart = scopeTeam ? '-' + scopeTeam.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') : '';
-  a.href = url; a.download = `field-roster${namePart}-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click(); URL.revokeObjectURL(url);
+  return idx;
 }
-document.getElementById('exportBtn').addEventListener('click', ()=> exportPatients(null));
 
-const TEMPLATE_EXAMPLE_ROW = ["Mobile Staff — Site A","DELA CRUZ, JUAN, SANTOS","1300-0004-937","Registered","Abucay",
-  "YES","2026-08-12","2026-08-12","NO","T1 Submitted","YES","NO","Optional remarks"];
-
-function downloadCsvTemplate(){
-  const rows = [CSV_HEADERS.join(','), TEMPLATE_EXAMPLE_ROW.map(csvSafe).join(',')];
-  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'dr-care-import-template.csv';
-  a.click(); URL.revokeObjectURL(url);
+function rowLooksLikeHeader(cols){
+  const joined = cols.map(normalizeHeader).join('|');
+  return /patient name|philhealth|digital mca|^name$/.test(joined);
 }
-document.getElementById('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
-
-function downloadXlsxTemplate(){
-  if(!window.XLSX){
-    alert("Excel template needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. The CSV template works without it in the meantime.");
-    return;
-  }
-  const wsData = [CSV_HEADERS, TEMPLATE_EXAMPLE_ROW];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols'] = [22,30,18,30,12,12,14,22,12,16,12,12,26].map(w=>({wch:w}));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Patients");
-  XLSX.writeFile(wb, "dr-care-import-template.xlsx");
-}
-document.getElementById('xlsxTemplateBtn').addEventListener('click', downloadXlsxTemplate);
-
-let importTargetTeam = null;
 
 async function processImportRows(allRows, targetTeam){
-  if(allRows.length) allRows.shift(); // drop the header row
-  const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
-  const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
-  let added = 0;
-  let skipped = 0;
-  let firstSkippedCount = null;
-  let badDates = 0;
+  if(!allRows || !allRows.length){
+    alert('No rows found in that file.');
+    return;
+  }
+  let start = 0;
+  let colIndex = null;
+  const first = allRows[0].map(c => (c==null ? '' : String(c)).trim());
+  if(rowLooksLikeHeader(first)){
+    colIndex = buildColIndex(first);
+    start = 1;
+  }
+  // Minimal import needs at least Patient Name (or PhilHealth ID)
+  if(colIndex && colIndex.name === undefined && colIndex.phid === undefined){
+    alert('Could not find a Patient Name or PhilHealth ID column in the header row.\\n\\nUse headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
+    return;
+  }
+
+  let added = 0, skipped = 0, badDates = 0;
   const importedMonthCounts = {};
-  allRows.forEach(rawCols=>{
-    const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
-    // Skip fully empty rows only. Short rows are padded so partial Excel exports still import.
-    if(cols.every(c=>c==='')) return;
-    while(cols.length < 13) cols.push('');
-    if(cols.length > 13) cols.length = 13;
-    // Need at least a name or PhilHealth ID to count as a patient row
-    if(!cols[1] && !cols[2]){
-      skipped++;
-      if(firstSkippedCount === null) firstSkippedCount = rawCols.length;
-      return;
+  const statusRev = {};
+  Object.entries(statusLabel).forEach(([k,v])=>{ statusRev[v.toLowerCase()] = k; statusRev[k] = k; });
+  statusRev['registered to other dr facility'] = 'registered_other';
+  statusRev['registered-other'] = 'registered_other';
+  const claimRev = {};
+  Object.entries(claimLabel).forEach(([k,v])=>{ claimRev[v.toLowerCase()] = k; claimRev[k] = k; });
+  claimRev['t1 submitted'] = 't1';
+  claimRev['missed 24h'] = 'missed24';
+
+  function cell(cols, field, positionalFallback){
+    if(colIndex && colIndex[field] !== undefined){
+      const v = cols[colIndex[field]];
+      return v == null ? '' : String(v).trim();
     }
-    const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
+    if(positionalFallback !== undefined && positionalFallback < cols.length){
+      const v = cols[positionalFallback];
+      return v == null ? '' : String(v).trim();
+    }
+    return '';
+  }
+
+  for(let r = start; r < allRows.length; r++){
+    const rawCols = allRows[r] || [];
+    const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
+    if(cols.every(c=>c==='')) continue;
+
+    // Positional fallback when there is no header:
+    // 5 cols  -> Name, PhilHealth ID, Status, Facility, Digital MCA
+    // 6+ cols -> Team, Name, PhilHealth ID, Status, Facility, Digital MCA, ...
+    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, rice, lab, notes;
+    if(colIndex){
+      team = cell(cols,'team');
+      name = cell(cols,'name');
+      phid = cell(cols,'phid');
+      status = cell(cols,'status');
+      facility = cell(cols,'facility');
+      mca = cell(cols,'mca');
+      dateEnc = cell(cols,'dateEnc');
+      dateSub = cell(cols,'dateSub');
+      within24 = cell(cols,'within24');
+      claim = cell(cols,'claim');
+      rice = cell(cols,'rice');
+      lab = cell(cols,'lab');
+      notes = cell(cols,'notes');
+    } else if(cols.length <= 5){
+      [name, phid, status, facility, mca] = cols;
+      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; rice = ''; lab = ''; notes = '';
+    } else {
+      team = cols[0]||''; name = cols[1]||''; phid = cols[2]||''; status = cols[3]||'';
+      facility = cols[4]||''; mca = cols[5]||'';
+      dateEnc = cols[6]||''; dateSub = cols[7]||''; within24 = cols[8]||'';
+      claim = cols[9]||''; rice = cols[10]||''; lab = cols[11]||''; notes = cols[12]||'';
+    }
+
+    if(!name && !phid){ skipped++; continue; }
+
     const resolvedStatus = statusRev[(status||'').toLowerCase()] || 'registered';
-    const parsedEnc = parseImportDate(dateEnc);
+    let parsedEnc = parseImportDate(dateEnc);
     const parsedSub = parseImportDate(dateSub);
     if((dateEnc && !parsedEnc) || (dateSub && !parsedSub)) badDates++;
-    const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
+    // Date Encoded is not part of the main monitoring columns — auto-fill for month filter only
+    if(!parsedEnc) parsedEnc = defaultEncodedDate();
+
+    const p = {
+      id: cryptoId(),
+      team: targetTeam || team || 'Imported',
+      name: name || '',
+      phid: phid || '',
+      status: resolvedStatus,
       facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
-      mca: isYesValue(mca), dateEncoded: parsedEnc, dateSubmitted: parsedSub,
-      within24: isYesValue(within24), claim: claimRev[(claim||'').toLowerCase()] || 'pending',
-      rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
+      mca: isYesValue(mca),
+      dateEncoded: parsedEnc,
+      dateSubmitted: parsedSub,
+      within24: isYesValue(within24),
+      claim: claimRev[(claim||'').toLowerCase()] || 'pending',
+      rice: isYesValue(rice),
+      lab: isYesValue(lab),
+      notes: notes || '',
+      deleted: false
+    };
     state.patients.push(p);
     pendingIds.add(p.id);
     added++;
-    if(parsedEnc){
-      const ym = parsedEnc.slice(0,7);
-      importedMonthCounts[ym] = (importedMonthCounts[ym] || 0) + 1;
-    } else {
-      importedMonthCounts[''] = (importedMonthCounts[''] || 0) + 1;
-    }
-  });
-  // Show imported rows: if they don't fall in the currently selected month,
-  // switch the month picker so the roster actually displays them.
+    const ym = (parsedEnc||'').slice(0,7);
+    if(ym) importedMonthCounts[ym] = (importedMonthCounts[ym] || 0) + 1;
+    else importedMonthCounts[''] = (importedMonthCounts[''] || 0) + 1;
+  }
+
   const monthFilterEl = document.getElementById('monthFilter');
   const currentMonth = monthFilterEl.value;
   const monthKeys = Object.keys(importedMonthCounts).filter(k => k !== '');
   let viewNote = '';
   if(added > 0){
-    if(monthKeys.length === 0){
-      // all blank dates — show every month so they appear
-      monthFilterEl.value = '';
-      viewNote = '\n\nDate encoded was blank on these rows, so the month filter was cleared to "all months" so you can see them.';
-    } else if(monthKeys.length === 1){
+    if(monthKeys.length === 1){
       const only = monthKeys[0];
       if(currentMonth && currentMonth !== only){
         monthFilterEl.value = only;
-        viewNote = `\n\nSwitched the month filter to ${monthLabel(only)} so the imported patients are visible.`;
+        viewNote = `\\n\\nSwitched the month filter to ${monthLabel(only)} so the imported patients are visible.`;
       }
-    } else {
-      // mixed months — show all so nothing is hidden
+    } else if(monthKeys.length > 1){
       monthFilterEl.value = '';
-      viewNote = '\n\nImported patients span multiple months, so the month filter was cleared to "all months". Use the month picker to focus on one month if needed.';
+      viewNote = '\\n\\nImported patients span multiple months, so the month filter was set to "all months".';
     }
   }
   savePending();
   renderAll();
   const aliveNow = state.patients.filter(p=>!p.deleted).length;
-  // Persist then confirm (IndexedDB can hold hundreds/thousands of patients)
   const savedOk = await saveLocalCache();
   flushPending().catch(()=>{});
   let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
-  msg += `\n\nTotal patients on this device now: ${aliveNow}.`;
+  msg += `\\n\\nTotal patients on this device now: ${aliveNow}.`;
   if(!savedOk){
-    msg += `\n\nWARNING: Could not fully save to device storage. Export a CSV backup now.`;
+    msg += `\\n\\nWARNING: Could not fully save to device storage. Export a CSV backup now.`;
   }
   if(skipped > 0){
-    msg += `\n\nSkipped ${skipped} row(s) with no Patient Name and no PhilHealth ID.`;
+    msg += `\\n\\nSkipped ${skipped} row(s) with no Patient Name and no PhilHealth ID.`;
   }
   if(badDates > 0){
-    msg += `\n\n${badDates} row(s) had a date that could not be read. Those dates were left blank. Prefer YYYY-MM-DD in your spreadsheet.`;
+    msg += `\\n\\n${badDates} row(s) had a date that could not be read. Those dates were left blank.`;
   }
   msg += viewNote;
   alert(msg);
@@ -1784,7 +1893,10 @@ function dashboardScopePatients(){
   const team = dashTeamSelect.value;
   return state.patients.filter(p=>{
     if(p.deleted) return false;
-    if(month !== 'all' && (p.dateEncoded||'').slice(0,7) !== month) return false;
+    if(month !== 'all'){
+      const enc = (p.dateEncoded||'').trim();
+      if(enc && enc.slice(0,7) !== month) return false;
+    }
     if(team !== 'all' && p.team !== team) return false;
     return true;
   });
