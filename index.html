@@ -854,7 +854,19 @@ function renderAll(){
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
-  const teamsToShow = teams.filter(team => monthList.some(p=>p.team===team) || pendingEmptyTeams.has(team));
+  /* A mobile with zero patients anywhere (brand new, nothing added
+     to it yet) should always be visible regardless of which month is
+     selected — filtering it by month makes no sense when it has no
+     dated records to filter. Without this, a freshly created mobile
+     only stayed visible via pendingEmptyTeams, which lives in memory
+     and resets on every reload, so the mobile would seem to vanish
+     the moment the page refreshed and before it had a first patient. */
+  const teamsWithAnyPatients = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
+  const teamsToShow = teams.filter(team =>
+    monthList.some(p=>p.team===team) ||
+    pendingEmptyTeams.has(team) ||
+    !teamsWithAnyPatients.has(team)
+  );
 
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
@@ -1497,13 +1509,21 @@ function getAllEncodedMonths(){
 }
 
 function populateDashboardControls(){
+  const mainMonth = document.getElementById('monthFilter').value; // '' or 'YYYY-MM'
+  /* Month options must include whichever month the main view is
+     currently on, even if it has zero patients — otherwise there's
+     no way to select it and the dashboard is forced to silently show
+     a different (non-empty) range instead, which is exactly what
+     made it look "out of sync" with an empty main view. */
   const months = getAllEncodedMonths();
-  const mainMonth = document.getElementById('monthFilter').value;
-  const preferredMonth = months.includes(mainMonth) ? mainMonth : 'all';
+  if(mainMonth && !months.includes(mainMonth)) months.unshift(mainMonth);
+  months.sort().reverse();
+
+  const preferredMonth = mainMonth || 'all';
   const prevMonthVal = dashMonthSelect.value || preferredMonth;
   dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
     months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
-  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : 'all';
+  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : preferredMonth;
 
   const teams = getTeams();
   const prevTeamVal = dashTeamSelect.value || 'all';
@@ -1672,6 +1692,12 @@ function renderTrendChart(selectedMonth){
 }
 
 function openDashboard(){
+  /* Always start a fresh open mirroring the main view's current
+     month (and "all mobiles") rather than remembering whatever the
+     dashboard's own dropdowns were left on from a previous session —
+     that's what made it seem to show stale/mismatched numbers. */
+  dashMonthSelect.value = '';
+  dashTeamSelect.value = '';
   populateDashboardControls();
   renderDashboard();
   dashBackdrop.classList.add('open');
