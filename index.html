@@ -44,7 +44,33 @@
   }
   body.dark input, body.dark select{ color-scheme: dark; }
   body.dark #monthFilter{ color: var(--teal); }
-  body{ background:var(--paper); color:var(--ink); font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; padding-bottom:60px; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 60px;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .app-shell{
+    max-width:1600px;
+    margin:0 auto;
+    padding:0 16px 24px;
+    box-sizing:border-box;
+  }
+  @media (min-width: 1100px){
+    .app-shell{ padding:0 28px 32px; }
+  }
+  /* Soft frame so content never looks cut off at the screen edge */
+  .app-frame{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-top:12px;
+  }
+  body > header{ /* keep header full-bleed */ }
   .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
 
   /* ---------- Offline banner ---------- */
@@ -80,6 +106,25 @@
     color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30;
     box-shadow:0 4px 14px rgba(11,54,48,0.25);
     position:relative; overflow:hidden;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .header-row, .toolbar, .team-group, .legend, .app-footer{
+    width:100%;
+    max-width:1600px;
+    margin-left:auto;
+    margin-right:auto;
+    box-sizing:border-box;
+  }
+  .toolbar{ padding-left:16px; padding-right:16px; }
+  .team-group{ padding-left:16px; padding-right:16px; }
+  .legend{ padding-left:16px; padding-right:16px; }
+  /* Outer edge frame around the page content */
+  html{ background:var(--teal-deep); }
+  body{
+    border-left:3px solid var(--teal);
+    border-right:3px solid var(--teal);
+    box-sizing:border-box;
   }
   header::before{
     content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
@@ -147,17 +192,26 @@
   .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
   .team-head .chev{ transition:transform .15s ease; font-size:12px; color:var(--muted); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
-  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; }
-  .team-title-block{ display:flex; flex-direction:column; gap:4px; }
-  .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; }
+  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(420px, 40vw); }
+  .team-title-block{ display:flex; flex-direction:row; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; }
+  .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; flex:none; }
   .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
   .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
   .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
   .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
-  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; }
-  .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; }
+  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; flex:none; white-space:nowrap; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
   .team-head .team-tools button{ background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
+  .team-head{ flex-wrap:wrap; gap:8px 10px; }
+  .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
+  .table-wrap{ max-width:100%; }
+  table{ min-width:960px; }
+  @media (max-width: 900px){
+    .team-head h2{ max-width:100%; }
+    .team-tools{ width:100%; margin-left:0; }
+    .stat-strip{ display:none; }
+  }
 
   /* ---------- Staff popup ---------- */
   .staff-popup-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.4); display:none; align-items:center; justify-content:center; z-index:150; padding:20px; }
@@ -295,7 +349,7 @@
   .team-pager .pager-btn:disabled{ opacity:0.4; cursor:not-allowed; }
   @media print{ .team-pager{ display:none !important; } }
 
-  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
+  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:14px 16px; } .toolbar{ padding:0 12px; } .team-group{ padding:0 12px; } .app-shell{ padding:0 8px 16px; } .app-frame{ margin-top:8px; border-radius:10px; } }
   @media print{
     header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
     #loginOverlay, #offlineBanner, th:last-child, td:last-child{ display:none !important; }
@@ -386,7 +440,7 @@
 
 <div id="groupsContainer"></div>
 <div class="legend" id="legend"></div>
-<div class="app-footer">By : 🇧​​🇴​​🇾​​🇸​ ​🇦​​🇹​ ​🇹​​🇭​​🇪​ ​🇧​​🇦​​🇨​​🇰​ ♞ · © 2026 All rights reserved</div>
+<div class="app-footer">By Lizerxc · © 2026 All rights reserved</div>
 
 <!-- Patient Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
@@ -659,8 +713,23 @@ async function pushOne(p){
   }catch(e){ return false; }
 }
 
+function prunePendingIds(){
+  let changed = false;
+  for(const id of [...pendingIds]){
+    const p = state.patients.find(x => x.id === id);
+    // Drop ids that no longer exist, or soft-deleted rows already synced away
+    if(!p){ pendingIds.delete(id); changed = true; }
+  }
+  if(changed) savePending();
+  return pendingIds.size;
+}
+
 async function flushPending(){
-  if(!navigator.onLine || pendingIds.size === 0) return;
+  prunePendingIds();
+  if(!navigator.onLine || pendingIds.size === 0){
+    if(navigator.onLine) setSyncStatus('Synced ' + timeNow());
+    return;
+  }
   setSyncStatus('Syncing…', 'busy');
   let ok = 0, fail = 0;
   for(const id of [...pendingIds]){
@@ -669,10 +738,12 @@ async function flushPending(){
     const success = await pushOne(p);
     if(success) ok++; else fail++;
   }
+  prunePendingIds();
   savePending();
   saveLocalCache();
-  if(fail > 0) setSyncStatus(`Synced ${ok}, ${fail} still pending`, 'err');
-  else if(ok > 0) setSyncStatus('Synced ' + timeNow());
+  const left = pendingIds.size;
+  if(left > 0) setSyncStatus(`Synced ${ok}, ${left} still uploading`, 'err');
+  else setSyncStatus('Synced ' + timeNow());
 }
 
 async function pullRemote(){
@@ -703,7 +774,7 @@ async function pullRemote(){
     state.patients = state.patients.filter(p => !p.deleted || pendingIds.has(p.id));
     saveLocalCache();
     renderAll();
-    const pendingCount = pendingIds.size;
+    const pendingCount = prunePendingIds();
     setSyncStatus(
       pendingCount ? `Synced ${timeNow()} · ${pendingCount} still uploading` : ('Synced ' + timeNow())
     );
@@ -874,6 +945,19 @@ function isDuplicate(phid, excludeId){
   return state.patients.some(p => !p.deleted && (p.phid||'').trim() === clean && p.id !== excludeId);
 }
 
+/* Two patients with the same PhilHealth ID count as 1 duplicate (each extra copy adds 1). */
+function countDuplicateExtras(list){
+  const counts = {};
+  list.forEach(p=>{
+    const id = (p.phid||'').trim();
+    if(!id) return;
+    counts[id] = (counts[id] || 0) + 1;
+  });
+  let extras = 0;
+  Object.values(counts).forEach(n=>{ if(n > 1) extras += (n - 1); });
+  return extras;
+}
+
 function duplicateTeam(phid, excludeId){
   const clean = (phid||'').trim();
   if(!clean) return null;
@@ -929,7 +1013,7 @@ function renderStats(){
     ["Other facility", all.filter(p=>p.status==='registered_other').length],
     ["Rice availed", all.filter(p=>p.rice).length],
     ["Lab availed", all.filter(p=>p.lab).length],
-    ["Duplicates", all.filter(p=>isDuplicate(p.phid, p.id)).length],
+    ["Duplicates", countDuplicateExtras(all)],
     ["Unsynced", all.filter(p=>pendingIds.has(p.id)).length],
   ];
   statStrip.innerHTML = stats.map(([lbl,num])=>`<div class="stat"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>`).join('');
@@ -1032,10 +1116,10 @@ function renderAll(){
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
         <span class="chev">▾</span>
         <div class="team-title-block">
-          <h2>${escapeHtml(team)}</h2>
-          ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+        ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
           <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} print</button>
@@ -1946,7 +2030,7 @@ function renderDashboard(){
   const labCount = scoped.filter(p=>p.lab).length;
   const bothCount = scoped.filter(p=>p.rice && p.lab).length;
   const neitherCount = scoped.filter(p=>!p.rice && !p.lab).length;
-  const dupCount = scoped.filter(p=>isDuplicate(p.phid, p.id)).length;
+  const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
 
   const monthVal = dashMonthSelect.value;
