@@ -854,25 +854,22 @@ function renderAll(){
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
-  /* A mobile with zero patients anywhere (brand new, nothing added
-     to it yet) should always be visible regardless of which month is
-     selected — filtering it by month makes no sense when it has no
-     dated records to filter. Without this, a freshly created mobile
-     only stayed visible via pendingEmptyTeams, which lives in memory
-     and resets on every reload, so the mobile would seem to vanish
-     the moment the page refreshed and before it had a first patient. */
-  const teamsWithAnyPatients = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
-  const teamsToShow = teams.filter(team =>
-    monthList.some(p=>p.team===team) ||
-    pendingEmptyTeams.has(team) ||
-    !teamsWithAnyPatients.has(team)
-  );
+  /* Every mobile/team is always shown, regardless of which month is
+     selected — a team should never disappear from the main list just
+     because it has zero patients dated in the currently-viewed month.
+     (Previously a team with patients only in OTHER months vanished
+     entirely from this view while still showing up with its full
+     patient count in the Dashboard, which was confusing: the roster
+     looked empty even though the mobile and its patients genuinely
+     existed.) Each team's table simply shows its patients for the
+     selected month — possibly zero, with an explanatory empty row —
+     while the team header, staff pill, and tools stay visible so you
+     can still add a patient or switch months from right there. */
+  const teamsToShow = teams;
 
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
-    const msg = monthVal
-      ? `No patients yet for ${monthLabel(monthVal)}. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`
-      : `No patients yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
+    const msg = `No mobiles yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -890,7 +887,7 @@ function renderAll(){
           <h2>${escapeHtml(team)}</h2>
           ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         </div>
-        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}</span>
+        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         <div class="team-tools">
           <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
           <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} print</button>
@@ -911,7 +908,7 @@ function renderAll(){
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="12" class="empty-state">No matching patients in this team.</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="12" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1338,6 +1335,15 @@ orgInput.addEventListener('input', ()=>{
 const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
+/* Accepts a strict YYYY-MM-DD date string only. Used to sanitize any
+   date coming from a CSV import: a corrupted or malformed cell (wrong
+   column count, stray characters, garbled text from a bad copy/paste
+   or encoding mismatch) must never be written into dateEncoded as-is.
+   Without this, a single bad row could silently poison the Dashboard's
+   month picker with an unreadable, garbled "month" option — since
+   getAllEncodedMonths() below just slices whatever's in dateEncoded. */
+function isValidDateStr(s){ return /^\d{4}-\d{2}-\d{2}$/.test((s||'').trim()); }
+
 /* Exports either every mobile (scopeTeam omitted/null, used by the
    toolbar's "Export CSV") or just one mobile's patients (scopeTeam
    set, used by a mobile's own "export" button). */
@@ -1394,6 +1400,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
       let added = 0;
       let skipped = 0;
       let firstSkippedCount = null;
+      let badDates = 0;
       allRows.forEach(rawCols=>{
         const cols = rawCols.map(c => (c||'').trim());
         if(cols.length < 13){
@@ -1403,9 +1410,10 @@ document.getElementById('importFile').addEventListener('change', e=>{
         }
         const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
         const resolvedStatus = statusRev[status.toLowerCase()] || 'registered';
+        if((dateEnc && !isValidDateStr(dateEnc)) || (dateSub && !isValidDateStr(dateSub))) badDates++;
         const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
           facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
-          mca: isYesValue(mca), dateEncoded: dateEnc, dateSubmitted: dateSub,
+          mca: isYesValue(mca), dateEncoded: isValidDateStr(dateEnc) ? dateEnc : '', dateSubmitted: isValidDateStr(dateSub) ? dateSub : '',
           within24: isYesValue(within24), claim: claimRev[claim.toLowerCase()] || 'pending',
           rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
         state.patients.push(p);
@@ -1416,6 +1424,9 @@ document.getElementById('importFile').addEventListener('change', e=>{
       let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
       if(skipped > 0){
         msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the CSV template's column order and try again.`;
+      }
+      if(badDates > 0){
+        msg += `\n\n${badDates} row(s) had a date that wasn't in YYYY-MM-DD format, so that date was left blank rather than imported as-is. Fix the dates in your spreadsheet and re-import if needed.`;
       }
       alert(msg);
     }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the Template button)."); console.error(err); }
@@ -1501,10 +1512,18 @@ document.getElementById('dashCloseBtn').innerHTML = icon('x', 15);
 
 /* Every distinct "Date encoded" month present in the (non-deleted)
    roster, newest first — this is what fills the dashboard's month
-   picker, independent of whichever month the main table is on. */
+   picker, independent of whichever month the main table is on.
+   Only well-formed "YYYY-MM" values are accepted: a stray or corrupted
+   dateEncoded value (e.g. from a bad CSV import in the past, before
+   isValidDateStr() existed) would otherwise slice into garbled text
+   and show up as an unreadable option in the dropdown. */
 function getAllEncodedMonths(){
   const set = new Set();
-  state.patients.forEach(p=>{ if(!p.deleted && p.dateEncoded) set.add(p.dateEncoded.slice(0,7)); });
+  state.patients.forEach(p=>{
+    if(p.deleted || !p.dateEncoded) return;
+    const ym = p.dateEncoded.slice(0,7);
+    if(/^\d{4}-\d{2}$/.test(ym)) set.add(ym);
+  });
   return [...set].sort().reverse();
 }
 
@@ -1516,7 +1535,7 @@ function populateDashboardControls(){
      a different (non-empty) range instead, which is exactly what
      made it look "out of sync" with an empty main view. */
   const months = getAllEncodedMonths();
-  if(mainMonth && !months.includes(mainMonth)) months.unshift(mainMonth);
+  if(mainMonth && /^\d{4}-\d{2}$/.test(mainMonth) && !months.includes(mainMonth)) months.unshift(mainMonth);
   months.sort().reverse();
 
   const preferredMonth = mainMonth || 'all';
