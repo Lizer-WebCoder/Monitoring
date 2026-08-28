@@ -537,34 +537,84 @@ function savePending(){
   try{ localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingIds])); return true; }
   catch(e){ console.error('savePending failed', e); return false; }
 }
-function saveLocalCache(){
+
+/* Patient roster is stored in IndexedDB (large capacity). localStorage is only a
+   small fallback for older data / tiny lists — mobile browsers often fail around
+   ~50–60 full patient records when using localStorage alone, which is why imports
+   looked capped near 53. */
+const IDB_NAME = 'dr_care_db_v1';
+const IDB_STORE = 'kv';
+function idbOpen(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error || new Error('idb open failed'));
+  });
+}
+function idbSet(key, value){
+  return idbOpen().then(db=> new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error || new Error('idb set failed'));
+  }));
+}
+function idbGet(key){
+  return idbOpen().then(db=> new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error || new Error('idb get failed'));
+  }));
+}
+
+async function saveLocalCache(){
+  let idbOk = false;
   try{
-    const payload = JSON.stringify(state.patients);
-    localStorage.setItem(CACHE_KEY, payload);
-    // Verify write actually stuck (catches silent quota / private-mode issues)
-    const check = localStorage.getItem(CACHE_KEY);
-    if(!check || check.length < payload.length * 0.9){
-      throw new Error('localStorage write verification failed');
-    }
-    return true;
+    await idbSet('roster', state.patients);
+    idbOk = true;
   }catch(e){
-    console.error('saveLocalCache failed', e);
-    try{
-      setSyncStatus('Save failed — storage full?', 'err');
-    }catch(_){}
+    console.error('IndexedDB save failed', e);
+  }
+  // Best-effort localStorage mirror (may fail on large rosters — that is OK)
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify(state.patients));
+  }catch(e){
+    try{ localStorage.removeItem(CACHE_KEY); }catch(_){}
+  }
+  if(!idbOk){
+    try{ setSyncStatus('Save failed — storage error', 'err'); }catch(_){}
     return false;
   }
+  return true;
 }
-function loadLocalCache(){
+
+async function loadLocalCache(){
+  // Prefer IndexedDB (full roster)
+  try{
+    const fromIdb = await idbGet('roster');
+    if(Array.isArray(fromIdb) && fromIdb.length) return fromIdb;
+  }catch(e){
+    console.error('IndexedDB load failed', e);
+  }
+  // Fallback: older localStorage cache
   try{
     const raw = localStorage.getItem(CACHE_KEY);
     if(!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if(Array.isArray(parsed) && parsed.length){
+      // migrate into IndexedDB in background
+      idbSet('roster', parsed).catch(()=>{});
+      return parsed;
+    }
   }catch(e){
-    console.error('loadLocalCache failed', e);
-    return [];
+    console.error('localStorage load failed', e);
   }
+  return [];
 }
 
 function cryptoId(){
@@ -1522,7 +1572,7 @@ document.getElementById('xlsxTemplateBtn').addEventListener('click', downloadXls
 
 let importTargetTeam = null;
 
-function processImportRows(allRows, targetTeam){
+async function processImportRows(allRows, targetTeam){
   if(allRows.length) allRows.shift(); // drop the header row
   const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
   const claimRev = Object.fromEntries(Object.entries(claimLabel).map(([k,v])=>[v.toLowerCase(),k]));
@@ -1533,11 +1583,14 @@ function processImportRows(allRows, targetTeam){
   const importedMonthCounts = {};
   allRows.forEach(rawCols=>{
     const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
-    if(cols.length < 13 || cols.every(c=>c==='')){
-      if(cols.some(c=>c!=='')){
-        skipped++;
-        if(firstSkippedCount === null) firstSkippedCount = cols.length;
-      }
+    // Skip fully empty rows only. Short rows are padded so partial Excel exports still import.
+    if(cols.every(c=>c==='')) return;
+    while(cols.length < 13) cols.push('');
+    if(cols.length > 13) cols.length = 13;
+    // Need at least a name or PhilHealth ID to count as a patient row
+    if(!cols[1] && !cols[2]){
+      skipped++;
+      if(firstSkippedCount === null) firstSkippedCount = rawCols.length;
       return;
     }
     const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
@@ -1584,23 +1637,18 @@ function processImportRows(allRows, targetTeam){
     }
   }
   savePending();
-  const savedOk = saveLocalCache();
   renderAll();
-  // Upload in background; do not block the import confirmation
+  const aliveNow = state.patients.filter(p=>!p.deleted).length;
+  // Persist then confirm (IndexedDB can hold hundreds/thousands of patients)
+  const savedOk = await saveLocalCache();
   flushPending().catch(()=>{});
   let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
+  msg += `\n\nTotal patients on this device now: ${aliveNow}.`;
   if(!savedOk){
-    msg += `\n\nWARNING: Could not save all patients on this device (storage may be full). They are visible now but may disappear after refresh. Free some browser storage or export a CSV backup immediately.`;
-  } else {
-    // Confirm how many are actually on disk
-    try{
-      const disk = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
-      const alive = Array.isArray(disk) ? disk.filter(p=>!p.deleted).length : 0;
-      msg += `\n\nSaved on this device: ${alive} patient(s) total.`;
-    }catch(e){}
+    msg += `\n\nWARNING: Could not fully save to device storage. Export a CSV backup now.`;
   }
   if(skipped > 0){
-    msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the template's column order and try again.`;
+    msg += `\n\nSkipped ${skipped} row(s) with no Patient Name and no PhilHealth ID.`;
   }
   if(badDates > 0){
     msg += `\n\n${badDates} row(s) had a date that could not be read. Those dates were left blank. Prefer YYYY-MM-DD in your spreadsheet.`;
@@ -1628,7 +1676,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
         const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-        processImportRows(allRows, targetTeam);
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
       }catch(err){ alert("Could not read that Excel file. Make sure it matches the DR CARE import format (see the Excel template button)."); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
@@ -1638,7 +1686,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
     reader.onload = evt=>{
       try{
         const allRows = parseCsvRows(evt.target.result);
-        processImportRows(allRows, targetTeam);
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
       }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the CSV template button)."); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
@@ -1980,7 +2028,7 @@ async function onSignedIn(session){
 /* ---------------- Init ---------------- */
 async function initApp(){
   setSyncStatus('Loading…', 'busy');
-  state.patients = loadLocalCache();
+  state.patients = await loadLocalCache();
   loadTeamStaffCache();
   if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
   renderAll();
