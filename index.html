@@ -8,36 +8,9 @@
 <meta name="theme-color" content="#14524a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
-<!--
-  STEP 0 — WHY THIS CHANGED
-  This used to load the Supabase library from a CDN (cdn.jsdelivr.net)
-  on every single page open. That's exactly why the app couldn't open
-  offline: with no signal, that script fails to load, and the app
-  crashes before it can draw anything on screen — a blank/stuck page.
-
-  Fix: download that library ONCE and save it next to this HTML file
-  as "supabase.js", so the browser never needs the network for it again.
-    1. Open this URL in a browser tab:
-       https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js
-    2. Save the page as "supabase.js" (Ctrl/Cmd+S), in the SAME folder
-       as this HTML file (and sw.js, manifest.json — see below).
-    3. That's it — the line below will pick it up automatically.
--->
+<!-- Offline: keep ./supabase.js next to this file (do not load from CDN). -->
 <script src="./supabase.js"></script>
-<!--
-  STEP 0b — EXCEL (.xlsx) IMPORT SUPPORT
-  Same idea as supabase.js above: this library reads .xlsx files in the
-  browser so patients can be imported straight from an Excel workbook,
-  not just CSV. Download it ONCE and save it next to this HTML file as
-  "xlsx.full.min.js" so it works offline too:
-    1. Open this URL in a browser tab:
-       https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-    2. Save the page as "xlsx.full.min.js", in the SAME folder as this
-       HTML file (and supabase.js, sw.js, manifest.json).
-    3. That's it — the line below will pick it up automatically. If
-       this file is missing, CSV import still works fine; only the
-       "Excel (.xlsx)" import option is affected.
--->
+<!-- Offline: keep ./xlsx.full.min.js next to this file for Excel import. -->
 <script src="./xlsx.full.min.js"></script>
 <style>
   :root{
@@ -358,6 +331,7 @@
 <div class="toolbar">
   <div class="toolbar-row">
     <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
+    <button class="btn btn-ghost" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
     <button class="btn" id="addTeamBtn">+ Add Mobile</button>
     <button class="btn" id="dashboardBtn"></button>
     <button class="btn" id="themeToggle"></button>
@@ -530,14 +504,6 @@ const HOME_FACILITY = "Abucay";
 const facilityOptionsOther = ["Cirian","Maasin","Sogod","Abuyog","Ormoc"];
 const facilityOptionsAll = [HOME_FACILITY, ...facilityOptionsOther];
 
-/* ---------------- Local cache + offline queue ----------------
-   All data lives in localStorage on this device at all times, so the
-   app works fully offline. Any add/edit/delete is saved locally first
-   (instant, no internet needed) and marked "pending" until it's been
-   pushed to Supabase. A background timer — and the moment the device
-   comes back online — flushes pending changes and pulls in whatever
-   teammates added elsewhere. If two people edit the same record while
-   both offline, whoever's change syncs last wins for that record. */
 const CACHE_KEY = "roster_patients_v1";
 const PENDING_KEY = "roster_pending_v1";
 const ORG_CACHE_KEY = "roster_org_v1";
@@ -573,8 +539,6 @@ const syncPill = document.getElementById('syncPill');
 function setSyncStatus(text, mode){ syncPill.textContent = text; syncPill.className = 'sync-pill' + (mode ? ' ' + mode : ''); }
 function timeNow(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
-/* Shows/hides the sticky "you're offline" banner and keeps it in sync
-   with the browser's online/offline events. */
 const offlineBanner = document.getElementById('offlineBanner');
 function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigator.onLine); }
 
@@ -640,10 +604,6 @@ async function pullOrg(){
   }catch(e){ /* ignore, offline or not set up yet */ }
 }
 
-/* ---------------- Team staff (who manages each site) ----------------
-   Stored as one JSON blob { teamName: [staff names] } in the same
-   "settings" table used for orgName, under key "teamStaff". Cached
-   locally so it's available offline too. */
 const TEAM_STAFF_CACHE_KEY = "roster_team_staff_v1";
 let teamStaff = {};
 function loadTeamStaffCache(){
@@ -651,10 +611,7 @@ function loadTeamStaffCache(){
   catch(e){ teamStaff = {}; }
 }
 function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
-/* Some previously-saved staff entries may be plain strings, others may
-   be {name, position}-style objects (or something else entirely) —
-   this always turns any of those into safe display text instead of
-   ever letting a raw object hit .join() and print "[object Object]". */
+
 function staffEntryToText(s){
   if(typeof s === 'string') return s;
   if(s && typeof s === 'object'){
@@ -707,24 +664,10 @@ const legend = document.getElementById('legend');
 const collapsedTeams = new Set();
 
 function getTeams(){
-  /* Only non-deleted patients count toward "this team still exists".
-     Deleting a mobile marks its patients p.deleted=true locally, but
-     those records aren't actually removed from state.patients until
-     they've finished syncing away (pullRemote() drops a deleted
-     record only once it's no longer pending). If deleted patients
-     were still counted here, a team you just deleted — or one whose
-     sync is slow/stuck (e.g. offline, or a record Supabase rejects) —
-     would keep reappearing in the list every render, looking "stuck"
-     and undeletable, even though the delete itself worked locally. */
+  
   const t = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
   pendingEmptyTeams.forEach(x=>t.add(x));
-  /* teamStaff is saved to localStorage (and Supabase) the moment a
-     mobile is created via "+ Add Mobile" — even before it has any
-     patients. Reading its keys here means a brand-new, still-empty
-     mobile keeps showing up after a reload or a background sync,
-     instead of depending only on the in-memory pendingEmptyTeams set
-     (which resets to empty on every page load and was why a freshly
-     added mobile could seem to "vanish"). */
+  
   Object.keys(teamStaff).forEach(x=>t.add(x));
   return [...t];
 }
@@ -736,10 +679,7 @@ function monthLabel(ym){
   if(!y || !m) return ym;
   return new Date(y, m-1, 1).toLocaleString('default', {month:'long', year:'numeric'});
 }
-/* Every patient's "Date encoded" determines which month/year page they
-   belong to. This returns just the non-deleted patients for whichever
-   month is currently selected in the picker (or everyone if no month
-   is chosen). */
+
 function monthPatients(){
   const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
   return state.patients.filter(p=>{
@@ -748,9 +688,7 @@ function monthPatients(){
     return (p.dateEncoded||'').slice(0,7) === month;
   });
 }
-/* If viewing a specific month, default a new patient's encoded date to
-   the 1st of that month (instead of today) so they show up immediately
-   on the page you're looking at, rather than seeming to vanish. */
+
 function defaultEncodedDate(){
   const month = document.getElementById('monthFilter').value;
   return month ? (month + '-01') : new Date().toISOString().slice(0,10);
@@ -776,9 +714,7 @@ function isDuplicate(phid, excludeId){
   if(!clean) return false;
   return state.patients.some(p => !p.deleted && (p.phid||'').trim() === clean && p.id !== excludeId);
 }
-/* Searches every team/site in the whole roster (not just the current
-   one) for another patient sharing this PhilHealth ID, and returns
-   the team name that record belongs to — or null if none. */
+
 function duplicateTeam(phid, excludeId){
   const clean = (phid||'').trim();
   if(!clean) return null;
@@ -843,10 +779,6 @@ function renderLegend(){
   `;
 }
 
-/* Every checkbox/dropdown change re-renders the whole table by
-   rebuilding innerHTML, which otherwise resets horizontal scroll back
-   to the left. These capture each team's scroll position beforehand
-   and put it back on the freshly-built table. */
 function captureScrollPositions(){
   const positions = {};
   document.querySelectorAll('.team-group').forEach(group=>{
@@ -879,17 +811,7 @@ function renderAll(){
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
-  /* Every mobile/team is always shown, regardless of which month is
-     selected — a team should never disappear from the main list just
-     because it has zero patients dated in the currently-viewed month.
-     (Previously a team with patients only in OTHER months vanished
-     entirely from this view while still showing up with its full
-     patient count in the Dashboard, which was confusing: the roster
-     looked empty even though the mobile and its patients genuinely
-     existed.) Each team's table simply shows its patients for the
-     selected month — possibly zero, with an explanatory empty row —
-     while the team header, staff pill, and tools stay visible so you
-     can still add a patient or switch months from right there. */
+  
   const teamsToShow = teams;
 
   groupsContainer.innerHTML = '';
@@ -1005,9 +927,6 @@ function rowHtml(p){
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function escapeAttr(s){ return escapeHtml(s); }
 
-/* Small, consistent inline-SVG icon set (stroke=currentColor, so they
-   automatically match light/dark theme and button text color) used in
-   place of emoji throughout the toolbar and row actions. */
 const ICON_PATHS = {
   moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
@@ -1144,8 +1063,6 @@ function updateFacilityField(preferredValue){
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
 
-/* Save is only enabled once both patient name and PhilHealth ID have
-   something typed in — keeps incomplete records from being saved. */
 const saveBtnEl = document.getElementById('saveBtn');
 function updateSaveEnabled(){
   const hasName = document.getElementById('f_name').value.trim().length > 0;
@@ -1273,12 +1190,7 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     position: row.querySelector('.tm-staff-position').value
   })).filter(s=>s.name);
 
-  /* Case-insensitive collision check against every OTHER existing
-     mobile. Without this, saving a new mobile with a name that
-     already exists (e.g. a typo matching an existing one exactly)
-     silently overwrote that mobile's staff list below with no
-     warning, and renaming into an existing name would silently merge
-     both mobiles' patients together. */
+  
   const existingTeams = getTeams();
   const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
 
@@ -1308,10 +1220,6 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
-/* Debounced so typing a search term doesn't trigger a full table
-   rebuild (including the per-badge width measurement pass) on every
-   single keystroke — noticeable as sluggish typing once a mobile has
-   more than a couple dozen patients. */
 let searchDebounceTimer = null;
 document.getElementById('search').addEventListener('input', ()=>{
   clearTimeout(searchDebounceTimer);
@@ -1322,6 +1230,10 @@ document.getElementById('filterBenefit').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', renderAll);
+document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
+  monthFilterEl.value = '';
+  renderAll();
+});
 
 /* ---------------- Theme (light / dark) ---------------- */
 const THEME_KEY = 'roster_theme_v1';
@@ -1361,18 +1273,52 @@ orgInput.addEventListener('input', ()=>{
 const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Encoded","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
-/* Accepts a strict YYYY-MM-DD date string only. Used to sanitize any
-   date coming from a CSV import: a corrupted or malformed cell (wrong
-   column count, stray characters, garbled text from a bad copy/paste
-   or encoding mismatch) must never be written into dateEncoded as-is.
-   Without this, a single bad row could silently poison the Dashboard's
-   month picker with an unreadable, garbled "month" option — since
-   getAllEncodedMonths() below just slices whatever's in dateEncoded. */
 function isValidDateStr(s){ return /^\d{4}-\d{2}-\d{2}$/.test((s||'').trim()); }
 
-/* Exports either every mobile (scopeTeam omitted/null, used by the
-   toolbar's "Export CSV") or just one mobile's patients (scopeTeam
-   set, used by a mobile's own "export" button). */
+function parseImportDate(raw){
+  if(raw == null) return '';
+  const s = String(raw).trim();
+  if(!s) return '';
+  if(isValidDateStr(s)) return s;
+  // Excel serial number (days since 1899-12-30)
+  if(/^\d+(\.\d+)?$/.test(s)){
+    const n = parseFloat(s);
+    if(n > 20000 && n < 80000){
+      const epoch = new Date(Date.UTC(1899, 11, 30));
+      epoch.setUTCDate(epoch.getUTCDate() + Math.floor(n));
+      const y = epoch.getUTCFullYear();
+      const m = String(epoch.getUTCMonth()+1).padStart(2,'0');
+      const d = String(epoch.getUTCDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+  }
+  // ISO-like with time: 2026-08-12T00:00:00
+  const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if(iso) return iso[1];
+  // M/D/YYYY or MM-DD-YYYY or D/M/YYYY (prefer US M/D when both <=12)
+  const slash = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(slash){
+    let a = parseInt(slash[1],10), b = parseInt(slash[2],10), y = parseInt(slash[3],10);
+    if(y < 100) y += 2000;
+    let month, day;
+    if(a > 12){ day = a; month = b; }
+    else if(b > 12){ month = a; day = b; }
+    else { month = a; day = b; } // default M/D/YYYY
+    if(month >= 1 && month <= 12 && day >= 1 && day <= 31){
+      return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+  }
+  // "Aug 12, 2026" / "12 Aug 2026"
+  const parsed = Date.parse(s);
+  if(!isNaN(parsed)){
+    const dt = new Date(parsed);
+    if(dt.getFullYear() > 1990 && dt.getFullYear() < 2100){
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    }
+  }
+  return '';
+}
+
 function exportPatients(scopeTeam){
   const rows = [CSV_HEADERS.join(',')];
   state.patients.filter(p=>!p.deleted && (!scopeTeam || p.team === scopeTeam)).forEach(p=>{
@@ -1392,9 +1338,6 @@ document.getElementById('exportBtn').addEventListener('click', ()=> exportPatien
 const TEMPLATE_EXAMPLE_ROW = ["Mobile Staff — Site A","DELA CRUZ, JUAN, SANTOS","1300-0004-937","Registered","Abucay",
   "YES","2026-08-12","2026-08-12","NO","T1 Submitted","YES","NO","Optional remarks"];
 
-/* Downloads a blank starting-point CSV (headers + one filled-in
-   example row) in exactly the format Import CSV expects, so a mobile
-   team can fill it out in Excel/Sheets and re-import it. */
 function downloadCsvTemplate(){
   const rows = [CSV_HEADERS.join(','), TEMPLATE_EXAMPLE_ROW.map(csvSafe).join(',')];
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
@@ -1405,11 +1348,6 @@ function downloadCsvTemplate(){
 }
 document.getElementById('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
 
-/* Same template, but as a real .xlsx workbook (built client-side with
-   the SheetJS library — see the STEP 0b comment near the top of this
-   file for how to add it) so a mobile team can fill it out directly
-   in Excel/Google Sheets and re-import that .xlsx straight into DR
-   CARE, without ever having to "Save As CSV" first. */
 function downloadXlsxTemplate(){
   if(!window.XLSX){
     alert("Excel template needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. The CSV template works without it in the meantime.");
@@ -1424,18 +1362,8 @@ function downloadXlsxTemplate(){
 }
 document.getElementById('xlsxTemplateBtn').addEventListener('click', downloadXlsxTemplate);
 
-/* When set (by a mobile's own "import" button), every row from the
-   next CSV import is forced into this team regardless of what its
-   "Team" column says — that's what makes import "per mobile". Reset
-   to null after each import so the toolbar's global Import CSV goes
-   back to reading each row's own Team column. */
 let importTargetTeam = null;
 
-/* Shared by both CSV and Excel import: given rows already split into
-   an array of string cells (header row still included), applies all
-   the same validation/normalization and adds the resulting patients.
-   Keeping this in one place means CSV and Excel imports can never
-   silently drift apart in behavior. */
 function processImportRows(allRows, targetTeam){
   if(allRows.length) allRows.shift(); // drop the header row
   const statusRev = Object.fromEntries(Object.entries(statusLabel).map(([k,v])=>[v.toLowerCase(),k]));
@@ -1444,6 +1372,7 @@ function processImportRows(allRows, targetTeam){
   let skipped = 0;
   let firstSkippedCount = null;
   let badDates = 0;
+  const importedMonthCounts = {};
   allRows.forEach(rawCols=>{
     const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
     if(cols.length < 13 || cols.every(c=>c==='')){
@@ -1454,25 +1383,57 @@ function processImportRows(allRows, targetTeam){
       return;
     }
     const [team,name,phid,status,facility,mca,dateEnc,dateSub,within24,claim,rice,lab,notes] = cols;
-    const resolvedStatus = statusRev[status.toLowerCase()] || 'registered';
-    if((dateEnc && !isValidDateStr(dateEnc)) || (dateSub && !isValidDateStr(dateSub))) badDates++;
+    const resolvedStatus = statusRev[(status||'').toLowerCase()] || 'registered';
+    const parsedEnc = parseImportDate(dateEnc);
+    const parsedSub = parseImportDate(dateSub);
+    if((dateEnc && !parsedEnc) || (dateSub && !parsedSub)) badDates++;
     const p = { id: cryptoId(), team: targetTeam || team || 'Imported', name, phid, status: resolvedStatus,
       facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
-      mca: isYesValue(mca), dateEncoded: isValidDateStr(dateEnc) ? dateEnc : '', dateSubmitted: isValidDateStr(dateSub) ? dateSub : '',
-      within24: isYesValue(within24), claim: claimRev[claim.toLowerCase()] || 'pending',
+      mca: isYesValue(mca), dateEncoded: parsedEnc, dateSubmitted: parsedSub,
+      within24: isYesValue(within24), claim: claimRev[(claim||'').toLowerCase()] || 'pending',
       rice: isYesValue(rice), lab: isYesValue(lab), notes: notes, deleted:false };
     state.patients.push(p);
     pendingIds.add(p.id);
     added++;
+    if(parsedEnc){
+      const ym = parsedEnc.slice(0,7);
+      importedMonthCounts[ym] = (importedMonthCounts[ym] || 0) + 1;
+    } else {
+      importedMonthCounts[''] = (importedMonthCounts[''] || 0) + 1;
+    }
   });
+  // Show imported rows: if they don't fall in the currently selected month,
+  // switch the month picker so the roster actually displays them.
+  const monthFilterEl = document.getElementById('monthFilter');
+  const currentMonth = monthFilterEl.value;
+  const monthKeys = Object.keys(importedMonthCounts).filter(k => k !== '');
+  let viewNote = '';
+  if(added > 0){
+    if(monthKeys.length === 0){
+      // all blank dates — show every month so they appear
+      monthFilterEl.value = '';
+      viewNote = '\n\nDate encoded was blank on these rows, so the month filter was cleared to "all months" so you can see them.';
+    } else if(monthKeys.length === 1){
+      const only = monthKeys[0];
+      if(currentMonth && currentMonth !== only){
+        monthFilterEl.value = only;
+        viewNote = `\n\nSwitched the month filter to ${monthLabel(only)} so the imported patients are visible.`;
+      }
+    } else {
+      // mixed months — show all so nothing is hidden
+      monthFilterEl.value = '';
+      viewNote = '\n\nImported patients span multiple months, so the month filter was cleared to "all months". Use the month picker to focus on one month if needed.';
+    }
+  }
   savePending(); saveLocalCache(); renderAll(); flushPending();
   let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
   if(skipped > 0){
     msg += `\n\nSkipped ${skipped} row(s) — they had ${firstSkippedCount} column(s) instead of the required 13.\n\nThis usually means the Team and/or Patient Name columns are missing from your spreadsheet (they must be the first two columns, even if Team is left blank). Check against the template's column order and try again.`;
   }
   if(badDates > 0){
-    msg += `\n\n${badDates} row(s) had a date that wasn't in YYYY-MM-DD format, so that date was left blank rather than imported as-is. Fix the dates in your spreadsheet and re-import if needed.`;
+    msg += `\n\n${badDates} row(s) had a date that could not be read. Those dates were left blank. Prefer YYYY-MM-DD in your spreadsheet.`;
   }
+  msg += viewNote;
   alert(msg);
 }
 
@@ -1491,7 +1452,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
     }
     reader.onload = evt=>{
       try{
-        const wb = XLSX.read(evt.target.result, {type:'array', cellDates:false});
+        const wb = XLSX.read(evt.target.result, {type:'array', cellDates:true, raw:false});
         const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
@@ -1514,20 +1475,11 @@ document.getElementById('importFile').addEventListener('change', e=>{
   }
 });
 
-/* Accepts a few common truthy spellings so a hand-filled spreadsheet
-   (Y, TRUE, 1, or plain yes in any case) still registers correctly —
-   previously only an exact "YES" matched and anything else silently
-   became NO. */
 function isYesValue(v){
   const c = (v||'').trim().toUpperCase();
   return c === 'YES' || c === 'Y' || c === 'TRUE' || c === '1';
 }
 
-/* Matches an imported Facility value to its canonical spelling
-   case-insensitively (e.g. "abucay" or "CIRIAN" both resolve
-   correctly) instead of silently falling back to a default facility
-   just because the case didn't match exactly. Returns '' if nothing
-   matches, so the caller's own fallback logic still applies. */
 function matchFacility(raw){
   const clean = (raw||'').trim();
   if(!clean) return '';
@@ -1535,14 +1487,6 @@ function matchFacility(raw){
   return found || '';
 }
 
-/* Parses an entire CSV file into rows of fields, correctly handling
-   quoted fields that themselves contain commas OR embedded newlines
-   (e.g. a multi-line Notes cell from Excel/Sheets) — a per-line
-   split-then-parse approach breaks on that second case because the
-   newline inside the quotes gets treated as a row boundary before the
-   quote is ever seen. Also strips a leading UTF-8 BOM, which Excel
-   sometimes prepends and would otherwise corrupt the first header
-   cell if a header row is missing. */
 function parseCsvRows(text){
   if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
   const rows = [];
@@ -1565,9 +1509,6 @@ function parseCsvRows(text){
   return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
 }
 
-/* Prints just one mobile team's table instead of the whole page: every
-   other team-group is hidden (print-only, via .print-hide) right
-   before printing, then restored once the print dialog closes. */
 function printSingleTeam(team){
   document.querySelectorAll('.team-group').forEach(g=>{
     const head = g.querySelector('.team-head');
@@ -1588,13 +1529,6 @@ const dashTeamSelect = document.getElementById('dashTeamSelect');
 const dashBody = document.getElementById('dashBody');
 document.getElementById('dashCloseBtn').innerHTML = icon('x', 15);
 
-/* Every distinct "Date encoded" month present in the (non-deleted)
-   roster, newest first — this is what fills the dashboard's month
-   picker, independent of whichever month the main table is on.
-   Only well-formed "YYYY-MM" values are accepted: a stray or corrupted
-   dateEncoded value (e.g. from a bad CSV import in the past, before
-   isValidDateStr() existed) would otherwise slice into garbled text
-   and show up as an unreadable option in the dropdown. */
 function getAllEncodedMonths(){
   const set = new Set();
   state.patients.forEach(p=>{
@@ -1607,11 +1541,7 @@ function getAllEncodedMonths(){
 
 function populateDashboardControls(){
   const mainMonth = document.getElementById('monthFilter').value; // '' or 'YYYY-MM'
-  /* Month options must include whichever month the main view is
-     currently on, even if it has zero patients — otherwise there's
-     no way to select it and the dashboard is forced to silently show
-     a different (non-empty) range instead, which is exactly what
-     made it look "out of sync" with an empty main view. */
+  
   const months = getAllEncodedMonths();
   if(mainMonth && /^\d{4}-\d{2}$/.test(mainMonth) && !months.includes(mainMonth)) months.unshift(mainMonth);
   months.sort().reverse();
@@ -1629,9 +1559,6 @@ function populateDashboardControls(){
   dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
 }
 
-/* Patients within the dashboard's own month + team scope (separate
-   from the main table's month filter, so you can browse metrics for
-   a different period without disturbing what's on screen behind it). */
 function dashboardScopePatients(){
   const month = dashMonthSelect.value;
   const team = dashTeamSelect.value;
@@ -1749,10 +1676,6 @@ function renderDashboard(){
   renderTrendChart(monthVal);
 }
 
-/* Simple hand-drawn SVG bar chart (no external chart library, so it
-   still works fully offline) showing total non-deleted patients
-   encoded per month across the whole roster. The bar for whichever
-   month is selected in the dashboard's month picker is highlighted. */
 function renderTrendChart(selectedMonth){
   const months = getAllEncodedMonths().slice().sort(); // ascending
   const wrap = document.getElementById('dashTrendWrap');
@@ -1761,11 +1684,7 @@ function renderTrendChart(selectedMonth){
 
   const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
   const maxCount = Math.max(...counts, 1);
-  /* topPad reserves headroom above the tallest possible bar so the
-     count label sitting above it always has room to render — without
-     this, a bar scaled to the full chart height pushes its label's
-     text right up against (or past) the top edge of the viewBox and
-     it gets visually clipped in half. */
+  
   const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
   const barAreaH = chartH - topPad - bottomPad;
   const svgW = months.length * (barW + gap) + leftPad;
@@ -1789,10 +1708,7 @@ function renderTrendChart(selectedMonth){
 }
 
 function openDashboard(){
-  /* Always start a fresh open mirroring the main view's current
-     month (and "all mobiles") rather than remembering whatever the
-     dashboard's own dropdowns were left on from a previous session —
-     that's what made it seem to show stale/mismatched numbers. */
+  
   dashMonthSelect.value = '';
   dashTeamSelect.value = '';
   populateDashboardControls();
@@ -1859,11 +1775,7 @@ async function initApp(){
   }catch(e){
     console.error('getSession failed', e);
   }
-  /* No cached session found (or the lookup failed, e.g. offline on a
-     device that never signed in here before). If we're offline at
-     this point there's nothing valid to fall back to locally, so we
-     still have to show the login screen — a first sign-in requires
-     one successful connection before offline access works. */
+  
   loginOverlay.classList.remove('hidden');
   if(!navigator.onLine){
     loginErr.textContent = "You're offline and this device hasn't signed in before — connect once to sign in, then offline access will work.";
