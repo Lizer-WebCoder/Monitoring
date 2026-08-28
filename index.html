@@ -377,6 +377,7 @@
     <button class="btn" id="importBtn"></button>
     <button class="btn btn-ghost" id="csvTemplateBtn"></button>
     <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
+    <button class="btn btn-ghost" id="memeBtn" type="button" title="Open meme generator">Memes</button>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
@@ -1482,7 +1483,12 @@ document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV
 document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
+document.getElementById('memeBtn').textContent = 'Memes';
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
+
+document.getElementById('memeBtn').addEventListener('click', ()=>{
+  window.open('https://imgflip.com/memegenerator/90133015/2-gay-black-mens-kissing', '_blank', 'noopener,noreferrer');
+});
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
