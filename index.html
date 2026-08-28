@@ -270,6 +270,28 @@
   .dash-empty{ text-align:center; padding:30px 20px; color:var(--muted); font-size:13px; }
   @media (max-width: 720px){ .dash-two-col{ grid-template-columns:1fr; } }
 
+
+  /* ---------- Pagination ---------- */
+  .team-pager{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-top:10px; padding:10px 12px; background:var(--card); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow); font-size:12.5px;
+  }
+  .team-pager .pager-left, .team-pager .pager-right{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .team-pager label{ margin:0; text-transform:none; font-weight:600; font-size:12px; color:var(--muted); letter-spacing:0; }
+  .team-pager select{
+    font-size:12.5px; padding:6px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--table-head); color:var(--ink); font-weight:700; cursor:pointer; min-width:72px;
+  }
+  .team-pager .pager-info{ color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .team-pager .pager-btn{
+    border:1px solid var(--line); background:var(--card); color:var(--ink); padding:6px 12px;
+    border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .team-pager .pager-btn:hover:not(:disabled){ border-color:var(--teal); color:var(--teal-deep); }
+  .team-pager .pager-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  @media print{ .team-pager{ display:none !important; } }
+
   @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:16px; } .toolbar{ padding:0 14px; } .team-group{ padding:0 14px; } }
   @media print{
     header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
@@ -662,6 +684,33 @@ const groupsContainer = document.getElementById('groupsContainer');
 const statStrip = document.getElementById('statStrip');
 const legend = document.getElementById('legend');
 const collapsedTeams = new Set();
+/* Per-mobile pagination: page size is shared; each team keeps its own page index. */
+let pageSizePreference = (function(){
+  try{
+    const v = localStorage.getItem('roster_page_size');
+    if(v === 'all' || v === '10' || v === '20' || v === '50') return v;
+  }catch(e){}
+  return '20';
+})();
+const teamPageIndex = {}; // teamName -> 0-based page
+function getPageSize(){
+  if(pageSizePreference === 'all') return Infinity;
+  const n = parseInt(pageSizePreference, 10);
+  return (n > 0) ? n : 20;
+}
+function setPageSizePreference(val){
+  pageSizePreference = String(val);
+  try{ localStorage.setItem('roster_page_size', pageSizePreference); }catch(e){}
+  // reset every team to first page when page size changes
+  Object.keys(teamPageIndex).forEach(k => { teamPageIndex[k] = 0; });
+}
+function getTeamPage(team){
+  return teamPageIndex[team] || 0;
+}
+function setTeamPage(team, page){
+  teamPageIndex[team] = Math.max(0, page|0);
+}
+
 
 function getTeams(){
   
@@ -821,12 +870,44 @@ function renderAll(){
     return;
   }
   teamsToShow.forEach(team=>{
-    const rows = list.filter(p=>p.team === team);
+    const allRows = list.filter(p=>p.team === team);
     const totalInTeam = monthList.filter(p=>p.team===team).length;
     const staffList = (teamStaff[team] || []).map(staffEntryToText).filter(Boolean);
     const wrap = document.createElement('div');
     wrap.className = 'team-group';
     const collapsed = collapsedTeams.has(team);
+
+    const size = getPageSize();
+    const totalFiltered = allRows.length;
+    const totalPages = size === Infinity ? 1 : Math.max(1, Math.ceil(totalFiltered / size));
+    let page = getTeamPage(team);
+    if(page > totalPages - 1) page = totalPages - 1;
+    if(page < 0) page = 0;
+    setTeamPage(team, page);
+    const start = size === Infinity ? 0 : page * size;
+    const end = size === Infinity ? totalFiltered : Math.min(start + size, totalFiltered);
+    const rows = allRows.slice(start, end);
+    const showingFrom = totalFiltered === 0 ? 0 : start + 1;
+    const showingTo = end;
+    const sizeOpts = ['10','20','50','all'].map(v=>{
+      const selected = String(pageSizePreference) === v ? 'selected' : '';
+      const label = v === 'all' ? 'All' : v;
+      return `<option value="${v}" ${selected}>${label}</option>`;
+    }).join('');
+    const pagerHtml = totalFiltered === 0 ? '' : `
+      <div class="team-pager" data-pager-team="${escapeAttr(team)}">
+        <div class="pager-left">
+          <label>Show</label>
+          <select data-page-size="${escapeAttr(team)}">${sizeOpts}</select>
+          <span class="pager-info">Showing ${showingFrom}–${showingTo} of ${totalFiltered}</span>
+        </div>
+        <div class="pager-right">
+          <button type="button" class="pager-btn" data-page-prev="${escapeAttr(team)}" ${page <= 0 ? 'disabled' : ''}>← Previous</button>
+          <span class="pager-info">Page ${page + 1} / ${totalPages}</span>
+          <button type="button" class="pager-btn" data-page-next="${escapeAttr(team)}" ${page >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+        </div>
+      </div>`;
+
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}">
         <span class="chev">▾</span>
@@ -859,6 +940,7 @@ function renderAll(){
           </tbody>
         </table>
       </div>
+      ${collapsed ? '' : pagerHtml}
     `;
     groupsContainer.appendChild(wrap);
   });
@@ -1233,6 +1315,30 @@ monthFilterEl.addEventListener('change', renderAll);
 document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
   monthFilterEl.value = '';
   renderAll();
+});
+
+/* Per-mobile pagination controls (Show 10/20/50/All + Prev/Next) */
+groupsContainer.addEventListener('change', e=>{
+  const sizeSel = e.target.closest('[data-page-size]');
+  if(sizeSel){
+    setPageSizePreference(sizeSel.value);
+    renderAll();
+  }
+});
+groupsContainer.addEventListener('click', e=>{
+  const prev = e.target.closest('[data-page-prev]');
+  if(prev){
+    const team = prev.dataset.pagePrev;
+    setTeamPage(team, getTeamPage(team) - 1);
+    renderAll();
+    return;
+  }
+  const next = e.target.closest('[data-page-next]');
+  if(next){
+    const team = next.dataset.pageNext;
+    setTeamPage(team, getTeamPage(team) + 1);
+    renderAll();
+  }
 });
 
 /* ---------------- Theme (light / dark) ---------------- */
