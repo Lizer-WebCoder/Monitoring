@@ -48,10 +48,28 @@
     background:var(--paper); color:var(--ink);
     font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing:antialiased;
-    padding:0 0 60px;
+    padding:0 0 90px;
     min-height:100vh;
     overflow-x:hidden;
   }
+  /* ---------- Bulk action bar ---------- */
+  #bulkBar{
+    display:none; position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    z-index:90; background:var(--teal-deep); color:#f2ede0; border-radius:14px;
+    padding:10px 16px; box-shadow:0 10px 40px rgba(11,54,48,0.4);
+    align-items:center; gap:12px; flex-wrap:wrap; max-width:calc(100vw - 24px);
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  #bulkBar.show{ display:flex; }
+  #bulkBar .bulk-count{ font-weight:800; font-size:13px; white-space:nowrap; }
+  #bulkBar .bulk-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #bulkBar .btn{ background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); color:#f2ede0; box-shadow:none; }
+  #bulkBar .btn:hover{ background:rgba(255,255,255,0.22); color:#fff; border-color:rgba(255,255,255,0.35); }
+  #bulkBar select{ background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#f2ede0; font-size:12.5px; padding:7px 10px; border-radius:8px; }
+  #bulkBar select option{ color:#12312b; background:#fff; }
+  body.dark #bulkBar{ background:#0d2e29; }
+  th.col-select, td.col-select{ width:36px; text-align:center; }
+  tr.selected-row{ background:var(--amber-bg) !important; }
   .app-shell{
     max-width:1600px;
     margin:0 auto;
@@ -170,6 +188,9 @@
   .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
   .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
   .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
+  .stat.stat-warn{ background:rgba(232,171,92,0.22); border-color:rgba(232,171,92,0.55); }
+  .stat.stat-warn .num{ color:#f0c878; }
+  .stat.stat-warn .lbl{ color:#f0c878; }
 
   /* ---------- Toolbar ---------- */
   .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; flex-direction:column; gap:10px; }
@@ -427,6 +448,11 @@
       <option value="lab-yes">Lab availed</option>
       <option value="lab-no">Lab not yet availed</option>
     </select>
+    <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
+      <option value="">All records</option>
+      <option value="dup-only">Duplicates only</option>
+      <option value="unique-only">Unique only</option>
+    </select>
   </div>
   <div class="toolbar-row">
     <button class="btn" id="syncNowBtn"></button>
@@ -441,6 +467,22 @@
 <div id="groupsContainer"></div>
 <div class="legend" id="legend"></div>
 <div class="app-footer">By : ʙᴏʏꜱ ᴀᴛ ᴛʜᴇ ʙᴀᴄᴋ · © 2026 All rights reserved</div>
+
+<!-- Bulk action bar (appears when rows are selected) -->
+<div id="bulkBar">
+  <span class="bulk-count" id="bulkCount">0 selected</span>
+  <div class="bulk-actions">
+    <button class="btn" type="button" id="bulkRiceYes">Mark rice ✓</button>
+    <button class="btn" type="button" id="bulkLabYes">Mark lab ✓</button>
+    <select id="bulkClaim">
+      <option value="">Set claim…</option>
+      <option value="pending">Pending</option>
+      <option value="t1">T1 Submitted</option>
+      <option value="missed24">Missed 24h</option>
+    </select>
+    <button class="btn" type="button" id="bulkClear">Clear selection</button>
+  </div>
+</div>
 
 <!-- Patient Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
@@ -697,7 +739,19 @@ function fromRemote(r){
 }
 
 const syncPill = document.getElementById('syncPill');
-function setSyncStatus(text, mode){ syncPill.textContent = text; syncPill.className = 'sync-pill' + (mode ? ' ' + mode : ''); }
+function setSyncStatus(text, mode){
+  // Always surface pending count when there are unsynced local changes
+  const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+  let display = text;
+  if(pending > 0 && !/uploading|Syncing|Offline|failed|Connecting|Loading/i.test(text || '')){
+    display = `${text} · ${pending} unsynced`;
+  }
+  syncPill.textContent = display;
+  syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '') + (pending > 0 && mode !== 'busy' ? ' err' : '');
+  syncPill.title = pending > 0
+    ? `${pending} change(s) saved on this device and waiting to upload`
+    : (text || '');
+}
 function timeNow(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
 const offlineBanner = document.getElementById('offlineBanner');
@@ -928,6 +982,7 @@ function filteredPatients(){
   const q = document.getElementById('search').value.trim().toLowerCase();
   const st = document.getElementById('filterStatus').value;
   const bf = document.getElementById('filterBenefit').value;
+  const dupFilter = document.getElementById('filterDup') ? document.getElementById('filterDup').value : '';
   return monthPatients().filter(p=>{
     if(q && !((p.name||'').toLowerCase().includes(q) || (p.phid||'').toLowerCase().includes(q))) return false;
     if(st && p.status !== st) return false;
@@ -935,6 +990,8 @@ function filteredPatients(){
     if(bf === 'rice-no' && p.rice) return false;
     if(bf === 'lab-yes' && !p.lab) return false;
     if(bf === 'lab-no' && p.lab) return false;
+    if(dupFilter === 'dup-only' && !isDuplicate(p.phid, p.id)) return false;
+    if(dupFilter === 'unique-only' && isDuplicate(p.phid, p.id)) return false;
     return true;
   });
 }
@@ -1007,16 +1064,20 @@ function normalizeFacility(p){
 
 function renderStats(){
   const all = monthPatients();
+  const unsyncedCount = all.filter(p=>pendingIds.has(p.id)).length;
   const stats = [
-    ["Total", all.length],
-    ["Registered", all.filter(p=>p.status==='registered').length],
-    ["Other facility", all.filter(p=>p.status==='registered_other').length],
-    ["Rice availed", all.filter(p=>p.rice).length],
-    ["Lab availed", all.filter(p=>p.lab).length],
-    ["Duplicates", countDuplicateExtras(all)],
-    ["Unsynced", all.filter(p=>pendingIds.has(p.id)).length],
+    ["Total", all.length, ''],
+    ["Registered", all.filter(p=>p.status==='registered').length, ''],
+    ["Other facility", all.filter(p=>p.status==='registered_other').length, ''],
+    ["Rice availed", all.filter(p=>p.rice).length, ''],
+    ["Lab availed", all.filter(p=>p.lab).length, ''],
+    ["Duplicates", countDuplicateExtras(all), ''],
+    ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
   ];
-  statStrip.innerHTML = stats.map(([lbl,num])=>`<div class="stat"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>`).join('');
+  statStrip.innerHTML = stats.map(([lbl,num,extra])=>
+    `<div class="stat ${extra}" title="${lbl === 'Unsynced' && num > 0 ? num + ' change(s) waiting to upload' : ''}">
+      <div class="num">${num}</div><div class="lbl">${lbl}</div>
+    </div>`).join('');
 }
 
 function renderLegend(){
@@ -1025,7 +1086,9 @@ function renderLegend(){
     <span><b>Status:</b> Registered → Registered to other DR facility</span>
     <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
-    <span><b>Unsynced badge:</b> row was changed on this device and hasn't reached the shared database yet — it'll sync automatically once online</span>
+    <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
+    <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
+    <span><b>Bulk actions:</b> tick the checkboxes on the left of rows (or “select all on this page”), then use the bottom bar to mark rice/lab or set claim status for many patients at once</span>
     <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
     <span><b>Backup:</b> Export CSV any time for a copy outside the app. Use each mobile's own "export"/"import" buttons to work with just that mobile's patients</span>
     <span><b>CSV / Excel import:</b> minimum columns — Patient Name, PhilHealth ID, Status, Facility, Digital MCA (Team and other fields optional)</span>
@@ -1133,6 +1196,7 @@ function renderAll(){
         <table>
           <thead>
             <tr>
+              <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
               <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
@@ -1140,7 +1204,7 @@ function renderAll(){
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="12" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="13" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1192,12 +1256,16 @@ function facilityCellHtml(p){
   </select></td>`;
 }
 
+const selectedIds = new Set();
+
 function rowHtml(p){
   const dupTeam = duplicateTeam(p.phid, p.id);
   const dup = !!dupTeam;
   const pend = pendingIds.has(p.id);
+  const sel = selectedIds.has(p.id);
   return `
-    <tr class="${dup?'dup-row':''} ${pend?'pending-row':''}" data-id="${p.id}">
+    <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
+      <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
       <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
       <td class="idcell">${escapeHtml(p.phid)}</td>
       <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
@@ -1322,6 +1390,30 @@ groupsContainer.addEventListener('click', e=>{
 });
 
 groupsContainer.addEventListener('change', e=>{
+  // Row selection / select-all
+  if(e.target.classList.contains('row-select')){
+    const id = e.target.dataset.id;
+    if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+    const tr = e.target.closest('tr');
+    if(tr) tr.classList.toggle('selected-row', e.target.checked);
+    updateBulkBar();
+    return;
+  }
+  if(e.target.classList.contains('select-all-page')){
+    const team = e.target.dataset.team;
+    const wrap = e.target.closest('.team-group');
+    const boxes = wrap ? wrap.querySelectorAll('.row-select') : [];
+    boxes.forEach(cb=>{
+      cb.checked = e.target.checked;
+      const id = cb.dataset.id;
+      if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+      const tr = cb.closest('tr');
+      if(tr) tr.classList.toggle('selected-row', e.target.checked);
+    });
+    updateBulkBar();
+    return;
+  }
+
   const row = e.target.closest('tr[data-id]');
   if(!row) return;
   const p = state.patients.find(p=>p.id===row.dataset.id);
@@ -1331,6 +1423,55 @@ groupsContainer.addEventListener('change', e=>{
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
   persistChange(p);
+});
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('bulkCount');
+  const n = selectedIds.size;
+  if(!bar || !countEl) return;
+  countEl.textContent = n === 1 ? '1 selected' : `${n} selected`;
+  bar.classList.toggle('show', n > 0);
+}
+
+async function applyBulkChange(mutator){
+  const ids = [...selectedIds];
+  if(!ids.length) return;
+  let changed = 0;
+  for(const id of ids){
+    const p = state.patients.find(x => x.id === id && !x.deleted);
+    if(!p) continue;
+    mutator(p);
+    pendingIds.add(p.id);
+    changed++;
+  }
+  if(changed){
+    savePending();
+    await saveLocalCache();
+    renderAll();
+    updateBulkBar();
+    flushPending().catch(()=>{});
+  }
+}
+
+document.getElementById('bulkRiceYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.rice = true; });
+});
+document.getElementById('bulkLabYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.lab = true; });
+});
+document.getElementById('bulkClaim').addEventListener('change', e=>{
+  const v = e.target.value;
+  if(!v) return;
+  applyBulkChange(p => { p.claim = v; });
+  e.target.value = '';
+});
+document.getElementById('bulkClear').addEventListener('click', ()=>{
+  selectedIds.clear();
+  document.querySelectorAll('.row-select').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('tr.selected-row').forEach(tr => tr.classList.remove('selected-row'));
+  document.querySelectorAll('.select-all-page').forEach(cb => { cb.checked = false; });
+  updateBulkBar();
 });
 
 /* ---------------- Modal ---------------- */
@@ -1359,6 +1500,20 @@ function updateFacilityField(preferredValue){
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
 
+/* Format PhilHealth ID as 1234-5678-9012 (keeps typing smooth for scanners too) */
+function formatPhilHealthId(raw){
+  const digits = String(raw || '').replace(/\D/g, '').slice(0, 12);
+  if(digits.length <= 4) return digits;
+  if(digits.length <= 8) return digits.slice(0,4) + '-' + digits.slice(4);
+  return digits.slice(0,4) + '-' + digits.slice(4,8) + '-' + digits.slice(8);
+}
+function normalizePhilHealthId(raw){
+  // Canonical stored form: with dashes when 12 digits, otherwise cleaned string
+  const digits = String(raw || '').replace(/\D/g, '');
+  if(digits.length === 12) return formatPhilHealthId(digits);
+  return String(raw || '').trim();
+}
+
 const saveBtnEl = document.getElementById('saveBtn');
 function updateSaveEnabled(){
   const hasName = document.getElementById('f_name').value.trim().length > 0;
@@ -1366,7 +1521,21 @@ function updateSaveEnabled(){
   saveBtnEl.disabled = !(hasName && hasPhid);
 }
 document.getElementById('f_name').addEventListener('input', updateSaveEnabled);
-document.getElementById('f_phid').addEventListener('input', updateSaveEnabled);
+document.getElementById('f_phid').addEventListener('input', e=>{
+  // Auto-format while typing / scanning (preserve cursor as best we can)
+  const el = e.target;
+  const start = el.selectionStart;
+  const oldLen = el.value.length;
+  const formatted = formatPhilHealthId(el.value);
+  if(formatted !== el.value){
+    el.value = formatted;
+    const newLen = formatted.length;
+    const diff = newLen - oldLen;
+    const pos = Math.max(0, (start || 0) + diff);
+    try{ el.setSelectionRange(pos, pos); }catch(_){}
+  }
+  updateSaveEnabled();
+});
 
 function openModal(id, presetTeam){
   editingId = id || null;
@@ -1409,7 +1578,7 @@ document.getElementById('f_phid').addEventListener('input', e=>{
 document.getElementById('saveBtn').addEventListener('click', ()=>{
   if(saveBtnEl.disabled) return;
   const name = document.getElementById('f_name').value.trim();
-  const phid = document.getElementById('f_phid').value.trim();
+  const phid = normalizePhilHealthId(document.getElementById('f_phid').value);
   if(!name || !phid){ return; }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
@@ -1523,6 +1692,7 @@ document.getElementById('search').addEventListener('input', ()=>{
 });
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
+document.getElementById('filterDup').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', renderAll);
@@ -1818,7 +1988,7 @@ async function processImportRows(allRows, targetTeam){
       id: cryptoId(),
       team: targetTeam || team || 'Imported',
       name: name || '',
-      phid: phid || '',
+      phid: normalizePhilHealthId(phid || ''),
       status: resolvedStatus,
       facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
       mca: isYesValue(mca),
@@ -2032,6 +2202,14 @@ function renderDashboard(){
   const neitherCount = scoped.filter(p=>!p.rice && !p.lab).length;
   const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
+  const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const within24Count = scoped.filter(p=>p.within24).length;
+  const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
+  const t1Rate = pct(t1Count);
+  const within24Rate = pct(within24Count);
+  const riceRate = pct(riceCount);
+  const labRate = pct(labCount);
+  const missedRate = pct(missed24);
 
   const monthVal = dashMonthSelect.value;
   const teamVal = dashTeamSelect.value;
@@ -2048,10 +2226,13 @@ function renderDashboard(){
       <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Total patients</div></div>
       <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
       <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Registered — other facility</div></div>
-      <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice availed</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab availed</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice availed (${riceRate})</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab availed (${labRate})</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${bothCount}</div><div class="dc-lbl">Availed both</div></div>
       <div class="dash-card"><div class="dc-num">${neitherCount}</div><div class="dc-lbl">Availed neither</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${t1Rate}</div><div class="dc-lbl">T1 submitted rate</div></div>
+      <div class="dash-card accent-amber"><div class="dc-num">${within24Rate}</div><div class="dc-lbl">Within 24h rate</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${missedRate}</div><div class="dc-lbl">Missed 24h rate</div></div>
       <div class="dash-card accent-red"><div class="dc-num">${dupCount}</div><div class="dc-lbl">Duplicates</div></div>
       <div class="dash-card accent-red"><div class="dc-num">${missed24}</div><div class="dc-lbl">Missed 24h claim</div></div>
     </div>`;
@@ -2283,10 +2464,41 @@ async function initApp(){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(err=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      // New version waiting → show a small update toast
+      if(reg.waiting){
+        showSwUpdateToast(reg);
+      }
+      reg.addEventListener('updatefound', ()=>{
+        const worker = reg.installing;
+        if(!worker) return;
+        worker.addEventListener('statechange', ()=>{
+          if(worker.state === 'installed' && navigator.serviceWorker.controller){
+            showSwUpdateToast(reg);
+          }
+        });
+      });
+    }).catch(err=>{
       console.warn('Service worker registration failed — offline app-shell caching is unavailable:', err);
     });
   });
+}
+
+function showSwUpdateToast(reg){
+  if(document.getElementById('swUpdateToast')) return;
+  const toast = document.createElement('div');
+  toast.id = 'swUpdateToast';
+  toast.style.cssText = 'position:fixed;bottom:24px;right:16px;z-index:300;background:var(--teal-deep);color:#f2ede0;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.25);font-size:13px;font-weight:600;display:flex;gap:12px;align-items:center;max-width:min(340px,calc(100vw - 24px));';
+  toast.innerHTML = `<span>Update available</span>
+    <button type="button" style="background:#fff;color:#0b3630;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px;">Refresh</button>
+    <button type="button" style="background:transparent;color:#c7dcd5;border:none;cursor:pointer;font-size:16px;line-height:1;" aria-label="Dismiss">×</button>`;
+  const [refreshBtn, dismissBtn] = toast.querySelectorAll('button');
+  refreshBtn.addEventListener('click', ()=>{
+    if(reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    window.location.reload();
+  });
+  dismissBtn.addEventListener('click', ()=> toast.remove());
+  document.body.appendChild(toast);
 }
 </script>
 </body>
