@@ -394,15 +394,25 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-card">
-    <h1>DR CARE — Sign in</h1>
-    <p>Divine Rays Mobile Operations · shared team login</p>
+    <h1 id="loginTitle">DR CARE — Sign in</h1>
+    <p id="loginSub">Divine Rays Mobile Operations · individual accounts</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
     <label for="loginPassword">Password</label>
     <input type="password" id="loginPassword" autocomplete="current-password">
+    <div id="signupNameWrap" style="display:none;">
+      <label for="loginFullName">Full name</label>
+      <input type="text" id="loginFullName" placeholder="Your name" autocomplete="name">
+    </div>
     <button id="loginBtn">Sign in</button>
+    <button id="signupBtn" type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;">Create account</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-note">Use the shared team email + password your admin set up in Supabase. Once signed in on this device, you'll stay signed in — even offline.</div>
+    <div class="login-note" id="loginNote">
+      Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.
+    </div>
+    <button type="button" id="toggleAuthMode" style="background:none;border:none;color:var(--teal);font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline;width:100%;">
+      Need an account? Sign up
+    </button>
   </div>
 </div>
 
@@ -434,6 +444,7 @@
     <button class="btn btn-ghost" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
     <button class="btn" id="addTeamBtn">+ Add Mobile</button>
     <button class="btn" id="dashboardBtn"></button>
+    <button class="btn" id="adminBtn" style="display:none;"></button>
     <button class="btn" id="themeToggle"></button>
     <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
     <select id="filterStatus">
@@ -541,6 +552,7 @@
         <label>Notes</label>
         <input type="text" id="f_notes" placeholder="Optional remarks…">
       </div>
+      <div class="full" id="auditInfo" style="display:none;font-size:12px;color:var(--muted);padding:8px 10px;background:var(--table-head);border-radius:8px;line-height:1.5;"></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
@@ -598,6 +610,25 @@
       <span class="dash-scope-note" id="dashScopeNote"></span>
     </div>
     <div id="dashBody"></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="dash-backdrop" id="adminBackdrop">
+  <div class="dash-modal" style="max-width:720px;">
+    <div class="dash-head">
+      <div>
+        <h3>Admin — Users &amp; roles</h3>
+        <div class="modal-sub">Create accounts by having staff sign up, then set their role here. Admins can manage everything; Encoders can edit patients; Viewers are read-only.</div>
+      </div>
+      <button class="dash-close" id="adminCloseBtn" title="Close"></button>
+    </div>
+    <div style="margin:12px 0 16px;padding:12px 14px;background:var(--table-head);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5;">
+      <b style="color:var(--ink);">How to add a new user:</b><br>
+      1. Staff opens the app → “Need an account? Sign up” → creates email + password.<br>
+      2. You open this Admin panel → set their role to <b>encoder</b> or <b>viewer</b> (or <b>admin</b>).
+    </div>
+    <div id="adminUsersBody"></div>
   </div>
 </div>
 
@@ -722,11 +753,14 @@ function cryptoId(){
 }
 
 function toRemote(p){
+  const uid = (currentUser && currentUser.id) || null;
   return {
     id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
     mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateSubmitted || null,
     within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab, notes: p.notes || '',
-    deleted: !!p.deleted, updated_at: new Date().toISOString()
+    deleted: !!p.deleted, updated_at: new Date().toISOString(),
+    created_by: p.createdBy || uid,
+    updated_by: uid
   };
 }
 function fromRemote(r){
@@ -734,8 +768,72 @@ function fromRemote(r){
     id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
     mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
     within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab, notes: r.notes || '',
-    deleted: !!r.deleted
+    deleted: !!r.deleted,
+    createdBy: r.created_by || null,
+    updatedBy: r.updated_by || null,
+    createdAt: r.created_at || null,
+    updatedAt: r.updated_at || null
   };
+}
+
+/* Current signed-in user + role */
+let currentUser = null; // { id, email, fullName, role }
+const profileCache = {}; // uid -> { full_name, email, role }
+
+function isAdmin(){ return currentUser && currentUser.role === 'admin'; }
+function canEdit(){ return currentUser && (currentUser.role === 'admin' || currentUser.role === 'encoder'); }
+function isViewer(){ return currentUser && currentUser.role === 'viewer'; }
+
+function displayNameFor(uid){
+  if(!uid) return '—';
+  if(currentUser && uid === currentUser.id) return currentUser.fullName || currentUser.email || 'You';
+  const p = profileCache[uid];
+  if(p) return p.full_name || p.email || uid.slice(0,8);
+  return uid.slice(0,8) + '…';
+}
+
+async function loadCurrentProfile(session){
+  const user = session.user;
+  currentUser = {
+    id: user.id,
+    email: user.email || '',
+    fullName: user.email || '',
+    role: 'encoder'
+  };
+  try{
+    let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if(error) throw error;
+    if(!data){
+      // Profile missing (pre-trigger user) — create one
+      const { data: inserted, error: insErr } = await sb.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        full_name: (user.user_metadata && user.user_metadata.full_name) || (user.email || '').split('@')[0],
+        role: 'encoder'
+      }).select().maybeSingle();
+      if(!insErr && inserted) data = inserted;
+    }
+    if(data){
+      currentUser.fullName = data.full_name || data.email || currentUser.email;
+      currentUser.role = data.role || 'encoder';
+      profileCache[user.id] = data;
+    }
+  }catch(e){
+    console.warn('loadCurrentProfile', e);
+  }
+  return currentUser;
+}
+
+async function loadAllProfiles(){
+  try{
+    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, created_at');
+    if(error) throw error;
+    (data || []).forEach(p => { profileCache[p.id] = p; });
+    return data || [];
+  }catch(e){
+    console.warn('loadAllProfiles', e);
+    return [];
+  }
 }
 
 const syncPill = document.getElementById('syncPill');
@@ -891,6 +989,16 @@ async function pullTeamStaff(){
 
 /* Called after any local add/edit/delete */
 async function persistChange(p){
+  if(!canEdit()){
+    setSyncStatus('View only — changes not saved', 'err');
+    renderAll();
+    return;
+  }
+  const uid = currentUser ? currentUser.id : null;
+  if(uid){
+    if(!p.createdBy) p.createdBy = uid;
+    p.updatedBy = uid;
+  }
   pendingIds.add(p.id);
   savePending();
   saveLocalCache();
@@ -1184,12 +1292,12 @@ function renderAll(){
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
-          <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>
+          ${canEdit() ? `<button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} print</button>
           <button data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} export</button>
-          <button data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} import</button>
+          ${canEdit() ? `<button data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} import</button>
           <button data-edit-team="${escapeAttr(team)}">edit mobile</button>
-          <button data-delete-team="${escapeAttr(team)}">delete mobile</button>
+          <button data-delete-team="${escapeAttr(team)}">delete mobile</button>` : ''}
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -1282,8 +1390,8 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
-        <button class="icon-btn" data-edit="${p.id}" title="Edit">${icon('edit',14)}</button>
-        <button class="icon-btn" data-remove="${p.id}" title="Delete">${icon('trash',14)}</button>
+        <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
+        ${canEdit() ? `<button class="icon-btn" data-remove="${p.id}" title="Delete">${icon('trash',14)}</button>` : ''}
       </td>
     </tr>`;
 }
@@ -1420,6 +1528,11 @@ groupsContainer.addEventListener('change', e=>{
   if(!p) return;
   const field = e.target.dataset.field;
   if(!field) return;
+  if(!canEdit()){
+    // Revert visual change for viewers
+    renderAll();
+    return;
+  }
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
   persistChange(p);
@@ -1538,9 +1651,13 @@ document.getElementById('f_phid').addEventListener('input', e=>{
 });
 
 function openModal(id, presetTeam){
+  if(!id && !canEdit()){
+    alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
+    return;
+  }
   editingId = id || null;
   const p = id ? state.patients.find(p=>p.id===id) : null;
-  document.getElementById('modalTitle').textContent = p ? "Edit Patient" : "Add Patient";
+  document.getElementById('modalTitle').textContent = p ? (canEdit() ? "Edit Patient" : "View Patient") : "Add Patient";
   populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
   document.getElementById('f_name').value = p ? p.name : '';
   document.getElementById('f_phid').value = p ? p.phid : '';
@@ -1556,9 +1673,31 @@ function openModal(id, presetTeam){
   document.getElementById('f_lab').checked = p ? p.lab : false;
   document.getElementById('f_notes').value = p ? (p.notes||'') : '';
   document.getElementById('dupWarning').style.display = 'none';
+
+  // Audit trail
+  const auditEl = document.getElementById('auditInfo');
+  if(p && (p.createdBy || p.updatedBy)){
+    const added = p.createdBy ? displayNameFor(p.createdBy) : '—';
+    const edited = p.updatedBy ? displayNameFor(p.updatedBy) : '—';
+    auditEl.innerHTML = `<b>Added by:</b> ${escapeHtml(added)} &nbsp;·&nbsp; <b>Last edited by:</b> ${escapeHtml(edited)}`;
+    auditEl.style.display = 'block';
+  } else {
+    auditEl.style.display = 'none';
+    auditEl.innerHTML = '';
+  }
+
+  // Read-only for viewers
+  const editable = canEdit();
+  saveBtnEl.style.display = editable ? '' : 'none';
+  backdrop.querySelectorAll('input, select').forEach(el=>{
+    if(el.id === 'cancelBtn') return;
+    el.disabled = !editable && el.type !== 'checkbox' ? !editable : !editable;
+    if(el.type === 'checkbox') el.disabled = !editable;
+  });
+
   updateSaveEnabled();
   backdrop.classList.add('open');
-  document.getElementById('f_name').focus();
+  if(editable) document.getElementById('f_name').focus();
 }
 function closeModal(){ backdrop.classList.remove('open'); editingId = null; }
 
@@ -1750,6 +1889,7 @@ document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
+document.getElementById('adminBtn').innerHTML = `${icon('users')} Admin`;
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
@@ -2344,22 +2484,135 @@ dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDas
 dashMonthSelect.addEventListener('change', renderDashboard);
 dashTeamSelect.addEventListener('change', renderDashboard);
 
+/* ---------------- Admin panel ---------------- */
+const adminBackdrop = document.getElementById('adminBackdrop');
+document.getElementById('adminCloseBtn').innerHTML = icon('x', 15);
+
+async function openAdmin(){
+  if(!isAdmin()){
+    alert('Admin access only.');
+    return;
+  }
+  adminBackdrop.classList.add('open');
+  await renderAdminUsers();
+}
+function closeAdmin(){ adminBackdrop.classList.remove('open'); }
+document.getElementById('adminBtn').addEventListener('click', openAdmin);
+document.getElementById('adminCloseBtn').addEventListener('click', closeAdmin);
+adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeAdmin(); });
+
+async function renderAdminUsers(){
+  const body = document.getElementById('adminUsersBody');
+  body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
+  const users = await loadAllProfiles();
+  if(!users.length){
+    body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
+    return;
+  }
+  const roleOptions = (current) => ['admin','encoder','viewer'].map(r =>
+    `<option value="${r}" ${r===current?'selected':''}>${r}</option>`
+  ).join('');
+
+  body.innerHTML = `
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => `
+            <tr data-uid="${u.id}">
+              <td>${escapeHtml(u.full_name || '—')}</td>
+              <td>${escapeHtml(u.email || '—')}</td>
+              <td>
+                <select class="admin-role-select" data-uid="${u.id}" ${u.id===currentUser.id?'disabled title="You cannot demote yourself here"':''}>
+                  ${roleOptions(u.role || 'encoder')}
+                </select>
+              </td>
+              <td style="font-size:11px;color:var(--muted);">
+                ${u.id===currentUser.id ? 'You' : ''}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px;">
+      Role meanings: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
+    </p>
+  `;
+
+  body.querySelectorAll('.admin-role-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const uid = sel.dataset.uid;
+      const role = sel.value;
+      sel.disabled = true;
+      try{
+        const { error } = await sb.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', uid);
+        if(error) throw error;
+        if(profileCache[uid]) profileCache[uid].role = role;
+        setSyncStatus('Role updated', '');
+      }catch(e){
+        console.error(e);
+        alert('Could not update role: ' + (e.message || e));
+        await renderAdminUsers();
+      }finally{
+        sel.disabled = false;
+      }
+    });
+  });
+}
+
 /* ---------------- Auth ---------------- */
 const loginOverlay = document.getElementById('loginOverlay');
 const loginErr = document.getElementById('loginErr');
 const whoAmI = document.getElementById('whoAmI');
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function setAuthMode(mode){
+  authMode = mode;
+  const isUp = mode === 'signup';
+  document.getElementById('loginTitle').textContent = isUp ? 'DR CARE — Create account' : 'DR CARE — Sign in';
+  document.getElementById('loginSub').textContent = isUp
+    ? 'New staff account · an admin will set your role after signup'
+    : 'Divine Rays Mobile Operations · individual accounts';
+  document.getElementById('signupNameWrap').style.display = isUp ? 'block' : 'none';
+  document.getElementById('loginBtn').textContent = isUp ? 'Create account' : 'Sign in';
+  document.getElementById('signupBtn').style.display = 'none';
+  document.getElementById('toggleAuthMode').textContent = isUp
+    ? 'Already have an account? Sign in'
+    : 'Need an account? Sign up';
+  document.getElementById('loginNote').textContent = isUp
+    ? 'Use your work email. After signup, ask an admin to set your role (encoder / viewer / admin).'
+    : 'Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.';
+  loginErr.style.display = 'none';
+}
+document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
+  setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+});
 
 async function doLogin(){
   const emailEl = document.getElementById('loginEmail');
   const passEl = document.getElementById('loginPassword');
   const email = (emailEl.value || '').trim().toLowerCase();
   const password = passEl.value || '';
+  const fullName = (document.getElementById('loginFullName').value || '').trim();
   const btn = document.getElementById('loginBtn');
   loginErr.style.display = 'none';
   loginErr.textContent = '';
 
   if(!email || !password){
     loginErr.textContent = 'Enter email and password.';
+    loginErr.style.display = 'block';
+    return;
+  }
+  if(authMode === 'signup' && password.length < 6){
+    loginErr.textContent = 'Password must be at least 6 characters.';
     loginErr.style.display = 'block';
     return;
   }
@@ -2370,9 +2623,34 @@ async function doLogin(){
   }
 
   btn.disabled = true;
-  btn.textContent = 'Signing in…';
+  btn.textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
 
   try{
+    if(authMode === 'signup'){
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName || email.split('@')[0] } }
+      });
+      if(error){
+        let msg = error.message || 'Sign up failed';
+        if(/already registered|already been registered/i.test(msg)) msg = 'That email is already registered. Sign in instead.';
+        loginErr.textContent = msg;
+        loginErr.style.display = 'block';
+        return;
+      }
+      if(data && data.session){
+        await onSignedIn(data.session);
+        return;
+      }
+      // Email confirmation may be required
+      loginErr.style.display = 'block';
+      loginErr.style.color = 'var(--green)';
+      loginErr.textContent = 'Account created. If email confirmation is enabled in Supabase, check your inbox, then sign in. Ask an admin to set your role.';
+      setAuthMode('signin');
+      return;
+    }
+
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if(error){
       let msg = error.message || 'Sign in failed';
@@ -2399,7 +2677,7 @@ async function doLogin(){
     loginErr.style.display = 'block';
   }finally{
     btn.disabled = false;
-    btn.textContent = 'Sign in';
+    btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
   }
 }
 
@@ -2418,13 +2696,34 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 
 async function onSignedIn(session){
   loginOverlay.classList.add('hidden');
-  whoAmI.textContent = (session.user && session.user.email) || '';
+  await loadCurrentProfile(session);
+  const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
+  whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel}`;
+  // Show Admin button only for admins
+  const adminBtn = document.getElementById('adminBtn');
+  if(adminBtn){
+    adminBtn.style.display = isAdmin() ? '' : 'none';
+    adminBtn.innerHTML = `${icon('users')} Admin`;
+  }
+  applyRoleUI();
   try{
     await initApp();
+    if(navigator.onLine) await loadAllProfiles();
   }catch(e){
     console.error('initApp failed after login', e);
     setSyncStatus('Loaded with errors — see console', 'err');
   }
+}
+
+function applyRoleUI(){
+  const editable = canEdit();
+  // Disable primary write controls for viewers
+  ['addTeamBtn','importBtn','csvTemplateBtn','xlsxTemplateBtn'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = editable ? '' : 'none';
+  });
+  const bulkBar = document.getElementById('bulkBar');
+  if(bulkBar && !editable) bulkBar.classList.remove('show');
 }
 
 /* ---------------- Init ---------------- */
