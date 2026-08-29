@@ -619,14 +619,15 @@
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Create accounts by having staff sign up, then set their role here. Admins can manage everything; Encoders can edit patients; Viewers are read-only.</div>
+        <div class="modal-sub">Approve who can log in, and set roles. New signups stay blocked until you check Approved.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close"></button>
     </div>
     <div style="margin:12px 0 16px;padding:12px 14px;background:var(--table-head);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5;">
       <b style="color:var(--ink);">How to add a new user:</b><br>
       1. Staff opens the app → “Need an account? Sign up” → creates email + password.<br>
-      2. You open this Admin panel → set their role to <b>encoder</b> or <b>viewer</b> (or <b>admin</b>).
+      2. They appear here as <b>Pending</b> (highlighted) and cannot log in yet.<br>
+      3. Check <b>Approved</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
     </div>
     <div id="adminUsersBody"></div>
   </div>
@@ -798,24 +799,28 @@ async function loadCurrentProfile(session){
     id: user.id,
     email: user.email || '',
     fullName: user.email || '',
-    role: 'encoder'
+    role: 'encoder',
+    approved: false
   };
   try{
     let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
     if(error) throw error;
     if(!data){
-      // Profile missing (pre-trigger user) — create one
+      // Profile missing — create one (not approved by default)
       const { data: inserted, error: insErr } = await sb.from('profiles').upsert({
         id: user.id,
         email: user.email,
         full_name: (user.user_metadata && user.user_metadata.full_name) || (user.email || '').split('@')[0],
-        role: 'encoder'
+        role: 'encoder',
+        approved: false
       }).select().maybeSingle();
       if(!insErr && inserted) data = inserted;
     }
     if(data){
       currentUser.fullName = data.full_name || data.email || currentUser.email;
       currentUser.role = data.role || 'encoder';
+      // Admins are always treated as approved
+      currentUser.approved = (data.role === 'admin') ? true : !!data.approved;
       profileCache[user.id] = data;
     }
   }catch(e){
@@ -826,7 +831,7 @@ async function loadCurrentProfile(session){
 
 async function loadAllProfiles(){
   try{
-    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, created_at');
+    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at');
     if(error) throw error;
     (data || []).forEach(p => { profileCache[p.id] = p; });
     return data || [];
@@ -2513,11 +2518,20 @@ async function renderAdminUsers(){
     `<option value="${r}" ${r===current?'selected':''}>${r}</option>`
   ).join('');
 
+  // Sort: unapproved first, then by name
+  users.sort((a,b)=>{
+    const aa = (a.role === 'admin' || a.approved) ? 1 : 0;
+    const bb = (b.role === 'admin' || b.approved) ? 1 : 0;
+    if(aa !== bb) return aa - bb;
+    return String(a.full_name||a.email||'').localeCompare(String(b.full_name||b.email||''));
+  });
+
   body.innerHTML = `
     <div class="dash-table-wrap">
       <table class="dash-table">
         <thead>
           <tr>
+            <th>Approved</th>
             <th>Name</th>
             <th>Email</th>
             <th>Role</th>
@@ -2525,25 +2539,36 @@ async function renderAdminUsers(){
           </tr>
         </thead>
         <tbody>
-          ${users.map(u => `
-            <tr data-uid="${u.id}">
+          ${users.map(u => {
+            const isSelf = u.id === currentUser.id;
+            const isUserAdmin = u.role === 'admin';
+            const approved = isUserAdmin ? true : !!u.approved;
+            return `
+            <tr data-uid="${u.id}" style="${!approved ? 'background:var(--amber-bg);' : ''}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
+                  ${approved ? 'checked' : ''}
+                  ${isSelf || isUserAdmin ? 'disabled title="Admins are always approved"' : ''}
+                  title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
+              </td>
               <td>${escapeHtml(u.full_name || '—')}</td>
               <td>${escapeHtml(u.email || '—')}</td>
               <td>
-                <select class="admin-role-select" data-uid="${u.id}" ${u.id===currentUser.id?'disabled title="You cannot demote yourself here"':''}>
+                <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled title="You cannot change your own role here"' : ''}>
                   ${roleOptions(u.role || 'encoder')}
                 </select>
               </td>
               <td style="font-size:11px;color:var(--muted);">
-                ${u.id===currentUser.id ? 'You' : ''}
+                ${isSelf ? 'You' : (!approved ? '<span style="color:var(--amber);font-weight:700;">Pending</span>' : 'OK')}
               </td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>
     <p style="font-size:12px;color:var(--muted);margin-top:14px;">
-      Role meanings: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
+      <b>Approved</b> = can log in. Uncheck to revoke access.<br>
+      Roles: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
     </p>
   `;
 
@@ -2553,16 +2578,41 @@ async function renderAdminUsers(){
       const role = sel.value;
       sel.disabled = true;
       try{
-        const { error } = await sb.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', uid);
+        const patch = { role, updated_at: new Date().toISOString() };
+        // Promoting to admin also approves
+        if(role === 'admin') patch.approved = true;
+        const { error } = await sb.from('profiles').update(patch).eq('id', uid);
         if(error) throw error;
-        if(profileCache[uid]) profileCache[uid].role = role;
+        if(profileCache[uid]){ profileCache[uid].role = role; if(role==='admin') profileCache[uid].approved = true; }
         setSyncStatus('Role updated', '');
+        await renderAdminUsers();
       }catch(e){
         console.error(e);
         alert('Could not update role: ' + (e.message || e));
         await renderAdminUsers();
       }finally{
         sel.disabled = false;
+      }
+    });
+  });
+
+  body.querySelectorAll('.admin-approve-check').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      const uid = cb.dataset.uid;
+      const approved = cb.checked;
+      cb.disabled = true;
+      try{
+        const { error } = await sb.from('profiles').update({ approved, updated_at: new Date().toISOString() }).eq('id', uid);
+        if(error) throw error;
+        if(profileCache[uid]) profileCache[uid].approved = approved;
+        setSyncStatus(approved ? 'User approved' : 'Access revoked', '');
+        await renderAdminUsers();
+      }catch(e){
+        console.error(e);
+        alert('Could not update approval: ' + (e.message || e));
+        await renderAdminUsers();
+      }finally{
+        cb.disabled = false;
       }
     });
   });
@@ -2695,11 +2745,21 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 });
 
 async function onSignedIn(session){
-  loginOverlay.classList.add('hidden');
   await loadCurrentProfile(session);
+
+  // Block unapproved users (admins always pass)
+  if(!currentUser.approved && currentUser.role !== 'admin'){
+    try{ await sb.auth.signOut(); }catch(e){}
+    loginOverlay.classList.remove('hidden');
+    loginErr.style.display = 'block';
+    loginErr.style.color = 'var(--red)';
+    loginErr.textContent = 'Your account is waiting for admin approval. Ask an admin to approve you in the Admin panel.';
+    return;
+  }
+
+  loginOverlay.classList.add('hidden');
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
   whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel}`;
-  // Show Admin button only for admins
   const adminBtn = document.getElementById('adminBtn');
   if(adminBtn){
     adminBtn.style.display = isAdmin() ? '' : 'none';
