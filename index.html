@@ -462,6 +462,8 @@
     <button class="btn btn-ghost" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
     <button class="btn" id="addTeamBtn">+ Add Mobile</button>
     <button class="btn" id="dashboardBtn"></button>
+    <button class="btn" id="activityBtn"></button>
+    <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
     <button class="btn" id="adminBtn" style="display:none;"></button>
     <button class="btn" id="themeToggle"></button>
     <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
@@ -648,6 +650,20 @@
       3. Check <b>Approved</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
     </div>
     <div id="adminUsersBody"></div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="dash-backdrop" id="activityBackdrop">
+  <div class="dash-modal" style="max-width:640px;">
+    <div class="dash-head">
+      <div>
+        <h3>Recent Activity</h3>
+        <div class="modal-sub">Latest adds, edits, and archives across the roster (from this device + synced data).</div>
+      </div>
+      <button class="dash-close" id="activityCloseBtn" title="Close"></button>
+    </div>
+    <div id="activityBody" style="max-height:60vh;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -1018,10 +1034,13 @@ async function persistChange(p){
     return;
   }
   const uid = currentUser ? currentUser.id : null;
+  const now = new Date().toISOString();
   if(uid){
     if(!p.createdBy) p.createdBy = uid;
     p.updatedBy = uid;
   }
+  if(!p.createdAt) p.createdAt = now;
+  p.updatedAt = now;
   pendingIds.add(p.id);
   savePending();
   saveLocalCache();
@@ -1075,10 +1094,12 @@ function setTeamPage(team, page){
 
 
 function getTeams(){
-  
-  const t = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
-  pendingEmptyTeams.forEach(x=>t.add(x));
-  
+  const t = new Set(
+    state.patients
+      .filter(p => showArchived ? p.deleted : !p.deleted)
+      .map(p => p.team)
+  );
+  if(!showArchived) pendingEmptyTeams.forEach(x=>t.add(x));
   Object.keys(teamStaff).forEach(x=>t.add(x));
   return [...t];
 }
@@ -1091,10 +1112,12 @@ function monthLabel(ym){
   return new Date(y, m-1, 1).toLocaleString('default', {month:'long', year:'numeric'});
 }
 
+let showArchived = false;
+
 function monthPatients(){
   const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
   return state.patients.filter(p=>{
-    if(p.deleted) return false;
+    if(showArchived ? !p.deleted : p.deleted) return false;
     if(!month) return true;
     const enc = (p.dateEncoded||'').trim();
     // Undated rows stay visible in every month view so imports without dates are not "lost"
@@ -1329,7 +1352,7 @@ function renderAll(){
           <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
           ${canEdit() ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
-          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>` : ''}
+          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('archive',13)} Archive</button>` : ''}
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -1423,7 +1446,10 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
-        ${canEdit() ? `<button class="icon-btn" data-remove="${p.id}" title="Delete">${icon('trash',14)}</button>` : ''}
+        ${canEdit() ? (p.deleted
+          ? `<button class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>`
+          : `<button class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
+        : ''}
       </td>
     </tr>`;
 }
@@ -1444,7 +1470,10 @@ const ICON_PATHS = {
   users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
   x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+  activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  archive: '<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
+  restore: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>'
 };
 function icon(name, size=15, extraStyle=''){
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;${extraStyle}">${ICON_PATHS[name]||''}</svg>`;
@@ -1510,7 +1539,7 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-delete-team]')){
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
-    if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
+    if(confirm(`Archive team "${team}" and its ${count} patient record(s)? You can restore patients later from Archived view.`)){
       state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
       delete teamStaff[team];
       pendingEmptyTeams.delete(team);
@@ -1521,9 +1550,17 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.closest('[data-edit]')){ openModal(e.target.closest('[data-edit]').dataset.edit); return; }
   if(e.target.closest('[data-remove]')){
-    if(confirm("Delete this patient record?")){
+    if(confirm("Archive this patient record? You can restore it later from the Archived view.")){
       const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
       if(p){ p.deleted = true; persistChange(p); }
+    }
+    return;
+  }
+  if(e.target.closest('[data-restore]')){
+    const p = state.patients.find(p=>p.id===e.target.closest('[data-restore]').dataset.restore);
+    if(p && confirm("Restore this patient record?")){
+      p.deleted = false;
+      persistChange(p);
     }
     return;
   }
@@ -1921,7 +1958,22 @@ document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
+document.getElementById('activityBtn').innerHTML = `${icon('activity')} Activity`;
+document.getElementById('archiveToggleBtn').innerHTML = `${icon('archive')} Archived`;
 document.getElementById('adminBtn').innerHTML = `${icon('users')} Admin`;
+
+document.getElementById('archiveToggleBtn').addEventListener('click', ()=>{
+  showArchived = !showArchived;
+  const btn = document.getElementById('archiveToggleBtn');
+  btn.innerHTML = showArchived
+    ? `${icon('restore')} Active roster`
+    : `${icon('archive')} Archived`;
+  btn.title = showArchived ? 'Back to active patients' : 'Show archived patients';
+  btn.classList.toggle('btn-primary', showArchived);
+  selectedIds.clear();
+  updateBulkBar();
+  renderAll();
+});
 
 /* ---------------- Org name ---------------- */
 const orgInput = document.getElementById('orgName');
@@ -2515,6 +2567,89 @@ document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
 dashMonthSelect.addEventListener('change', renderDashboard);
 dashTeamSelect.addEventListener('change', renderDashboard);
+
+/* ---------------- Recent Activity ---------------- */
+const activityBackdrop = document.getElementById('activityBackdrop');
+document.getElementById('activityCloseBtn').innerHTML = icon('x', 15);
+
+function formatActivityTime(iso){
+  if(!iso) return '—';
+  try{
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return '—';
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if(sameDay) return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    return d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }catch(_){ return '—'; }
+}
+
+function buildActivityFeed(limit=40){
+  const events = [];
+  state.patients.forEach(p=>{
+    const name = p.name || '(unnamed)';
+    const team = p.team || '—';
+    if(p.createdAt){
+      events.push({
+        at: p.createdAt,
+        who: p.createdBy,
+        action: 'Added',
+        name, team,
+        kind: 'add'
+      });
+    }
+    // Only show a separate "Edited" if updated meaningfully after create
+    if(p.updatedAt && p.updatedAt !== p.createdAt){
+      events.push({
+        at: p.updatedAt,
+        who: p.updatedBy || p.createdBy,
+        action: p.deleted ? 'Archived' : 'Edited',
+        name, team,
+        kind: p.deleted ? 'archive' : 'edit'
+      });
+    } else if(p.deleted && p.updatedAt){
+      events.push({
+        at: p.updatedAt,
+        who: p.updatedBy || p.createdBy,
+        action: 'Archived',
+        name, team,
+        kind: 'archive'
+      });
+    }
+  });
+  events.sort((a,b)=> (b.at||'').localeCompare(a.at||''));
+  return events.slice(0, limit);
+}
+
+function openActivity(){
+  const body = document.getElementById('activityBody');
+  const events = buildActivityFeed(50);
+  if(!events.length){
+    body.innerHTML = `<div class="dash-empty" style="padding:28px 12px;">No activity yet. Add or edit patients to see a feed here.</div>`;
+  } else {
+    body.innerHTML = events.map(ev=>{
+      const who = displayNameFor(ev.who) || 'Someone';
+      const color = ev.kind === 'add' ? 'var(--green)' : (ev.kind === 'archive' ? 'var(--amber)' : 'var(--blue)');
+      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13px;">
+        <div style="min-width:72px;color:var(--muted);font-size:11.5px;padding-top:2px;">${escapeHtml(formatActivityTime(ev.at))}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:var(--ink);">
+            <span style="color:${color};">${escapeHtml(ev.action)}</span>
+            · ${escapeHtml(ev.name)}
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+            by ${escapeHtml(who)} · ${escapeHtml(ev.team)}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  activityBackdrop.classList.add('open');
+}
+function closeActivity(){ activityBackdrop.classList.remove('open'); }
+document.getElementById('activityBtn').addEventListener('click', openActivity);
+document.getElementById('activityCloseBtn').addEventListener('click', closeActivity);
+activityBackdrop.addEventListener('click', e=>{ if(e.target===activityBackdrop) closeActivity(); });
 
 /* ---------------- Admin panel ---------------- */
 const adminBackdrop = document.getElementById('adminBackdrop');
