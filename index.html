@@ -1150,10 +1150,27 @@ function filteredPatients(){
   });
 }
 
+/* PhilHealth ID index — rebuilt once per render instead of scanning all patients per row */
+let phidIndex = new Map(); // cleanPhid -> [{id, team}]
+
+function rebuildPhidIndex(){
+  phidIndex = new Map();
+  state.patients.forEach(p=>{
+    if(p.deleted) return;
+    const clean = (p.phid||'').trim();
+    if(!clean) return;
+    let arr = phidIndex.get(clean);
+    if(!arr){ arr = []; phidIndex.set(clean, arr); }
+    arr.push({ id: p.id, team: p.team });
+  });
+}
+
 function isDuplicate(phid, excludeId){
   const clean = (phid||'').trim();
   if(!clean) return false;
-  return state.patients.some(p => !p.deleted && (p.phid||'').trim() === clean && p.id !== excludeId);
+  const arr = phidIndex.get(clean);
+  if(!arr) return false;
+  return arr.some(x => x.id !== excludeId);
 }
 
 /* Two patients with the same PhilHealth ID count as 1 duplicate (each extra copy adds 1). */
@@ -1172,7 +1189,9 @@ function countDuplicateExtras(list){
 function duplicateTeam(phid, excludeId){
   const clean = (phid||'').trim();
   if(!clean) return null;
-  const match = state.patients.find(p => !p.deleted && p.id !== excludeId && (p.phid||'').trim() === clean);
+  const arr = phidIndex.get(clean);
+  if(!arr) return null;
+  const match = arr.find(x => x.id !== excludeId);
   return match ? match.team : null;
 }
 
@@ -1271,6 +1290,7 @@ function restoreScrollPositions(positions){
 function renderAll(){
   const savedScroll = captureScrollPositions();
   autoFlagMissedClaims();
+  rebuildPhidIndex(); // O(n) once — used by duplicate checks instead of O(n²) scans
   state.patients.forEach(normalizeFacility);
   renderStats();
   renderLegend();
@@ -1352,10 +1372,12 @@ function renderAll(){
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
           <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('archive',13)} Archive</button>` : ''}
-          ${canEdit() && showArchived ? `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>` : ''}
+          ${canEdit() && showArchived ? `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
+          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete all forever</button>` : ''}
         </div>
       </div>
-      <div class="table-wrap" style="${collapsed?'display:none;':''}">
+      ${collapsed ? '' : `
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -1371,7 +1393,7 @@ function renderAll(){
           </tbody>
         </table>
       </div>
-      ${collapsed ? '' : pagerHtml}
+      ${pagerHtml}`}
     `;
     groupsContainer.appendChild(wrap);
   });
@@ -1395,10 +1417,25 @@ function measureTextWidth(text, refEl){
   return Math.ceil(width + pad + 4);
 }
 function autosizeBadgeSelects(){
-  document.querySelectorAll('select.badge-select').forEach(sel=>{
+  // Only size visible badge selects (expanded teams). Skip work when nothing is open.
+  const selects = document.querySelectorAll('.table-wrap select.badge-select');
+  if(!selects.length) return;
+  // Reuse one measuring span for the whole pass
+  const span = document.createElement('span');
+  span.style.cssText = 'visibility:hidden;position:absolute;white-space:nowrap;pointer-events:none;';
+  document.body.appendChild(span);
+  selects.forEach(sel=>{
     const opt = sel.options[sel.selectedIndex];
-    sel.style.width = measureTextWidth(opt ? opt.textContent : '', sel) + 'px';
+    const cs = getComputedStyle(sel);
+    span.style.fontSize = cs.fontSize;
+    span.style.fontFamily = cs.fontFamily;
+    span.style.fontWeight = cs.fontWeight;
+    span.style.letterSpacing = cs.letterSpacing;
+    span.textContent = opt ? opt.textContent : '';
+    const pad = (parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0)+(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
+    sel.style.width = Math.ceil(span.offsetWidth + pad + 4) + 'px';
   });
+  document.body.removeChild(span);
 }
 
 function facilityCellHtml(p){
@@ -1447,7 +1484,8 @@ function rowHtml(p){
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
-          ? `<button class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>`
+          ? `<button class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>
+             <button class="icon-btn" data-purge="${p.id}" title="Delete forever" style="color:var(--red);">${icon('trash',14)}</button>`
           : `<button class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
         : ''}
       </td>
@@ -1590,7 +1628,50 @@ groupsContainer.addEventListener('click', e=>{
     }
     return;
   }
+  if(e.target.closest('[data-purge]')){
+    const id = e.target.closest('[data-purge]').dataset.purge;
+    const p = state.patients.find(x=>x.id===id);
+    if(p && confirm("Permanently delete this patient? This cannot be undone.")){
+      permanentlyDeletePatients([p.id]);
+    }
+    return;
+  }
+  if(e.target.closest('[data-purge-team]')){
+    const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
+    const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
+    if(ids.length === 0){ alert('No archived patients in this mobile.'); return; }
+    if(confirm(`Permanently delete all ${ids.length} archived patient(s) in "${team}"? This cannot be undone.`)){
+      permanentlyDeletePatients(ids);
+    }
+    return;
+  }
 });
+
+async function permanentlyDeletePatients(ids){
+  if(!canEdit() || !ids.length) return;
+  setSyncStatus('Deleting…', 'busy');
+  const idSet = new Set(ids);
+  // Remove locally first so UI updates immediately
+  state.patients = state.patients.filter(p => !idSet.has(p.id));
+  ids.forEach(id => pendingIds.delete(id));
+  selectedIds.forEach(id => { if(idSet.has(id)) selectedIds.delete(id); });
+  savePending();
+  saveLocalCache();
+  renderAll();
+  // Delete from Supabase when online
+  if(navigator.onLine){
+    try{
+      const { error } = await sb.from('patients').delete().in('id', ids);
+      if(error) throw error;
+      setSyncStatus('Deleted ' + timeNow());
+    }catch(e){
+      console.error(e);
+      setSyncStatus('Deleted locally — server delete failed, will retry later', 'err');
+    }
+  } else {
+    setSyncStatus('Deleted on this device — offline', 'err');
+  }
+}
 
 groupsContainer.addEventListener('change', e=>{
   // Row selection / select-all
