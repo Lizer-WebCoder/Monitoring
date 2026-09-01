@@ -694,6 +694,7 @@ const facilityOptionsAll = [HOME_FACILITY, ...facilityOptionsOther];
 const CACHE_KEY = "roster_patients_v1";
 const PENDING_KEY = "roster_pending_v1";
 const ORG_CACHE_KEY = "roster_org_v1";
+const PURGED_KEY = "roster_purged_v1";
 
 let pendingIds = new Set();
 try{ pendingIds = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || "[]")); }catch(e){ pendingIds = new Set(); }
@@ -701,6 +702,13 @@ try{ pendingIds = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || "[]"))
 function savePending(){
   try{ localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingIds])); return true; }
   catch(e){ console.error('savePending failed', e); return false; }
+}
+
+/* IDs the user permanently deleted — never re-add them from a server pull */
+let purgedIds = new Set();
+try{ purgedIds = new Set(JSON.parse(localStorage.getItem(PURGED_KEY) || "[]")); }catch(e){ purgedIds = new Set(); }
+function savePurged(){
+  try{ localStorage.setItem(PURGED_KEY, JSON.stringify([...purgedIds])); }catch(e){}
 }
 
 /* Patient roster is stored in IndexedDB (large capacity). localStorage is only a
@@ -953,13 +961,31 @@ async function pullRemote(){
       if(data.length < pageSize) break;
       from += pageSize;
     }
+    const stillOnServer = [];
     remoteRows.forEach(r=>{
+      if(purgedIds.has(r.id)){
+        stillOnServer.push(r.id); // user deleted these — strip locally & retry server delete
+        return;
+      }
       if(pendingIds.has(r.id)) return; // don't overwrite an unsynced local edit
       const remote = fromRemote(r);
       const local = state.patients.find(p => p.id === r.id);
       if(local) Object.assign(local, remote);
       else state.patients.push(remote);
     });
+    // Drop any local copies of purged IDs
+    if(purgedIds.size){
+      state.patients = state.patients.filter(p => !purgedIds.has(p.id));
+    }
+    // Retry deleting rows that still exist on the server
+    if(stillOnServer.length && navigator.onLine){
+      sb.from('patients').delete().in('id', stillOnServer).then(({ error })=>{
+        if(!error){
+          stillOnServer.forEach(id => purgedIds.delete(id));
+          savePurged();
+        }
+      }).catch(()=>{});
+    }
     // Keep ALL patients locally (including archived). Archived rows stay
     // until the user restores or permanently deletes them.
     saveLocalCache();
@@ -1651,6 +1677,9 @@ async function permanentlyDeletePatients(ids){
   if(!canEdit() || !ids.length) return;
   setSyncStatus('Deleting…', 'busy');
   const idSet = new Set(ids);
+  // Remember these IDs so sync never brings them back
+  ids.forEach(id => purgedIds.add(id));
+  savePurged();
   // Remove locally first so UI updates immediately
   state.patients = state.patients.filter(p => !idSet.has(p.id));
   ids.forEach(id => pendingIds.delete(id));
@@ -1661,12 +1690,20 @@ async function permanentlyDeletePatients(ids){
   // Delete from Supabase when online
   if(navigator.onLine){
     try{
-      const { error } = await sb.from('patients').delete().in('id', ids);
-      if(error) throw error;
-      setSyncStatus('Deleted ' + timeNow());
+      // Delete in chunks (PostgREST URL length limits on large .in() lists)
+      const chunkSize = 100;
+      for(let i = 0; i < ids.length; i += chunkSize){
+        const chunk = ids.slice(i, i + chunkSize);
+        const { error } = await sb.from('patients').delete().in('id', chunk);
+        if(error) throw error;
+      }
+      // Server confirmed — can forget purged markers for these ids
+      ids.forEach(id => purgedIds.delete(id));
+      savePurged();
+      setSyncStatus('Deleted forever ' + timeNow());
     }catch(e){
       console.error(e);
-      setSyncStatus('Deleted locally — server delete failed, will retry later', 'err');
+      setSyncStatus('Removed here — server delete blocked (check RLS). Won\'t reappear on this device.', 'err');
     }
   } else {
     setSyncStatus('Deleted on this device — offline', 'err');
