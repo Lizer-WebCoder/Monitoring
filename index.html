@@ -1124,8 +1124,11 @@ function getTeams(){
       .filter(p => showArchived ? p.deleted : !p.deleted)
       .map(p => p.team)
   );
-  if(!showArchived) pendingEmptyTeams.forEach(x=>t.add(x));
-  Object.keys(teamStaff).forEach(x=>t.add(x));
+  // Empty mobiles (just created, no patients yet) only belong in the active roster
+  if(!showArchived){
+    pendingEmptyTeams.forEach(x=>t.add(x));
+    Object.keys(teamStaff).forEach(x=>t.add(x));
+  }
   return [...t];
 }
 const pendingEmptyTeams = new Set();
@@ -1397,9 +1400,11 @@ function renderAll(){
           <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
-          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('archive',13)} Archive</button>` : ''}
-          ${canEdit() && showArchived ? `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
-          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete all forever</button>` : ''}
+          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${totalInTeam === 0 ? `${icon('trash',13)} Remove` : `${icon('archive',13)} Archive`}</button>` : ''}
+          ${canEdit() && showArchived ? (totalInTeam === 0
+            ? `<button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
+            : `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
+          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete all forever</button>`) : ''}
         </div>
       </div>
       ${collapsed ? '' : `
@@ -1603,6 +1608,12 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-delete-team]')){
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
+    if(count === 0){
+      if(confirm(`Remove empty mobile "${team}"?`)){
+        removeEmptyTeam(team);
+      }
+      return;
+    }
     if(confirm(`Archive team "${team}" and its ${count} patient record(s)? You can restore them later from Archived view.`)){
       const uid = currentUser ? currentUser.id : null;
       const now = new Date().toISOString();
@@ -1622,7 +1633,13 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-restore-team]')){
     const team = e.target.closest('[data-restore-team]').dataset.restoreTeam;
     const count = state.patients.filter(p=>p.team===team && p.deleted).length;
-    if(count === 0){ alert('No archived patients in this mobile.'); return; }
+    if(count === 0){
+      // Empty shell left in archived view — just remove it
+      if(confirm(`Remove empty mobile "${team}"?`)){
+        removeEmptyTeam(team);
+      }
+      return;
+    }
     if(confirm(`Restore all ${count} archived patient(s) in "${team}"?`)){
       const uid = currentUser ? currentUser.id : null;
       const now = new Date().toISOString();
@@ -1665,13 +1682,33 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-purge-team]')){
     const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
     const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
-    if(ids.length === 0){ alert('No archived patients in this mobile.'); return; }
+    if(ids.length === 0){
+      if(confirm(`Remove empty mobile "${team}"?`)){
+        removeEmptyTeam(team);
+      }
+      return;
+    }
     if(confirm(`Permanently delete all ${ids.length} archived patient(s) in "${team}"? This cannot be undone.`)){
-      permanentlyDeletePatients(ids);
+      permanentlyDeletePatients(ids).then(()=> removeEmptyTeam(team));
     }
     return;
   }
 });
+
+function removeEmptyTeam(team){
+  pendingEmptyTeams.delete(team);
+  delete teamStaff[team];
+  expandedTeams.delete(team);
+  saveTeamStaffCache();
+  pushTeamStaff();
+  // Only remove the team shell — don't touch patients that still exist under other filters
+  const stillHasPatients = state.patients.some(p => p.team === team);
+  if(!stillHasPatients){
+    renderAll();
+  } else {
+    renderAll();
+  }
+}
 
 async function permanentlyDeletePatients(ids){
   if(!canEdit() || !ids.length) return;
