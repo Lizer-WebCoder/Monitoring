@@ -960,9 +960,8 @@ async function pullRemote(){
       if(local) Object.assign(local, remote);
       else state.patients.push(remote);
     });
-    // Keep every local non-deleted patient, even if not yet on the server.
-    // Only drop soft-deleted rows that already finished syncing.
-    state.patients = state.patients.filter(p => !p.deleted || pendingIds.has(p.id));
+    // Keep ALL patients locally (including archived). Archived rows stay
+    // until the user restores or permanently deletes them.
     saveLocalCache();
     renderAll();
     const pendingCount = prunePendingIds();
@@ -1347,12 +1346,13 @@ function renderAll(){
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
-          ${canEdit() ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
+          ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
           <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
-          ${canEdit() ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
+          ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
           <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('archive',13)} Archive</button>` : ''}
+          ${canEdit() && showArchived ? `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>` : ''}
         </div>
       </div>
       <div class="table-wrap" style="${collapsed?'display:none;':''}">
@@ -1539,11 +1539,37 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-delete-team]')){
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
-    if(confirm(`Archive team "${team}" and its ${count} patient record(s)? You can restore patients later from Archived view.`)){
-      state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
-      delete teamStaff[team];
-      pendingEmptyTeams.delete(team);
-      pushTeamStaff();
+    if(confirm(`Archive team "${team}" and its ${count} patient record(s)? You can restore them later from Archived view.`)){
+      const uid = currentUser ? currentUser.id : null;
+      const now = new Date().toISOString();
+      state.patients.forEach(p=>{
+        if(p.team===team && !p.deleted){
+          p.deleted = true;
+          if(uid){ if(!p.createdBy) p.createdBy = uid; p.updatedBy = uid; }
+          if(!p.createdAt) p.createdAt = now;
+          p.updatedAt = now;
+          pendingIds.add(p.id);
+        }
+      });
+      savePending(); saveLocalCache(); renderAll(); flushPending();
+    }
+    return;
+  }
+  if(e.target.closest('[data-restore-team]')){
+    const team = e.target.closest('[data-restore-team]').dataset.restoreTeam;
+    const count = state.patients.filter(p=>p.team===team && p.deleted).length;
+    if(count === 0){ alert('No archived patients in this mobile.'); return; }
+    if(confirm(`Restore all ${count} archived patient(s) in "${team}"?`)){
+      const uid = currentUser ? currentUser.id : null;
+      const now = new Date().toISOString();
+      state.patients.forEach(p=>{
+        if(p.team===team && p.deleted){
+          p.deleted = false;
+          if(uid) p.updatedBy = uid;
+          p.updatedAt = now;
+          pendingIds.add(p.id);
+        }
+      });
       savePending(); saveLocalCache(); renderAll(); flushPending();
     }
     return;
