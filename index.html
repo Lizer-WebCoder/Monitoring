@@ -4,7 +4,2888 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Mobile Operations Tracker</title>
-<!-- See local artifacts for full file - content truncated in this restore attempt -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#14524a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<!-- Offline: keep ./supabase.js next to this file (do not load from CDN). -->
+<script src="./supabase.js"></script>
+<!-- Offline: keep ./xlsx.full.min.js next to this file for Excel import. -->
+<script src="./xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
+    --teal:#14524a; --teal-deep:#0b3630;
+    --amber:#c8862b; --amber-bg:#fbeed9;
+    --blue:#2f5f8a; --blue-bg:#e4edf5;
+    --green:#3d7a4f; --green-bg:#e2efe3;
+    --red:#a8402f; --red-bg:#f6e3df;
+    --purple:#6b3fa0; --purple-bg:#efe3fb;
+    --muted:#6c7570;
+    --table-head:#eef0e8;
+    --row-hover:#fbfaf6;
+    --label-accent:#14524a;
+    --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body.dark{
+    --ink:#e7ede9; --paper:#101a17; --card:#182421; --line:#2b3a35;
+    --teal:#2f8a79; --teal-deep:#0d2e29;
+    --amber:#e0ab5c; --amber-bg:#3a2d16;
+    --blue:#82aed4; --blue-bg:#1c2c3c;
+    --green:#84c495; --green-bg:#1b3021;
+    --red:#e2907d; --red-bg:#3a221d;
+    --purple:#bda2e0; --purple-bg:#2a2038;
+    --muted:#9aa39c; --table-head:#1e2d28;
+    --row-hover:#1c2924; --label-accent:#8fd9c4;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.3);
+  }
+  body.dark input, body.dark select{ color-scheme: dark; }
+  body.dark #monthFilter{ color: var(--teal); }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 90px;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* ---------- Bulk action bar ---------- */
+  #bulkBar{
+    display:none; position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    z-index:90; background:var(--teal-deep); color:#f2ede0; border-radius:14px;
+    padding:10px 16px; box-shadow:0 10px 40px rgba(11,54,48,0.4);
+    align-items:center; gap:12px; flex-wrap:wrap; max-width:calc(100vw - 24px);
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  #bulkBar.show{ display:flex; }
+  #bulkBar .bulk-count{ font-weight:800; font-size:13px; white-space:nowrap; }
+  #bulkBar .bulk-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #bulkBar .btn{ background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); color:#f2ede0; box-shadow:none; }
+  #bulkBar .btn:hover{ background:rgba(255,255,255,0.22); color:#fff; border-color:rgba(255,255,255,0.35); }
+  #bulkBar select{ background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#f2ede0; font-size:12.5px; padding:7px 10px; border-radius:8px; }
+  #bulkBar select option{ color:#12312b; background:#fff; }
+  body.dark #bulkBar{ background:#0d2e29; }
+  th.col-select, td.col-select{ width:36px; text-align:center; }
+  tr.selected-row{ background:var(--amber-bg) !important; }
+  .app-shell{
+    max-width:1600px;
+    margin:0 auto;
+    padding:0 16px 24px;
+    box-sizing:border-box;
+  }
+  @media (min-width: 1100px){
+    .app-shell{ padding:0 28px 32px; }
+  }
+  /* Soft frame so content never looks cut off at the screen edge */
+  .app-frame{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-top:12px;
+  }
+  body > header{ /* keep header full-bleed */ }
+  .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
+
+  /* ---------- Offline banner ---------- */
+  #offlineBanner{
+    display:none; position:sticky; top:0; z-index:40; background:var(--amber-bg); color:var(--amber);
+    font-size:12px; font-weight:700; text-align:center; padding:6px 10px;
+  }
+  #offlineBanner.show{ display:block; }
+
+  /* ---------- Login overlay ---------- */
+  #loginOverlay{
+    position:fixed; inset:0; background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  #loginOverlay.hidden{ display:none; }
+  .login-card{
+    background:var(--card); border-radius:14px; padding:32px 30px; width:100%; max-width:360px;
+    box-shadow:0 20px 60px rgba(11,54,48,0.35);
+  }
+  .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
+  .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
+  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
+  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
+  .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
+  .login-card button:hover{ background:var(--teal-deep); }
+  .login-card button:disabled{ opacity:0.6; cursor:default; }
+  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; }
+  .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30;
+    box-shadow:0 4px 14px rgba(11,54,48,0.25);
+    position:relative; overflow:hidden;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .header-row, .toolbar, .team-group, .legend, .app-footer{
+    width:100%;
+    max-width:1600px;
+    margin-left:auto;
+    margin-right:auto;
+    box-sizing:border-box;
+  }
+  .toolbar{ padding-left:16px; padding-right:16px; }
+  .team-group{ padding-left:16px; padding-right:16px; }
+  .legend{ padding-left:16px; padding-right:16px; }
+  /* Outer edge frame around the page content */
+  html{ background:var(--teal-deep); }
+  body{
+    border-left:3px solid var(--teal);
+    border-right:3px solid var(--teal);
+    box-sizing:border-box;
+  }
+  header::before{
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(circle at 92% -20%, rgba(255,255,255,0.14), transparent 42%),
+      radial-gradient(circle at 6% 130%, rgba(255,255,255,0.10), transparent 45%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 26px);
+  }
+  header::after{
+    content:''; position:absolute; right:-30px; top:-30px; width:220px; height:220px; z-index:0; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='4'%3E%3Cpath d='M50 20v60M20 50h60'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-size:contain; opacity:0.9;
+  }
+  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
+  .brand-title{
+    font-family:'Sora', 'Inter', sans-serif; font-size:28px; font-weight:800; letter-spacing:.01em; margin:0;
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(100deg, #ffffff 10%, #bfe8da 55%, #ffffff 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 2px 18px rgba(0,0,0,0.15);
+  }
+  .pulse-badge{
+    flex:none; width:38px; height:30px; border-radius:9px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.14); color:#bfe8da;
+  }
+  .pulse-line{ stroke-dasharray:100; stroke-dashoffset:0; animation:pulse-travel 2.2s linear infinite; }
+  @keyframes pulse-travel{ 0%{ stroke-dashoffset:100; } 100%{ stroke-dashoffset:0; } }
+  .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
+  .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
+  .org-input::placeholder{ color:rgba(242,237,224,0.55); }
+  .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
+  .sync-row{ display:flex; align-items:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#c7dcd5; }
+  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; }
+  .sync-pill.err::before{ background:#e2897a; }
+  .sync-pill.busy::before{ background:#e0c479; }
+  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
+  .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
+
+  .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
+  .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
+  .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
+  .stat.stat-warn{ background:rgba(232,171,92,0.22); border-color:rgba(232,171,92,0.55); }
+  .stat.stat-warn .num{ color:#f0c878; }
+  .stat.stat-warn .lbl{ color:#f0c878; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; flex-direction:column; gap:10px; }
+  .toolbar-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
+  .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
+  .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+  .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .btn-primary:disabled{ opacity:0.45; cursor:not-allowed; transform:none; background:var(--teal); color:#fff; }
+  .btn-ghost{ box-shadow:none; }
+  input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  select{ text-align:center; text-align-last:center; }
+  #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
+  #search{ min-width:220px; flex:1; }
+  .spacer{ flex:1; }
+  input[type="file"]{ display:none; }
+
+  /* ---------- Groups ---------- */
+  .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
+  .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
+  .team-head .chev{
+    flex:none; width:28px; height:28px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; line-height:1; color:var(--teal-deep);
+    background:var(--table-head); border:1px solid var(--line);
+    transition:transform .15s ease, background .12s ease, border-color .12s ease;
+  }
+  .team-head:hover .chev{ background:var(--line); border-color:var(--teal); }
+  .team-head.collapsed .chev{ transform:rotate(-90deg); }
+  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(420px, 40vw); }
+  .team-title-block{ display:flex; flex-direction:row; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; }
+  .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; flex:none; }
+  .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
+  .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
+  .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
+  .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
+  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; flex:none; white-space:nowrap; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  .team-head .team-tools .tt-btn{
+    display:inline-flex; align-items:center; gap:5px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font-size:12px; font-weight:600; padding:5px 10px; border-radius:8px;
+    cursor:pointer; text-decoration:none; box-shadow:var(--shadow);
+    transition:all .12s ease;
+  }
+  .team-head .team-tools .tt-btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
+  .team-head .team-tools .tt-btn.tt-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+  .team-head .team-tools .tt-btn.tt-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .team-head .team-tools .tt-btn.tt-danger{ color:var(--red); }
+  .team-head .team-tools .tt-btn.tt-danger:hover{ border-color:var(--red); background:var(--red-bg); }
+  .team-head{ flex-wrap:wrap; gap:8px 10px; }
+  .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
+  .table-wrap{ max-width:100%; }
+  table{ min-width:960px; }
+  @media (max-width: 900px){
+    .team-head h2{ max-width:100%; }
+    .team-tools{ width:100%; margin-left:0; }
+    .stat-strip{ display:none; }
+  }
+
+  /* ---------- Staff popup ---------- */
+  .staff-popup-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.4); display:none; align-items:center; justify-content:center; z-index:150; padding:20px; }
+  .staff-popup-backdrop.open{ display:flex; }
+  .staff-popup{ background:var(--card); border-radius:14px; width:100%; max-width:320px; max-height:80vh; overflow-y:auto; padding:18px 20px 16px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
+  .staff-popup h4{ margin:0 0 2px; font-size:14px; }
+  .staff-popup .staff-popup-sub{ font-size:11px; color:var(--muted); margin-bottom:12px; }
+  .staff-popup-list{ display:flex; flex-direction:column; gap:8px; }
+  .staff-popup-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--table-head); border-radius:8px; padding:8px 10px; }
+  .staff-popup-item .sp-name{ font-size:13px; font-weight:600; }
+  .staff-popup-item .sp-pos{ font-size:11px; font-weight:700; color:var(--teal-deep); background:var(--card); border:1px solid var(--line); padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .staff-popup-close{ display:block; margin:14px auto 0; }
+
+  /* ---------- Table ---------- */
+  .table-wrap{ overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:var(--card); margin-top:8px; }
+  table{ width:100%; border-collapse:collapse; min-width:1260px; }
+  thead th{ position:sticky; top:0; background:var(--table-head); color:var(--label-accent); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:10px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th:first-child{ text-align:left; }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody tr:hover{ background:var(--row-hover); }
+  tbody tr.dup-row{ background:var(--red-bg); }
+  tbody tr.pending-row{ box-shadow:inset 3px 0 0 var(--amber); }
+  td{ padding:9px 10px; font-size:13px; vertical-align:middle; }
+  td.name{ font-weight:600; min-width:190px; }
+  .idcell{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:center; }
+  .datecell{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); white-space:nowrap; text-align:center; }
+  input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--teal); cursor:pointer; }
+
+  .badge-select{ border:none; border-radius:20px; padding:5px 10px 5px 9px; font-size:11.5px; font-weight:700; cursor:pointer; appearance:none; -webkit-appearance:none; text-align:center; text-align-last:center; background-position:right 7px center; background-repeat:no-repeat; background-size:9px; padding-right:22px; }
+  .st-registered{ background:var(--green-bg); color:var(--green); }
+  .st-registered-other{ background:var(--purple-bg); color:var(--purple); }
+  .fac-select{ background:var(--table-head); color:var(--ink); }
+  .fac-select.fac-home{ background:var(--green-bg); color:var(--green); }
+  .fac-select.fac-other{ background:var(--purple-bg); color:var(--purple); }
+  .fac-fixed{ font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:20px; background:var(--green-bg); color:var(--green); display:inline-block; }
+  .fac-fixed.fac-other{ background:var(--purple-bg); color:var(--purple); }
+  .cl-pending{ background:var(--amber-bg); color:var(--amber); }
+  .cl-t1{ background:var(--blue-bg); color:var(--blue); }
+  .cl-missed24{ background:var(--red-bg); color:var(--red); }
+  .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+  .dup-new{ background:var(--green-bg); color:var(--green); }
+  .dup-flag{ background:var(--red-bg); color:var(--red); }
+  .sync-tag{ font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:var(--amber-bg); color:var(--amber); margin-left:6px; }
+
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{ border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:3px 5px; border-radius:6px; }
+  .icon-btn:hover{ background:var(--line); color:var(--ink); }
+  .empty-state{ text-align:center; padding:50px 20px; color:var(--muted); font-size:13px; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:100; padding:40px 16px; overflow-y:auto; }
+  .modal-backdrop.open{ display:flex; }
+  .modal{ background:var(--card); border-radius:14px; max-width:640px; width:100%; padding:26px 28px 22px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
+  .modal h3{ margin:0 0 4px; font-size:17px; }
+  .modal .modal-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+  .form-grid .full{ grid-column:1/-1; }
+  label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin-bottom:4px; }
+  .form-grid input, .form-grid select{ width:100%; }
+  .check-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  .check-row{ display:flex; align-items:center; gap:8px; }
+  .check-row label{ margin:0; text-transform:none; font-weight:600; font-size:13px; color:var(--ink); line-height:1.3; }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .dup-warning{ background:var(--red-bg); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-top:4px; display:none; }
+  .field-hint{ font-size:11px; color:var(--muted); margin-top:4px; }
+  .legend{ max-width:1400px; margin:26px auto 0; padding:16px 26px; font-size:12px; color:var(--muted); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+  .legend b{ color:var(--ink); }
+  .app-footer{ text-align:center; font-size:11px; color:#8a8f89; padding:18px 20px 4px; letter-spacing:.02em; }
+
+  /* ---------- Dashboard ---------- */
+  .dash-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:120; padding:30px 16px; overflow-y:auto; }
+  .dash-backdrop.open{ display:flex; }
+  .dash-modal{ background:var(--card); border-radius:14px; max-width:1180px; width:100%; padding:24px 26px 26px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
+  .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
+  .dash-head h3{ margin:0 0 4px; font-size:18px; }
+  .dash-head .modal-sub{ margin-bottom:0; }
+  .dash-close{ border:none; background:var(--table-head); color:var(--muted); border-radius:8px; padding:6px 8px; cursor:pointer; flex:none; }
+  .dash-close:hover{ color:var(--ink); background:var(--line); }
+  .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
+  .dash-controls select{ min-width:190px; }
+  .dash-scope-note{ font-size:11px; color:var(--muted); }
+  .dash-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:22px; }
+  .dash-card{ background:var(--table-head); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .dash-card .dc-num{ font-size:22px; font-weight:800; font-family:'IBM Plex Mono',monospace; line-height:1; color:var(--teal-deep); }
+  body.dark .dash-card .dc-num{ color:var(--teal); }
+  .dash-card .dc-lbl{ font-size:11px; color:var(--muted); margin-top:5px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .dash-card.accent-amber .dc-num{ color:var(--amber); }
+  .dash-card.accent-purple .dc-num{ color:var(--purple); }
+  .dash-card.accent-green .dc-num{ color:var(--green); }
+  .dash-card.accent-blue .dc-num{ color:var(--blue); }
+  .dash-card.accent-red .dc-num{ color:var(--red); }
+  .dash-section{ margin-bottom:24px; }
+  .dash-section h4{ font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--label-accent); margin:0 0 12px; }
+  .dash-bar-row{ display:grid; grid-template-columns:170px 1fr 42px; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px; }
+  .dash-bar-row .dbr-label{ color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-bar-track{ background:var(--table-head); border-radius:20px; height:14px; overflow:hidden; }
+  .dash-bar-fill{ height:100%; border-radius:20px; background:var(--teal); transition:width .2s ease; }
+  .dash-bar-fill.accent-purple-fill{ background:var(--purple); }
+  .dash-bar-row .dbr-num{ text-align:right; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+  .dash-two-col{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .dash-trend-wrap{ overflow-x:auto; }
+  .dash-trend-svg{ display:block; }
+  .dash-trend-bar{ fill:var(--teal); }
+  .dash-trend-bar.dtb-current{ fill:var(--amber); }
+  .dash-trend-label{ font-size:9.5px; fill:var(--muted); font-family:'IBM Plex Mono',monospace; }
+  .dash-trend-num{ font-size:11px; fill:var(--ink); font-weight:700; font-family:'IBM Plex Mono',monospace; }
+  .dash-table-wrap{ overflow-x:auto; border-radius:8px; border:1px solid var(--line); }
+  .dash-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
+  .dash-table th{ background:var(--table-head); color:var(--label-accent); text-transform:uppercase; letter-spacing:.03em; font-size:10px; font-weight:700; padding:8px 10px; text-align:center; white-space:nowrap; }
+  .dash-table th:first-child{ text-align:left; }
+  .dash-table td{ padding:8px 10px; text-align:center; border-top:1px solid var(--line); }
+  .dash-table td:first-child{ text-align:left; font-weight:600; }
+  .dash-empty{ text-align:center; padding:30px 20px; color:var(--muted); font-size:13px; }
+  @media (max-width: 720px){ .dash-two-col{ grid-template-columns:1fr; } }
+
+
+  /* ---------- Pagination ---------- */
+  .team-pager{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-top:10px; padding:10px 12px; background:var(--card); border:1px solid var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow); font-size:12.5px;
+  }
+  .team-pager .pager-left, .team-pager .pager-right{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .team-pager label{ margin:0; text-transform:none; font-weight:600; font-size:12px; color:var(--muted); letter-spacing:0; }
+  .team-pager select{
+    font-size:12.5px; padding:6px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--table-head); color:var(--ink); font-weight:700; cursor:pointer; min-width:72px;
+  }
+  .team-pager .pager-info{ color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .team-pager .pager-btn{
+    border:1px solid var(--line); background:var(--card); color:var(--ink); padding:6px 12px;
+    border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .team-pager .pager-btn:hover:not(:disabled){ border-color:var(--teal); color:var(--teal-deep); }
+  .team-pager .pager-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  @media print{ .team-pager{ display:none !important; } }
+
+  @media (max-width: 720px){ .stat-strip{ display:none; } .form-grid{ grid-template-columns:1fr; } .check-grid{ grid-template-columns:1fr; } header{ padding:14px 16px; } .toolbar{ padding:0 12px; } .team-group{ padding:0 12px; } .app-shell{ padding:0 8px 16px; } .app-frame{ margin-top:8px; border-radius:10px; } }
+  @media print{
+    header, .toolbar, .row-actions, .legend, .app-footer, .team-tools,
+    #loginOverlay, #offlineBanner, th:last-child, td:last-child{ display:none !important; }
+    body{ padding-bottom:0; background:#fff; }
+    .team-group{ max-width:none; margin:0 0 22px; padding:0; page-break-inside:avoid; break-inside:avoid; }
+    .team-group.print-hide{ display:none !important; }
+    .team-head{ border-bottom:2px solid #000; }
+    .table-wrap{ overflow:visible; box-shadow:none; border-radius:0; }
+    table{ min-width:0; width:100%; font-size:10px; }
+    th, td{ padding:4px 5px; }
+    thead{ display:table-header-group; }
+    tr{ page-break-inside:avoid; break-inside:avoid; }
+    .badge-select, .fac-fixed, .dup-tag, .sync-tag{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
 </head>
-<body><h1>Upload in progress - please wait</h1><p>If you see this, refresh in a minute or re-upload index.html from the app.</p></body>
+<body>
+
+<div id="offlineBanner">You're offline — changes are saved on this device and will sync once you're back online.</div>
+
+<!-- ============ LOGIN OVERLAY ============ -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <h1 id="loginTitle">DR CARE — Sign in</h1>
+    <p id="loginSub">Divine Rays Mobile Operations · individual accounts</p>
+    <label for="loginEmail">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+    <div id="signupNameWrap" style="display:none;">
+      <label for="loginFullName">Full name</label>
+      <input type="text" id="loginFullName" placeholder="Your name" autocomplete="name">
+    </div>
+    <button id="loginBtn">Sign in</button>
+    <button id="signupBtn" type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;">Create account</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-note" id="loginNote">
+      Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.
+    </div>
+    <button type="button" id="toggleAuthMode" style="background:none;border:none;color:var(--teal);font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline;width:100%;">
+      Need an account? Sign up
+    </button>
+  </div>
+</div>
+
+<header>
+  <div class="header-row">
+    <div>
+      <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
+      <h1 class="brand-title">
+        <span class="pulse-badge" aria-hidden="true">
+          <svg viewBox="0 0 60 24" width="34" height="18" fill="none">
+            <polyline class="pulse-line" points="0,12 14,12 18,4 22,20 26,8 30,12 60,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        DR CARE <span class="tag">Patient Tracker</span>
+      </h1>
+      <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
+      <div class="sync-row">
+        <div class="sync-pill" id="syncPill">Connecting…</div>
+        <div class="who-row"><span id="whoAmI"></span><button id="logoutBtn">Sign out</button></div>
+      </div>
+    </div>
+    <div class="stat-strip" id="statStrip"></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-row">
+    <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
+    <button class="btn btn-ghost" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
+    <button class="btn" id="addTeamBtn">+ Add Mobile</button>
+    <button class="btn" id="dashboardBtn"></button>
+    <button class="btn" id="adminBtn" style="display:none;"></button>
+    <button class="btn" id="themeToggle"></button>
+    <input type="text" id="search" placeholder="Search name or PhilHealth ID…">
+    <select id="filterStatus">
+      <option value="">All statuses</option>
+      <option value="registered">Registered</option>
+      <option value="registered_other">Registered to other DR facility</option>
+    </select>
+    <select id="filterBenefit">
+      <option value="">All benefit states</option>
+      <option value="rice-yes">Rice availed</option>
+      <option value="rice-no">Rice not yet availed</option>
+      <option value="lab-yes">Lab availed</option>
+      <option value="lab-no">Lab not yet availed</option>
+    </select>
+    <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
+      <option value="">All records</option>
+      <option value="dup-only">Duplicates only</option>
+      <option value="unique-only">Unique only</option>
+    </select>
+  </div>
+  <div class="toolbar-row">
+    <button class="btn" id="syncNowBtn"></button>
+    <button class="btn" id="exportBtn"></button>
+    <button class="btn" id="importBtn"></button>
+    <button class="btn btn-ghost" id="csvTemplateBtn"></button>
+    <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
+    <input type="file" id="importFile" accept=".csv,.xlsx">
+  </div>
+</div>
+
+<div id="groupsContainer"></div>
+<div class="legend" id="legend"></div>
+<div class="app-footer">By : ʙᴏʏꜱ ᴀᴛ ᴛʜᴇ ʙᴀᴄᴋ · © 2026 All rights reserved</div>
+
+<!-- Bulk action bar (appears when rows are selected) -->
+<div id="bulkBar">
+  <span class="bulk-count" id="bulkCount">0 selected</span>
+  <div class="bulk-actions">
+    <button class="btn" type="button" id="bulkRiceYes">Mark rice ✓</button>
+    <button class="btn" type="button" id="bulkLabYes">Mark lab ✓</button>
+    <select id="bulkClaim">
+      <option value="">Set claim…</option>
+      <option value="pending">Pending</option>
+      <option value="t1">T1 Submitted</option>
+      <option value="missed24">Missed 24h</option>
+    </select>
+    <button class="btn" type="button" id="bulkClear">Clear selection</button>
+  </div>
+</div>
+
+<!-- Patient Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Add Patient</h3>
+    <div class="modal-sub">Fields marked with the team dropdown determine which group this row appears under.</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Patient name (Last, First, Middle, Suffix)</label>
+        <input type="text" id="f_name" placeholder="DELA CRUZ, JUAN, SANTOS">
+      </div>
+      <div>
+        <label>PhilHealth ID</label>
+        <input type="text" id="f_phid" placeholder="1234-5678-9012">
+        <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
+      </div>
+      <div>
+        <label>Team / Site</label>
+        <select id="f_team"></select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="f_status">
+          <option value="registered">Registered</option>
+          <option value="registered_other">Registered to other DR facility</option>
+        </select>
+      </div>
+      <div>
+        <label>Facility</label>
+        <select id="f_facility"></select>
+        <div class="field-hint" id="facilityHint"></div>
+      </div>
+      <div>
+        <label>Status of claim</label>
+        <select id="f_claim">
+          <option value="pending">Pending</option>
+          <option value="t1">T1 Submitted</option>
+          <option value="missed24">Missed 24h</option>
+        </select>
+      </div>
+      <div>
+        <label>Date encoded</label>
+        <input type="date" id="f_dateEncoded">
+      </div>
+      <div>
+        <label>Date validated &amp; submitted</label>
+        <input type="date" id="f_dateSubmitted">
+      </div>
+      <div class="full check-grid">
+        <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA attachment on file</label></div>
+        <div class="check-row"><input type="checkbox" id="f_within24"><label for="f_within24">Submitted within 24 hours</label></div>
+        <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
+        <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Already availed laboratory</label></div>
+      </div>
+      <div class="full">
+        <label>Notes</label>
+        <input type="text" id="f_notes" placeholder="Optional remarks…">
+      </div>
+      <div class="full" id="auditInfo" style="display:none;font-size:12px;color:var(--muted);padding:8px 10px;background:var(--table-head);border-radius:8px;line-height:1.5;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" disabled>Save patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- Team / Site Modal -->
+<div class="modal-backdrop" id="teamModalBackdrop">
+  <div class="modal">
+    <h3 id="teamModalTitle">Add Mobile</h3>
+    <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Mobile name</label>
+        <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
+      </div>
+      <div class="full">
+        <label>Managing staff / employees</label>
+        <div id="tm_staffList"></div>
+        <button class="btn btn-ghost" id="tm_addStaffBtn" type="button">+ Add staff member</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="tm_cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="tm_saveBtn">Save team</button>
+    </div>
+  </div>
+</div>
+
+<!-- Staff Popup -->
+<div class="staff-popup-backdrop" id="staffPopupBackdrop">
+  <div class="staff-popup">
+    <h4 id="staffPopupTitle">Staff</h4>
+    <div class="staff-popup-sub">Managing this mobile mission</div>
+    <div class="staff-popup-list" id="staffPopupList"></div>
+    <button class="btn staff-popup-close" id="staffPopupClose">Close</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dash-backdrop" id="dashBackdrop">
+  <div class="dash-modal">
+    <div class="dash-head">
+      <div>
+        <h3>Metrics Dashboard</h3>
+        <div class="modal-sub">Totals for registration status, facility, and rice/lab availment across your mobiles.</div>
+      </div>
+      <button class="dash-close" id="dashCloseBtn" title="Close"></button>
+    </div>
+    <div class="dash-controls">
+      <select id="dashMonthSelect"></select>
+      <select id="dashTeamSelect"></select>
+      <span class="dash-scope-note" id="dashScopeNote"></span>
+    </div>
+    <div id="dashBody"></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="dash-backdrop" id="adminBackdrop">
+  <div class="dash-modal" style="max-width:720px;">
+    <div class="dash-head">
+      <div>
+        <h3>Admin — Users &amp; roles</h3>
+        <div class="modal-sub">Approve who can log in, and set roles. New signups stay blocked until you check Approved.</div>
+      </div>
+      <button class="dash-close" id="adminCloseBtn" title="Close"></button>
+    </div>
+    <div style="margin:12px 0 16px;padding:12px 14px;background:var(--table-head);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5;">
+      <b style="color:var(--ink);">How to add a new user:</b><br>
+      1. Staff opens the app → “Need an account? Sign up” → creates email + password.<br>
+      2. They appear here as <b>Pending</b> (highlighted) and cannot log in yet.<br>
+      3. Check <b>Approved</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
+    </div>
+    <div id="adminUsersBody"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   STEP 1 — PASTE YOUR SUPABASE KEYS HERE
+   Find these in your Supabase project: Settings → API
+   Replace ONLY the text between the quotes below. Do not delete the quotes.
+   ========================================================================= */
+const SUPABASE_URL = "https://xuaieokstfsxghgvgtzb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1YWllb2tzdGZzeGdoZ3ZndHpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MTMyODEsImV4cCI6MjEwMzE4OTI4MX0.2hWJFMkQeDF4loT2aP32kBJynKMb5Kk_3QKwyg6MFsQ";
+/* ========================================================================= */
+
+if(!window.supabase){
+  document.body.innerHTML = `<div style="max-width:480px;margin:60px auto;padding:24px;font-family:sans-serif;background:#fbeed9;color:#a8402f;border-radius:12px;">
+    <h2 style="margin-top:0;">Can't start DR CARE</h2>
+    <p>The <code>supabase.js</code> library file wasn't found next to this page. See the STEP&nbsp;0 comment near the top of this file's source for how to add it — once it's in place this screen won't appear again, including offline.</p>
+  </div>`;
+  throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Facility lists */
+const HOME_FACILITY = "Abucay";
+const facilityOptionsOther = ["Cirian","Maasin","Sogod","Abuyog","Ormoc"];
+const facilityOptionsAll = [HOME_FACILITY, ...facilityOptionsOther];
+
+const CACHE_KEY = "roster_patients_v1";
+const PENDING_KEY = "roster_pending_v1";
+const ORG_CACHE_KEY = "roster_org_v1";
+
+let pendingIds = new Set();
+try{ pendingIds = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || "[]")); }catch(e){ pendingIds = new Set(); }
+
+function savePending(){
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingIds])); return true; }
+  catch(e){ console.error('savePending failed', e); return false; }
+}
+
+/* Patient roster is stored in IndexedDB (large capacity). localStorage is only a
+   small fallback for older data / tiny lists — mobile browsers often fail around
+   ~50–60 full patient records when using localStorage alone, which is why imports
+   looked capped near 53. */
+const IDB_NAME = 'dr_care_db_v1';
+const IDB_STORE = 'kv';
+function idbOpen(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error || new Error('idb open failed'));
+  });
+}
+function idbSet(key, value){
+  return idbOpen().then(db=> new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error || new Error('idb set failed'));
+  }));
+}
+function idbGet(key){
+  return idbOpen().then(db=> new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error || new Error('idb get failed'));
+  }));
+}
+
+async function saveLocalCache(){
+  let idbOk = false;
+  try{
+    await idbSet('roster', state.patients);
+    idbOk = true;
+  }catch(e){
+    console.error('IndexedDB save failed', e);
+  }
+  // Best-effort localStorage mirror (may fail on large rosters — that is OK)
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify(state.patients));
+  }catch(e){
+    try{ localStorage.removeItem(CACHE_KEY); }catch(_){}
+  }
+  if(!idbOk){
+    try{ setSyncStatus('Save failed — storage error', 'err'); }catch(_){}
+    return false;
+  }
+  return true;
+}
+
+async function loadLocalCache(){
+  // Prefer IndexedDB (full roster)
+  try{
+    const fromIdb = await idbGet('roster');
+    if(Array.isArray(fromIdb) && fromIdb.length) return fromIdb;
+  }catch(e){
+    console.error('IndexedDB load failed', e);
+  }
+  // Fallback: older localStorage cache
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    if(Array.isArray(parsed) && parsed.length){
+      // migrate into IndexedDB in background
+      idbSet('roster', parsed).catch(()=>{});
+      return parsed;
+    }
+  }catch(e){
+    console.error('localStorage load failed', e);
+  }
+  return [];
+}
+
+function cryptoId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+
+function toRemote(p){
+  const uid = (currentUser && currentUser.id) || null;
+  return {
+    id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
+    mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateSubmitted || null,
+    within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab, notes: p.notes || '',
+    deleted: !!p.deleted, updated_at: new Date().toISOString(),
+    created_by: p.createdBy || uid,
+    updated_by: uid
+  };
+}
+function fromRemote(r){
+  return {
+    id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
+    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
+    within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab, notes: r.notes || '',
+    deleted: !!r.deleted,
+    createdBy: r.created_by || null,
+    updatedBy: r.updated_by || null,
+    createdAt: r.created_at || null,
+    updatedAt: r.updated_at || null
+  };
+}
+
+/* Current signed-in user + role */
+let currentUser = null; // { id, email, fullName, role }
+const profileCache = {}; // uid -> { full_name, email, role }
+
+function isAdmin(){ return currentUser && currentUser.role === 'admin'; }
+function canEdit(){ return currentUser && (currentUser.role === 'admin' || currentUser.role === 'encoder'); }
+function isViewer(){ return currentUser && currentUser.role === 'viewer'; }
+
+function displayNameFor(uid){
+  if(!uid) return '—';
+  if(currentUser && uid === currentUser.id) return currentUser.fullName || currentUser.email || 'You';
+  const p = profileCache[uid];
+  if(p) return p.full_name || p.email || uid.slice(0,8);
+  return uid.slice(0,8) + '…';
+}
+
+async function loadCurrentProfile(session){
+  const user = session.user;
+  currentUser = {
+    id: user.id,
+    email: user.email || '',
+    fullName: user.email || '',
+    role: 'encoder',
+    approved: false
+  };
+  try{
+    let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if(error) throw error;
+    if(!data){
+      // Profile missing — create one (not approved by default)
+      const { data: inserted, error: insErr } = await sb.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        full_name: (user.user_metadata && user.user_metadata.full_name) || (user.email || '').split('@')[0],
+        role: 'encoder',
+        approved: false
+      }).select().maybeSingle();
+      if(!insErr && inserted) data = inserted;
+    }
+    if(data){
+      currentUser.fullName = data.full_name || data.email || currentUser.email;
+      currentUser.role = data.role || 'encoder';
+      // Admins are always treated as approved
+      currentUser.approved = (data.role === 'admin') ? true : !!data.approved;
+      profileCache[user.id] = data;
+    }
+  }catch(e){
+    console.warn('loadCurrentProfile', e);
+  }
+  return currentUser;
+}
+
+async function loadAllProfiles(){
+  try{
+    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at');
+    if(error) throw error;
+    (data || []).forEach(p => { profileCache[p.id] = p; });
+    return data || [];
+  }catch(e){
+    console.warn('loadAllProfiles', e);
+    return [];
+  }
+}
+
+const syncPill = document.getElementById('syncPill');
+function setSyncStatus(text, mode){
+  // Always surface pending count when there are unsynced local changes
+  const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+  let display = text;
+  if(pending > 0 && !/uploading|Syncing|Offline|failed|Connecting|Loading/i.test(text || '')){
+    display = `${text} · ${pending} unsynced`;
+  }
+  syncPill.textContent = display;
+  syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '') + (pending > 0 && mode !== 'busy' ? ' err' : '');
+  syncPill.title = pending > 0
+    ? `${pending} change(s) saved on this device and waiting to upload`
+    : (text || '');
+}
+function timeNow(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+
+const offlineBanner = document.getElementById('offlineBanner');
+function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigator.onLine); }
+
+async function pushOne(p){
+  try{
+    const { error } = await sb.from('patients').upsert(toRemote(p));
+    if(error) throw error;
+    pendingIds.delete(p.id);
+    savePending();
+    return true;
+  }catch(e){ return false; }
+}
+
+function prunePendingIds(){
+  let changed = false;
+  for(const id of [...pendingIds]){
+    const p = state.patients.find(x => x.id === id);
+    // Drop ids that no longer exist, or soft-deleted rows already synced away
+    if(!p){ pendingIds.delete(id); changed = true; }
+  }
+  if(changed) savePending();
+  return pendingIds.size;
+}
+
+async function flushPending(){
+  prunePendingIds();
+  if(!navigator.onLine || pendingIds.size === 0){
+    if(navigator.onLine) setSyncStatus('Synced ' + timeNow());
+    return;
+  }
+  setSyncStatus('Syncing…', 'busy');
+  let ok = 0, fail = 0;
+  for(const id of [...pendingIds]){
+    const p = state.patients.find(x => x.id === id);
+    if(!p){ pendingIds.delete(id); continue; }
+    const success = await pushOne(p);
+    if(success) ok++; else fail++;
+  }
+  prunePendingIds();
+  savePending();
+  saveLocalCache();
+  const left = pendingIds.size;
+  if(left > 0) setSyncStatus(`Synced ${ok}, ${left} still uploading`, 'err');
+  else setSyncStatus('Synced ' + timeNow());
+}
+
+async function pullRemote(){
+  if(!navigator.onLine){ setSyncStatus('Offline — saved on this device', 'err'); return; }
+  setSyncStatus('Syncing…', 'busy');
+  try{
+    // Page through all remote rows (Supabase/PostgREST can cap a single request)
+    const pageSize = 1000;
+    let from = 0;
+    const remoteRows = [];
+    while(true){
+      const { data, error } = await sb.from('patients').select('*').range(from, from + pageSize - 1);
+      if(error) throw error;
+      if(!data || data.length === 0) break;
+      remoteRows.push(...data);
+      if(data.length < pageSize) break;
+      from += pageSize;
+    }
+    remoteRows.forEach(r=>{
+      if(pendingIds.has(r.id)) return; // don't overwrite an unsynced local edit
+      const remote = fromRemote(r);
+      const local = state.patients.find(p => p.id === r.id);
+      if(local) Object.assign(local, remote);
+      else state.patients.push(remote);
+    });
+    // Keep every local non-deleted patient, even if not yet on the server.
+    // Only drop soft-deleted rows that already finished syncing.
+    state.patients = state.patients.filter(p => !p.deleted || pendingIds.has(p.id));
+    saveLocalCache();
+    renderAll();
+    const pendingCount = prunePendingIds();
+    setSyncStatus(
+      pendingCount ? `Synced ${timeNow()} · ${pendingCount} still uploading` : ('Synced ' + timeNow())
+    );
+  }catch(e){
+    console.error(e);
+    setSyncStatus('Sync failed — will retry', 'err');
+  }
+}
+
+async function pushOrg(value){
+  localStorage.setItem(ORG_CACHE_KEY, value);
+  if(!navigator.onLine) return;
+  try{ await sb.from('settings').upsert({ key: 'orgName', value }); }catch(e){ /* retried on next pull cycle indirectly */ }
+}
+async function pullOrg(){
+  const cached = localStorage.getItem(ORG_CACHE_KEY);
+  if(cached) orgInput.value = cached;
+  if(!navigator.onLine) return;
+  try{
+    const { data } = await sb.from('settings').select('value').eq('key','orgName').maybeSingle();
+    if(data && data.value && document.activeElement !== orgInput){
+      orgInput.value = data.value;
+      localStorage.setItem(ORG_CACHE_KEY, data.value);
+    }
+  }catch(e){ /* ignore, offline or not set up yet */ }
+}
+
+const TEAM_STAFF_CACHE_KEY = "roster_team_staff_v1";
+let teamStaff = {};
+function loadTeamStaffCache(){
+  try{ teamStaff = JSON.parse(localStorage.getItem(TEAM_STAFF_CACHE_KEY) || "{}"); }
+  catch(e){ teamStaff = {}; }
+}
+function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
+
+function staffEntryToText(s){
+  if(typeof s === 'string') return s;
+  if(s && typeof s === 'object'){
+    if(s.name && s.position) return `${s.name} (${s.position})`;
+    if(s.name) return String(s.name);
+  }
+  return s == null ? '' : String(s);
+}
+async function pushTeamStaff(){
+  saveTeamStaffCache();
+  if(!navigator.onLine) return;
+  try{ await sb.from('settings').upsert({ key: 'teamStaff', value: JSON.stringify(teamStaff) }); }catch(e){ /* retried indirectly */ }
+}
+async function pullTeamStaff(){
+  loadTeamStaffCache();
+  if(!navigator.onLine) return;
+  try{
+    const { data } = await sb.from('settings').select('value').eq('key','teamStaff').maybeSingle();
+    if(data && data.value){
+      teamStaff = JSON.parse(data.value);
+      saveTeamStaffCache();
+    }
+  }catch(e){ /* ignore, offline or not set up yet */ }
+}
+
+/* Called after any local add/edit/delete */
+async function persistChange(p){
+  if(!canEdit()){
+    setSyncStatus('View only — changes not saved', 'err');
+    renderAll();
+    return;
+  }
+  const uid = currentUser ? currentUser.id : null;
+  if(uid){
+    if(!p.createdBy) p.createdBy = uid;
+    p.updatedBy = uid;
+  }
+  pendingIds.add(p.id);
+  savePending();
+  saveLocalCache();
+  renderAll();
+  const ok = await pushOne(p);
+  if(ok){ saveLocalCache(); renderAll(); setSyncStatus('Synced ' + timeNow()); }
+  else setSyncStatus('Offline — saved on this device', 'err');
+}
+
+function seedData(){
+  return [
+    {id:cryptoId(), team:"Mobile Staff — Site A", name:"DELA CRUZ, JUAN, SANTOS", phid:"1300-0004-937", status:"registered", facility:HOME_FACILITY,
+     mca:true, dateEncoded:"2026-08-12", dateSubmitted:"2026-08-12", within24:false, claim:"t1", rice:true, lab:false, notes:"", deleted:false},
+  ];
+}
+
+let state = { patients: [] };
+
+/* ---------------- Rendering ---------------- */
+const groupsContainer = document.getElementById('groupsContainer');
+const statStrip = document.getElementById('statStrip');
+const legend = document.getElementById('legend');
+/* Teams start collapsed; only teams the user expands are in this set */
+const expandedTeams = new Set();
+/* Per-mobile pagination: page size is shared; each team keeps its own page index. */
+let pageSizePreference = (function(){
+  try{
+    const v = localStorage.getItem('roster_page_size');
+    if(v === 'all' || v === '10' || v === '20' || v === '50') return v;
+  }catch(e){}
+  return '20';
+})();
+const teamPageIndex = {}; // teamName -> 0-based page
+function getPageSize(){
+  if(pageSizePreference === 'all') return Infinity;
+  const n = parseInt(pageSizePreference, 10);
+  return (n > 0) ? n : 20;
+}
+function setPageSizePreference(val){
+  pageSizePreference = String(val);
+  try{ localStorage.setItem('roster_page_size', pageSizePreference); }catch(e){}
+  // reset every team to first page when page size changes
+  Object.keys(teamPageIndex).forEach(k => { teamPageIndex[k] = 0; });
+}
+function getTeamPage(team){
+  return teamPageIndex[team] || 0;
+}
+function setTeamPage(team, page){
+  teamPageIndex[team] = Math.max(0, page|0);
+}
+
+
+function getTeams(){
+  
+  const t = new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team));
+  pendingEmptyTeams.forEach(x=>t.add(x));
+  
+  Object.keys(teamStaff).forEach(x=>t.add(x));
+  return [...t];
+}
+const pendingEmptyTeams = new Set();
+
+function monthLabel(ym){
+  if(!ym) return '';
+  const [y,m] = ym.split('-').map(Number);
+  if(!y || !m) return ym;
+  return new Date(y, m-1, 1).toLocaleString('default', {month:'long', year:'numeric'});
+}
+
+function monthPatients(){
+  const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
+  return state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(!month) return true;
+    const enc = (p.dateEncoded||'').trim();
+    // Undated rows stay visible in every month view so imports without dates are not "lost"
+    if(!enc) return true;
+    return enc.slice(0,7) === month;
+  });
+}
+
+function defaultEncodedDate(){
+  // Always use today so brand-new / imported patients stay "Pending"
+  // instead of being auto-flagged Missed 24h (which happened when we
+  // defaulted to the 1st of the selected month).
+  return new Date().toISOString().slice(0,10);
+}
+
+function filteredPatients(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const st = document.getElementById('filterStatus').value;
+  const bf = document.getElementById('filterBenefit').value;
+  const dupFilter = document.getElementById('filterDup') ? document.getElementById('filterDup').value : '';
+  return monthPatients().filter(p=>{
+    if(q && !((p.name||'').toLowerCase().includes(q) || (p.phid||'').toLowerCase().includes(q))) return false;
+    if(st && p.status !== st) return false;
+    if(bf === 'rice-yes' && !p.rice) return false;
+    if(bf === 'rice-no' && p.rice) return false;
+    if(bf === 'lab-yes' && !p.lab) return false;
+    if(bf === 'lab-no' && p.lab) return false;
+    if(dupFilter === 'dup-only' && !isDuplicate(p.phid, p.id)) return false;
+    if(dupFilter === 'unique-only' && isDuplicate(p.phid, p.id)) return false;
+    return true;
+  });
+}
+
+function isDuplicate(phid, excludeId){
+  const clean = (phid||'').trim();
+  if(!clean) return false;
+  return state.patients.some(p => !p.deleted && (p.phid||'').trim() === clean && p.id !== excludeId);
+}
+
+/* Two patients with the same PhilHealth ID count as 1 duplicate (each extra copy adds 1). */
+function countDuplicateExtras(list){
+  const counts = {};
+  list.forEach(p=>{
+    const id = (p.phid||'').trim();
+    if(!id) return;
+    counts[id] = (counts[id] || 0) + 1;
+  });
+  let extras = 0;
+  Object.values(counts).forEach(n=>{ if(n > 1) extras += (n - 1); });
+  return extras;
+}
+
+function duplicateTeam(phid, excludeId){
+  const clean = (phid||'').trim();
+  if(!clean) return null;
+  const match = state.patients.find(p => !p.deleted && p.id !== excludeId && (p.phid||'').trim() === clean);
+  return match ? match.team : null;
+}
+
+function claimDeadline(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if(isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+function autoFlagMissedClaims(){
+  const now = new Date();
+  let changed = false;
+  state.patients.forEach(p=>{
+    if(p.deleted) return;
+    if(p.claim !== 'pending') return;
+    // Already marked within 24h — do not force Missed 24h
+    if(p.within24) return;
+    // Prefer date submitted; fall back to date encoded. No date → leave Pending.
+    const base = (p.dateSubmitted || p.dateEncoded || '').trim();
+    if(!base) return;
+    const deadline = claimDeadline(base);
+    if(deadline && now >= deadline){
+      p.claim = 'missed24';
+      pendingIds.add(p.id);
+      changed = true;
+    }
+  });
+  if(changed){ savePending(); saveLocalCache(); flushPending(); }
+  return changed;
+}
+
+const statusLabel = { registered:"Registered", registered_other:"Registered to other DR facility" };
+const statusClass = { registered:"st-registered", registered_other:"st-registered-other" };
+const claimLabel = {pending:"Pending", t1:"T1 Submitted", missed24:"Missed 24h"};
+const claimClass = {pending:"cl-pending", t1:"cl-t1", missed24:"cl-missed24"};
+
+function normalizeFacility(p){
+  if(p.status === 'registered') p.facility = HOME_FACILITY;
+  else if(p.status === 'registered_other'){ if(!facilityOptionsOther.includes(p.facility)) p.facility = facilityOptionsOther[0]; }
+  else if(!p.facility) p.facility = HOME_FACILITY;
+}
+
+function renderStats(){
+  const all = monthPatients();
+  const unsyncedCount = all.filter(p=>pendingIds.has(p.id)).length;
+  const stats = [
+    ["Total", all.length, ''],
+    ["Registered", all.filter(p=>p.status==='registered').length, ''],
+    ["Other facility", all.filter(p=>p.status==='registered_other').length, ''],
+    ["Rice availed", all.filter(p=>p.rice).length, ''],
+    ["Lab availed", all.filter(p=>p.lab).length, ''],
+    ["Duplicates", countDuplicateExtras(all), ''],
+    ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
+  ];
+  statStrip.innerHTML = stats.map(([lbl,num,extra])=>
+    `<div class="stat ${extra}" title="${lbl === 'Unsynced' && num > 0 ? num + ' change(s) waiting to upload' : ''}">
+      <div class="num">${num}</div><div class="lbl">${lbl}</div>
+    </div>`).join('');
+}
+
+function renderLegend(){
+  legend.innerHTML = `
+    <span><b>Month view:</b> the picker at the top filters everything to one month, based on each patient's Date encoded — switch months to page between mobile missions</span>
+    <span><b>Status:</b> Registered → Registered to other DR facility</span>
+    <span><b>Facility:</b> "Registered" auto-fills as Abucay. "Registered to other DR facility" lets you pick Cirian, Maasin, Sogod, Abuyog, or Ormoc</span>
+    <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
+    <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
+    <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
+    <span><b>Bulk actions:</b> tick the checkboxes on the left of rows (or “select all on this page”), then use the bottom bar to mark rice/lab or set claim status for many patients at once</span>
+    <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
+    <span><b>Backup:</b> Export CSV any time for a copy outside the app. Use each mobile's own "export"/"import" buttons to work with just that mobile's patients</span>
+    <span><b>CSV / Excel import:</b> minimum columns — Patient Name, PhilHealth ID, Status, Facility, Digital MCA (Team and other fields optional)</span>
+  `;
+}
+
+function captureScrollPositions(){
+  const positions = {};
+  document.querySelectorAll('.team-group').forEach(group=>{
+    const head = group.querySelector('.team-head');
+    const wrap = group.querySelector('.table-wrap');
+    if(head && wrap) positions[head.dataset.team] = wrap.scrollLeft;
+  });
+  return positions;
+}
+function restoreScrollPositions(positions){
+  document.querySelectorAll('.team-group').forEach(group=>{
+    const head = group.querySelector('.team-head');
+    const wrap = group.querySelector('.table-wrap');
+    if(head && wrap && positions[head.dataset.team] != null){
+      wrap.scrollLeft = positions[head.dataset.team];
+    }
+  });
+}
+
+function renderAll(){
+  const savedScroll = captureScrollPositions();
+  autoFlagMissedClaims();
+  state.patients.forEach(normalizeFacility);
+  renderStats();
+  renderLegend();
+  updateOfflineBanner();
+  const teams = getTeams();
+  const monthList = monthPatients();
+  const list = filteredPatients();
+  populateTeamSelect(teams);
+
+  const monthVal = document.getElementById('monthFilter').value;
+
+  // When a specific month is selected, only show mobiles that have patients in that month
+  // (plus any brand-new empty mobiles the user just created). Avoids "copying" empty tables into next month.
+  let teamsToShow = teams;
+  if(monthVal){
+    const teamsWithPatients = new Set(monthList.map(p => p.team));
+    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
+  }
+
+  groupsContainer.innerHTML = '';
+  if(teamsToShow.length === 0){
+    const msg = monthVal
+      ? `No mobile records for ${monthLabel(monthVal)}. Switch months, or add a mobile and encode patients for this month.`
+      : `No mobiles yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
+    groupsContainer.innerHTML = `<div class="empty-state">${msg}</div>`;
+    return;
+  }
+  teamsToShow.forEach(team=>{
+    const allRows = list.filter(p=>p.team === team);
+    const totalInTeam = monthList.filter(p=>p.team===team).length;
+    const staffList = (teamStaff[team] || []).map(staffEntryToText).filter(Boolean);
+    const wrap = document.createElement('div');
+    wrap.className = 'team-group';
+    const collapsed = !expandedTeams.has(team);
+
+    const size = getPageSize();
+    const totalFiltered = allRows.length;
+    const totalPages = size === Infinity ? 1 : Math.max(1, Math.ceil(totalFiltered / size));
+    let page = getTeamPage(team);
+    if(page > totalPages - 1) page = totalPages - 1;
+    if(page < 0) page = 0;
+    setTeamPage(team, page);
+    const start = size === Infinity ? 0 : page * size;
+    const end = size === Infinity ? totalFiltered : Math.min(start + size, totalFiltered);
+    const rows = allRows.slice(start, end);
+    const showingFrom = totalFiltered === 0 ? 0 : start + 1;
+    const showingTo = end;
+    const sizeOpts = ['10','20','50','all'].map(v=>{
+      const selected = String(pageSizePreference) === v ? 'selected' : '';
+      const label = v === 'all' ? 'All' : v;
+      return `<option value="${v}" ${selected}>${label}</option>`;
+    }).join('');
+    const pagerHtml = totalFiltered === 0 ? '' : `
+      <div class="team-pager" data-pager-team="${escapeAttr(team)}">
+        <div class="pager-left">
+          <label>Show</label>
+          <select data-page-size="${escapeAttr(team)}">${sizeOpts}</select>
+          <span class="pager-info">Showing ${showingFrom}–${showingTo} of ${totalFiltered}</span>
+        </div>
+        <div class="pager-right">
+          <button type="button" class="pager-btn" data-page-prev="${escapeAttr(team)}" ${page <= 0 ? 'disabled' : ''}>← Previous</button>
+          <span class="pager-info">Page ${page + 1} / ${totalPages}</span>
+          <button type="button" class="pager-btn" data-page-next="${escapeAttr(team)}" ${page >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+        </div>
+      </div>`;
+
+    wrap.innerHTML = `
+      <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
+        <span class="chev" aria-hidden="true">▾</span>
+        <div class="team-title-block">
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
+        </div>
+        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+        ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
+        <div class="team-tools">
+          ${canEdit() ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
+          <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
+          <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
+          ${canEdit() ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
+          <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
+          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>` : ''}
+        </div>
+      </div>
+      <div class="table-wrap" style="${collapsed?'display:none;':''}">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
+              <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
+              <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
+              <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
+              <th>Rice availed</th><th>Lab availed</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="13" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      ${collapsed ? '' : pagerHtml}
+    `;
+    groupsContainer.appendChild(wrap);
+  });
+  autosizeBadgeSelects();
+  restoreScrollPositions(savedScroll);
+  if(typeof dashBackdrop !== 'undefined' && dashBackdrop.classList.contains('open')) renderDashboard();
+}
+
+function measureTextWidth(text, refEl){
+  const span = document.createElement('span');
+  const cs = getComputedStyle(refEl);
+  span.style.visibility = 'hidden'; span.style.position = 'absolute'; span.style.whiteSpace = 'nowrap';
+  span.style.fontSize = cs.fontSize; span.style.fontFamily = cs.fontFamily; span.style.fontWeight = cs.fontWeight;
+  span.style.letterSpacing = cs.letterSpacing; span.style.textTransform = cs.textTransform;
+  span.textContent = text;
+  document.body.appendChild(span);
+  const width = span.offsetWidth;
+  document.body.removeChild(span);
+  const cs2 = cs;
+  const pad = (parseFloat(cs2.paddingLeft)||0)+(parseFloat(cs2.paddingRight)||0)+(parseFloat(cs2.borderLeftWidth)||0)+(parseFloat(cs2.borderRightWidth)||0);
+  return Math.ceil(width + pad + 4);
+}
+function autosizeBadgeSelects(){
+  document.querySelectorAll('select.badge-select').forEach(sel=>{
+    const opt = sel.options[sel.selectedIndex];
+    sel.style.width = measureTextWidth(opt ? opt.textContent : '', sel) + 'px';
+  });
+}
+
+function facilityCellHtml(p){
+  // Colors match status: Registered/Abucay = green, other facility = purple
+  if(p.status === 'registered'){
+    return `<td style="text-align:center"><span class="fac-fixed">${HOME_FACILITY}</span></td>`;
+  }
+  if(p.status === 'registered_other'){
+    const opts = facilityOptionsOther;
+    return `<td style="text-align:center"><select class="badge-select fac-select fac-other" data-field="facility">
+      ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
+    </select></td>`;
+  }
+  const opts = facilityOptionsAll;
+  const facClass = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
+  return `<td style="text-align:center"><select class="badge-select fac-select ${facClass}" data-field="facility">
+    ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
+  </select></td>`;
+}
+
+const selectedIds = new Set();
+
+function rowHtml(p){
+  const dupTeam = duplicateTeam(p.phid, p.id);
+  const dup = !!dupTeam;
+  const pend = pendingIds.has(p.id);
+  const sel = selectedIds.has(p.id);
+  return `
+    <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
+      <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
+      <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
+      <td class="idcell">${escapeHtml(p.phid)}</td>
+      <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
+        ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      ${facilityCellHtml(p)}
+      <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
+      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
+      <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
+      <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
+        ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
+      <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
+      <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
+      <td class="row-actions">
+        <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
+        ${canEdit() ? `<button class="icon-btn" data-remove="${p.id}" title="Delete">${icon('trash',14)}</button>` : ''}
+      </td>
+    </tr>`;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+const ICON_PATHS = {
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  printer: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'
+};
+function icon(name, size=15, extraStyle=''){
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;${extraStyle}">${ICON_PATHS[name]||''}</svg>`;
+}
+
+function populateTeamSelect(teams){
+  const sel = document.getElementById('f_team');
+  const current = sel.value;
+  sel.innerHTML = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  if(teams.includes(current)) sel.value = current;
+}
+
+/* ---------------- Staff popup ---------------- */
+const staffPopupBackdrop = document.getElementById('staffPopupBackdrop');
+const staffPopupTitle = document.getElementById('staffPopupTitle');
+const staffPopupList = document.getElementById('staffPopupList');
+function openStaffPopup(team){
+  const staffList = (teamStaff[team] || []).map(staffEntryToObj);
+  staffPopupTitle.textContent = team;
+  staffPopupList.innerHTML = staffList.length
+    ? staffList.map(s=>`<div class="staff-popup-item"><span class="sp-name">${escapeHtml(s.name)}</span>${s.position?`<span class="sp-pos">${escapeHtml(s.position)}</span>`:''}</div>`).join('')
+    : `<div class="empty-state" style="padding:10px 0;">No staff listed.</div>`;
+  staffPopupBackdrop.classList.add('open');
+}
+function closeStaffPopup(){ staffPopupBackdrop.classList.remove('open'); }
+document.getElementById('staffPopupClose').addEventListener('click', closeStaffPopup);
+staffPopupBackdrop.addEventListener('click', e=>{ if(e.target===staffPopupBackdrop) closeStaffPopup(); });
+
+groupsContainer.addEventListener('click', e=>{
+  const staffBtn = e.target.closest('[data-staff-popup]');
+  if(staffBtn){
+    openStaffPopup(staffBtn.dataset.staffPopup);
+    return;
+  }
+  const teamHead = e.target.closest('.team-head');
+  if(teamHead && !e.target.closest('.team-tools') && !e.target.closest('[data-staff-popup]')){
+    const team = teamHead.dataset.team;
+    if(expandedTeams.has(team)) expandedTeams.delete(team); else expandedTeams.add(team);
+    renderAll();
+    return;
+  }
+  if(e.target.closest('[data-add-patient]')){
+    openModal(null, e.target.closest('[data-add-patient]').dataset.addPatient);
+    return;
+  }
+  if(e.target.closest('[data-print-team]')){
+    printSingleTeam(e.target.closest('[data-print-team]').dataset.printTeam);
+    return;
+  }
+  if(e.target.closest('[data-export-team]')){
+    exportPatients(e.target.closest('[data-export-team]').dataset.exportTeam);
+    return;
+  }
+  if(e.target.closest('[data-import-team]')){
+    importTargetTeam = e.target.closest('[data-import-team]').dataset.importTeam;
+    document.getElementById('importFile').click();
+    return;
+  }
+  if(e.target.closest('[data-edit-team]')){
+    openTeamModal(e.target.closest('[data-edit-team]').dataset.editTeam);
+    return;
+  }
+  if(e.target.closest('[data-delete-team]')){
+    const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
+    const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
+    if(confirm(`Delete team "${team}" and its ${count} patient record(s)? This cannot be undone.`)){
+      state.patients.forEach(p=>{ if(p.team===team){ p.deleted = true; pendingIds.add(p.id); } });
+      delete teamStaff[team];
+      pendingEmptyTeams.delete(team);
+      pushTeamStaff();
+      savePending(); saveLocalCache(); renderAll(); flushPending();
+    }
+    return;
+  }
+  if(e.target.closest('[data-edit]')){ openModal(e.target.closest('[data-edit]').dataset.edit); return; }
+  if(e.target.closest('[data-remove]')){
+    if(confirm("Delete this patient record?")){
+      const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
+      if(p){ p.deleted = true; persistChange(p); }
+    }
+    return;
+  }
+});
+
+groupsContainer.addEventListener('change', e=>{
+  // Row selection / select-all
+  if(e.target.classList.contains('row-select')){
+    const id = e.target.dataset.id;
+    if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+    const tr = e.target.closest('tr');
+    if(tr) tr.classList.toggle('selected-row', e.target.checked);
+    updateBulkBar();
+    return;
+  }
+  if(e.target.classList.contains('select-all-page')){
+    const team = e.target.dataset.team;
+    const wrap = e.target.closest('.team-group');
+    const boxes = wrap ? wrap.querySelectorAll('.row-select') : [];
+    boxes.forEach(cb=>{
+      cb.checked = e.target.checked;
+      const id = cb.dataset.id;
+      if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+      const tr = cb.closest('tr');
+      if(tr) tr.classList.toggle('selected-row', e.target.checked);
+    });
+    updateBulkBar();
+    return;
+  }
+
+  const row = e.target.closest('tr[data-id]');
+  if(!row) return;
+  const p = state.patients.find(p=>p.id===row.dataset.id);
+  if(!p) return;
+  const field = e.target.dataset.field;
+  if(!field) return;
+  if(!canEdit()){
+    // Revert visual change for viewers
+    renderAll();
+    return;
+  }
+  p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  if(field === 'status') normalizeFacility(p);
+  persistChange(p);
+});
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('bulkCount');
+  const n = selectedIds.size;
+  if(!bar || !countEl) return;
+  countEl.textContent = n === 1 ? '1 selected' : `${n} selected`;
+  bar.classList.toggle('show', n > 0);
+}
+
+async function applyBulkChange(mutator){
+  const ids = [...selectedIds];
+  if(!ids.length) return;
+  let changed = 0;
+  for(const id of ids){
+    const p = state.patients.find(x => x.id === id && !x.deleted);
+    if(!p) continue;
+    mutator(p);
+    pendingIds.add(p.id);
+    changed++;
+  }
+  if(changed){
+    savePending();
+    await saveLocalCache();
+    renderAll();
+    updateBulkBar();
+    flushPending().catch(()=>{});
+  }
+}
+
+document.getElementById('bulkRiceYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.rice = true; });
+});
+document.getElementById('bulkLabYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.lab = true; });
+});
+document.getElementById('bulkClaim').addEventListener('change', e=>{
+  const v = e.target.value;
+  if(!v) return;
+  applyBulkChange(p => { p.claim = v; });
+  e.target.value = '';
+});
+document.getElementById('bulkClear').addEventListener('click', ()=>{
+  selectedIds.clear();
+  document.querySelectorAll('.row-select').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('tr.selected-row').forEach(tr => tr.classList.remove('selected-row'));
+  document.querySelectorAll('.select-all-page').forEach(cb => { cb.checked = false; });
+  updateBulkBar();
+});
+
+/* ---------------- Modal ---------------- */
+const backdrop = document.getElementById('modalBackdrop');
+let editingId = null;
+
+function updateFacilityField(preferredValue){
+  const status = document.getElementById('f_status').value;
+  const sel = document.getElementById('f_facility');
+  const hint = document.getElementById('facilityHint');
+  if(status === 'registered'){
+    sel.innerHTML = `<option value="${HOME_FACILITY}">${HOME_FACILITY}</option>`;
+    sel.value = HOME_FACILITY; sel.disabled = true;
+    hint.textContent = 'Auto-set to Abucay for "Registered" status.';
+  } else if(status === 'registered_other'){
+    sel.innerHTML = facilityOptionsOther.map(f=>`<option value="${f}">${f}</option>`).join('');
+    sel.disabled = false;
+    sel.value = (preferredValue && facilityOptionsOther.includes(preferredValue)) ? preferredValue : facilityOptionsOther[0];
+    hint.textContent = 'Choose which DR facility this patient is registered to.';
+  } else {
+    sel.innerHTML = facilityOptionsAll.map(f=>`<option value="${f}">${f}</option>`).join('');
+    sel.disabled = false;
+    sel.value = (preferredValue && facilityOptionsAll.includes(preferredValue)) ? preferredValue : HOME_FACILITY;
+    hint.textContent = '';
+  }
+}
+document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
+
+/* Format PhilHealth ID as 1234-5678-9012 (keeps typing smooth for scanners too) */
+function formatPhilHealthId(raw){
+  const digits = String(raw || '').replace(/\D/g, '').slice(0, 12);
+  if(digits.length <= 4) return digits;
+  if(digits.length <= 8) return digits.slice(0,4) + '-' + digits.slice(4);
+  return digits.slice(0,4) + '-' + digits.slice(4,8) + '-' + digits.slice(8);
+}
+function normalizePhilHealthId(raw){
+  // Canonical stored form: with dashes when 12 digits, otherwise cleaned string
+  const digits = String(raw || '').replace(/\D/g, '');
+  if(digits.length === 12) return formatPhilHealthId(digits);
+  return String(raw || '').trim();
+}
+
+const saveBtnEl = document.getElementById('saveBtn');
+function updateSaveEnabled(){
+  const hasName = document.getElementById('f_name').value.trim().length > 0;
+  const hasPhid = document.getElementById('f_phid').value.trim().length > 0;
+  saveBtnEl.disabled = !(hasName && hasPhid);
+}
+document.getElementById('f_name').addEventListener('input', updateSaveEnabled);
+document.getElementById('f_phid').addEventListener('input', e=>{
+  // Auto-format while typing / scanning (preserve cursor as best we can)
+  const el = e.target;
+  const start = el.selectionStart;
+  const oldLen = el.value.length;
+  const formatted = formatPhilHealthId(el.value);
+  if(formatted !== el.value){
+    el.value = formatted;
+    const newLen = formatted.length;
+    const diff = newLen - oldLen;
+    const pos = Math.max(0, (start || 0) + diff);
+    try{ el.setSelectionRange(pos, pos); }catch(_){}
+  }
+  updateSaveEnabled();
+});
+
+function openModal(id, presetTeam){
+  if(!id && !canEdit()){
+    alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
+    return;
+  }
+  editingId = id || null;
+  const p = id ? state.patients.find(p=>p.id===id) : null;
+  document.getElementById('modalTitle').textContent = p ? (canEdit() ? "Edit Patient" : "View Patient") : "Add Patient";
+  populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
+  document.getElementById('f_name').value = p ? p.name : '';
+  document.getElementById('f_phid').value = p ? p.phid : '';
+  document.getElementById('f_team').value = p ? p.team : (presetTeam || getTeams()[0] || '');
+  document.getElementById('f_status').value = p ? p.status : 'registered';
+  updateFacilityField(p ? p.facility : HOME_FACILITY);
+  document.getElementById('f_claim').value = p ? p.claim : 'pending';
+  document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
+  document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
+  document.getElementById('f_mca').checked = p ? p.mca : false;
+  document.getElementById('f_within24').checked = p ? p.within24 : false;
+  document.getElementById('f_rice').checked = p ? p.rice : false;
+  document.getElementById('f_lab').checked = p ? p.lab : false;
+  document.getElementById('f_notes').value = p ? (p.notes||'') : '';
+  document.getElementById('dupWarning').style.display = 'none';
+
+  // Audit trail
+  const auditEl = document.getElementById('auditInfo');
+  if(p && (p.createdBy || p.updatedBy)){
+    const added = p.createdBy ? displayNameFor(p.createdBy) : '—';
+    const edited = p.updatedBy ? displayNameFor(p.updatedBy) : '—';
+    auditEl.innerHTML = `<b>Added by:</b> ${escapeHtml(added)} &nbsp;·&nbsp; <b>Last edited by:</b> ${escapeHtml(edited)}`;
+    auditEl.style.display = 'block';
+  } else {
+    auditEl.style.display = 'none';
+    auditEl.innerHTML = '';
+  }
+
+  // Read-only for viewers
+  const editable = canEdit();
+  saveBtnEl.style.display = editable ? '' : 'none';
+  backdrop.querySelectorAll('input, select').forEach(el=>{
+    if(el.id === 'cancelBtn') return;
+    el.disabled = !editable && el.type !== 'checkbox' ? !editable : !editable;
+    if(el.type === 'checkbox') el.disabled = !editable;
+  });
+
+  updateSaveEnabled();
+  backdrop.classList.add('open');
+  if(editable) document.getElementById('f_name').focus();
+}
+function closeModal(){ backdrop.classList.remove('open'); editingId = null; }
+
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeModal(); });
+document.getElementById('f_phid').addEventListener('input', e=>{
+  const dupTeam = duplicateTeam(e.target.value, editingId);
+  const warn = document.getElementById('dupWarning');
+  if(dupTeam){
+    warn.textContent = `⚠ This PhilHealth ID already exists — Duplicate at ${dupTeam}.`;
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+});
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  if(saveBtnEl.disabled) return;
+  const name = document.getElementById('f_name').value.trim();
+  const phid = normalizePhilHealthId(document.getElementById('f_phid').value);
+  if(!name || !phid){ return; }
+  const data = {
+    team: document.getElementById('f_team').value, name, phid,
+    status: document.getElementById('f_status').value,
+    facility: document.getElementById('f_facility').value,
+    claim: document.getElementById('f_claim').value || 'pending',
+    dateEncoded: document.getElementById('f_dateEncoded').value || defaultEncodedDate(),
+    dateSubmitted: document.getElementById('f_dateSubmitted').value,
+    mca: document.getElementById('f_mca').checked,
+    within24: document.getElementById('f_within24').checked,
+    rice: document.getElementById('f_rice').checked,
+    lab: document.getElementById('f_lab').checked,
+    notes: document.getElementById('f_notes').value.trim(),
+    deleted: false
+  };
+  let p;
+  if(editingId){ p = state.patients.find(p=>p.id===editingId); Object.assign(p, data); }
+  else { p = Object.assign({id:cryptoId()}, data); state.patients.push(p); }
+  pendingEmptyTeams.delete(data.team);
+  persistChange(p);
+  closeModal();
+});
+
+/* ---------------- Team / Site modal ---------------- */
+const teamModalBackdrop = document.getElementById('teamModalBackdrop');
+let editingTeamOriginalName = null;
+
+const STAFF_POSITIONS = ['DR','Medtech','Radtech','Phlebo','Encoder','Driver','Receiving'];
+function staffEntryToObj(s){
+  if(typeof s === 'string') return { name:s, position:'' };
+  if(s && typeof s === 'object') return { name:s.name||'', position:s.position||'' };
+  return { name:'', position:'' };
+}
+function addStaffRow(person){
+  const p = staffEntryToObj(person || {});
+  const list = document.getElementById('tm_staffList');
+  const row = document.createElement('div');
+  row.className = 'staff-row';
+  row.innerHTML = `<input type="text" class="tm-staff-input" placeholder="Employee name" value="${escapeAttr(p.name)}">
+    <select class="tm-staff-position">
+      <option value="">Position…</option>
+      ${STAFF_POSITIONS.map(pos=>`<option value="${pos}" ${p.position===pos?'selected':''}>${pos}</option>`).join('')}
+    </select>
+    <button class="icon-btn" data-remove-staff title="Remove">${icon('trash',14)}</button>`;
+  list.appendChild(row);
+}
+function renderStaffRows(entries){
+  const list = document.getElementById('tm_staffList');
+  list.innerHTML = '';
+  (entries && entries.length ? entries : [{}]).forEach(entry => addStaffRow(entry));
+}
+document.getElementById('tm_addStaffBtn').addEventListener('click', ()=> addStaffRow());
+document.getElementById('tm_staffList').addEventListener('click', e=>{
+  if(e.target.closest('[data-remove-staff]')) e.target.closest('.staff-row').remove();
+});
+
+function openTeamModal(existingName){
+  editingTeamOriginalName = existingName || null;
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
+  document.getElementById('tm_name').value = existingName || '';
+  renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
+  teamModalBackdrop.classList.add('open');
+  document.getElementById('tm_name').focus();
+}
+function closeTeamModal(){ teamModalBackdrop.classList.remove('open'); editingTeamOriginalName = null; }
+document.getElementById('tm_cancelBtn').addEventListener('click', closeTeamModal);
+teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop) closeTeamModal(); });
+
+document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('tm_name').value.trim();
+  if(!name){ alert("Mobile name is required."); return; }
+  const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
+    name: row.querySelector('.tm-staff-input').value.trim(),
+    position: row.querySelector('.tm-staff-position').value
+  })).filter(s=>s.name);
+
+  
+  const existingTeams = getTeams();
+  const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
+
+  if(!editingTeamOriginalName && collidesWith){
+    alert(`A mobile named "${collidesWith}" already exists. Choose a different name, or edit that mobile instead of adding a new one.`);
+    return;
+  }
+  if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
+    const proceed = confirm(`A mobile named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
+    if(!proceed) return;
+  }
+
+  if(editingTeamOriginalName && editingTeamOriginalName !== name){
+    // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
+    state.patients.forEach(p=>{ if(p.team === editingTeamOriginalName){ p.team = name; pendingIds.add(p.id); } });
+    if(pendingEmptyTeams.has(editingTeamOriginalName)){ pendingEmptyTeams.delete(editingTeamOriginalName); pendingEmptyTeams.add(name); }
+    delete teamStaff[editingTeamOriginalName];
+    savePending(); saveLocalCache(); flushPending();
+  } else if(!editingTeamOriginalName && !existingTeams.includes(name)){
+    pendingEmptyTeams.add(name);
+  }
+  teamStaff[name] = staffNames;
+  pushTeamStaff();
+  renderAll();
+  closeTeamModal();
+});
+
+document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
+
+let searchDebounceTimer = null;
+document.getElementById('search').addEventListener('input', ()=>{
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(renderAll, 180);
+});
+document.getElementById('filterStatus').addEventListener('change', renderAll);
+document.getElementById('filterBenefit').addEventListener('change', renderAll);
+document.getElementById('filterDup').addEventListener('change', renderAll);
+const monthFilterEl = document.getElementById('monthFilter');
+monthFilterEl.value = new Date().toISOString().slice(0,7);
+monthFilterEl.addEventListener('change', renderAll);
+document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
+  monthFilterEl.value = '';
+  renderAll();
+});
+
+/* Per-mobile pagination controls (Show 10/20/50/All + Prev/Next) */
+groupsContainer.addEventListener('change', e=>{
+  const sizeSel = e.target.closest('[data-page-size]');
+  if(sizeSel){
+    setPageSizePreference(sizeSel.value);
+    renderAll();
+  }
+});
+groupsContainer.addEventListener('click', e=>{
+  const prev = e.target.closest('[data-page-prev]');
+  if(prev){
+    const team = prev.dataset.pagePrev;
+    setTeamPage(team, getTeamPage(team) - 1);
+    renderAll();
+    return;
+  }
+  const next = e.target.closest('[data-page-next]');
+  if(next){
+    const team = next.dataset.pageNext;
+    setTeamPage(team, getTeamPage(team) + 1);
+    renderAll();
+  }
+});
+
+/* ---------------- Theme (light / dark) ---------------- */
+const THEME_KEY = 'roster_theme_v1';
+function applyTheme(theme){
+  document.body.classList.toggle('dark', theme === 'dark');
+  const btn = document.getElementById('themeToggle');
+  if(btn) btn.innerHTML = theme === 'dark'
+    ? `${icon('sun')} Light mode`
+    : `${icon('moon')} Dark mode`;
+}
+(function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+})();
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+document.getElementById('syncNowBtn').innerHTML = `${icon('refresh')} Sync now`;
+document.getElementById('exportBtn').innerHTML = `${icon('download')} Export CSV`;
+document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
+document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
+document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
+document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
+document.getElementById('adminBtn').innerHTML = `${icon('users')} Admin`;
+
+/* ---------------- Org name ---------------- */
+const orgInput = document.getElementById('orgName');
+let orgSaveTimer = null;
+orgInput.addEventListener('input', ()=>{
+  clearTimeout(orgSaveTimer);
+  orgSaveTimer = setTimeout(()=> pushOrg(orgInput.value), 500);
+});
+
+/* ---------------- CSV export / import ---------------- */
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Notes"];
+
+function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+
+function patientToCsvRow(p){
+  return [
+    p.team||'', p.name||'', p.phid||'', statusLabel[p.status]||p.status||'', p.facility||'',
+    p.mca?'YES':'NO', p.dateSubmitted||'', p.within24?'YES':'NO',
+    claimLabel[p.claim]||p.claim||'', p.rice?'YES':'NO', p.lab?'YES':'NO', p.notes||''
+  ].map(csvSafe).join(',');
+}
+
+function exportPatients(teamFilter){
+  const rows = state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(teamFilter && p.team !== teamFilter) return false;
+    return true;
+  });
+  const lines = [CSV_HEADERS.join(',')].concat(rows.map(patientToCsvRow));
+  const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const namePart = teamFilter ? '-' + teamFilter.replace(/[^\w\-]+/g,'_').slice(0,40) : '';
+  a.href = url; a.download = `field-roster${namePart}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportBtn').addEventListener('click', ()=> exportPatients(null));
+
+document.getElementById('csvTemplateBtn').addEventListener('click', ()=>{
+  const sample = [
+    CSV_HEADERS.join(','),
+    ['Mobile Staff — Site A','DELA CRUZ, JUAN','1300-0004-937','Registered','Abucay','YES','','NO','Pending','YES','NO','Optional remarks'].map(csvSafe).join(','),
+    ['','SANTOS, MARIA','','Registered to other DR facility','Cirian','YES','','NO','T1 Submitted','NO','YES',''].map(csvSafe).join(',')
+  ].join('\r\n');
+  const blob = new Blob([sample], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'DRCARE_import_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('xlsxTemplateBtn').addEventListener('click', ()=>{
+  if(!window.XLSX){
+    alert('Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
+    return;
+  }
+  const data = [
+    CSV_HEADERS,
+    ['Mobile Staff — Site A','DELA CRUZ, JUAN','1300-0004-937','Registered','Abucay','YES','','NO','Pending','YES','NO','Optional remarks'],
+    ['','SANTOS, MARIA','','Registered to other DR facility','Cirian','YES','','NO','T1 Submitted','NO','YES','']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Patients');
+  XLSX.writeFile(wb, 'DRCARE_import_template.xlsx');
+});
+
+
+function isValidDateStr(s){ return /^\d{4}-\d{2}-\d{2}$/.test((s||'').trim()); }
+
+function parseImportDate(raw){
+  if(raw == null || raw === '') return '';
+  if(raw instanceof Date && !isNaN(raw.getTime())){
+    const y = raw.getFullYear(), m = String(raw.getMonth()+1).padStart(2,'0'), d = String(raw.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  let s = String(raw).trim();
+  if(!s) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  if(/^\d+(\.\d+)?$/.test(s)){
+    const n = parseFloat(s);
+    if(n > 20000 && n < 60000){
+      const epoch = new Date(Date.UTC(1899, 11, 30));
+      const dt = new Date(epoch.getTime() + Math.round(n) * 86400000);
+      if(!isNaN(dt.getTime())){
+        const y = dt.getUTCFullYear(), m = String(dt.getUTCMonth()+1).padStart(2,'0'), d = String(dt.getUTCDate()).padStart(2,'0');
+        return `${y}-${m}-${d}`;
+      }
+    }
+  }
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){
+    let a = parseInt(m[1],10), b = parseInt(m[2],10), y = parseInt(m[3],10);
+    if(y < 100) y += 2000;
+    let month, day;
+    if(a > 12){ day = a; month = b; }
+    else if(b > 12){ month = a; day = b; }
+    else { month = a; day = b; }
+    if(month >= 1 && month <= 12 && day >= 1 && day <= 31){
+      return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+  }
+  const dt = new Date(s);
+  if(!isNaN(dt.getTime()) && dt.getFullYear() > 1990 && dt.getFullYear() < 2100){
+    const y = dt.getFullYear(), mo = String(dt.getMonth()+1).padStart(2,'0'), d = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
+  return '';
+}
+
+function normalizeHeader(h){
+  return String(h||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/&/g,'and');
+}
+
+/* Map spreadsheet headers to fields. Date Encoded is optional — not required for monitoring. */
+const IMPORT_HEADER_MAP = {
+  team: ['team','mobile','mobile / site','site'],
+  name: ['patient name','name','patient','patient_name'],
+  phid: ['philhealth id','philhealth','phid','philhealth id no','philhealth no'],
+  status: ['status','registration status'],
+  facility: ['facility'],
+  mca: ['digital mca','mca','digital_mca'],
+  dateEnc: ['date encoded','encoded','date_encoded'],
+  dateSub: ['date validated and submitted','date validated & submitted','date submitted','date validated','date_submitted'],
+  within24: ['within 24h','within 24','within24'],
+  claim: ['status of claim','claim','claim status'],
+  rice: ['rice availed','rice'],
+  lab: ['lab availed','lab'],
+  notes: ['notes','remarks','comment']
+};
+
+function buildColIndex(headerRow){
+  const idx = {};
+  headerRow.forEach((h, i)=>{
+    const n = normalizeHeader(h);
+    if(!n) return;
+    for(const [field, aliases] of Object.entries(IMPORT_HEADER_MAP)){
+      if(aliases.includes(n) && idx[field] === undefined) idx[field] = i;
+    }
+  });
+  return idx;
+}
+
+function rowLooksLikeHeader(cols){
+  const joined = cols.map(normalizeHeader).join('|');
+  return /patient name|philhealth|digital mca|^name$/.test(joined);
+}
+
+async function processImportRows(allRows, targetTeam){
+  if(!allRows || !allRows.length){
+    alert('No rows found in that file.');
+    return;
+  }
+  let start = 0;
+  let colIndex = null;
+  const first = allRows[0].map(c => (c==null ? '' : String(c)).trim());
+  if(rowLooksLikeHeader(first)){
+    colIndex = buildColIndex(first);
+    start = 1;
+  }
+  // Minimal import needs at least Patient Name (or PhilHealth ID)
+  if(colIndex && colIndex.name === undefined && colIndex.phid === undefined){
+    alert('Could not find a Patient Name or PhilHealth ID column in the header row.\\n\\nUse headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
+    return;
+  }
+
+  let added = 0, skipped = 0, badDates = 0;
+  const importedMonthCounts = {};
+  const statusRev = {};
+  Object.entries(statusLabel).forEach(([k,v])=>{ statusRev[v.toLowerCase()] = k; statusRev[k] = k; });
+  statusRev['registered to other dr facility'] = 'registered_other';
+  statusRev['registered-other'] = 'registered_other';
+  const claimRev = {};
+  Object.entries(claimLabel).forEach(([k,v])=>{ claimRev[v.toLowerCase()] = k; claimRev[k] = k; });
+  claimRev['t1 submitted'] = 't1';
+  claimRev['missed 24h'] = 'missed24';
+
+  function cell(cols, field, positionalFallback){
+    if(colIndex && colIndex[field] !== undefined){
+      const v = cols[colIndex[field]];
+      return v == null ? '' : String(v).trim();
+    }
+    if(positionalFallback !== undefined && positionalFallback < cols.length){
+      const v = cols[positionalFallback];
+      return v == null ? '' : String(v).trim();
+    }
+    return '';
+  }
+
+  for(let r = start; r < allRows.length; r++){
+    const rawCols = allRows[r] || [];
+    const cols = rawCols.map(c => (c==null ? '' : String(c)).trim());
+    if(cols.every(c=>c==='')) continue;
+
+    // Positional fallback when there is no header:
+    // 5 cols  -> Name, PhilHealth ID, Status, Facility, Digital MCA
+    // 6+ cols -> Team, Name, PhilHealth ID, Status, Facility, Digital MCA, ...
+    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, rice, lab, notes;
+    if(colIndex){
+      team = cell(cols,'team');
+      name = cell(cols,'name');
+      phid = cell(cols,'phid');
+      status = cell(cols,'status');
+      facility = cell(cols,'facility');
+      mca = cell(cols,'mca');
+      dateEnc = cell(cols,'dateEnc');
+      dateSub = cell(cols,'dateSub');
+      within24 = cell(cols,'within24');
+      claim = cell(cols,'claim');
+      rice = cell(cols,'rice');
+      lab = cell(cols,'lab');
+      notes = cell(cols,'notes');
+    } else if(cols.length <= 5){
+      [name, phid, status, facility, mca] = cols;
+      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; rice = ''; lab = ''; notes = '';
+    } else {
+      team = cols[0]||''; name = cols[1]||''; phid = cols[2]||''; status = cols[3]||'';
+      facility = cols[4]||''; mca = cols[5]||'';
+      dateEnc = cols[6]||''; dateSub = cols[7]||''; within24 = cols[8]||'';
+      claim = cols[9]||''; rice = cols[10]||''; lab = cols[11]||''; notes = cols[12]||'';
+    }
+
+    if(!name && !phid){ skipped++; continue; }
+
+    const resolvedStatus = statusRev[(status||'').toLowerCase()] || 'registered';
+    let parsedEnc = parseImportDate(dateEnc);
+    const parsedSub = parseImportDate(dateSub);
+    if((dateEnc && !parsedEnc) || (dateSub && !parsedSub)) badDates++;
+    // Date Encoded is not part of the main monitoring columns — auto-fill for month filter only
+    if(!parsedEnc) parsedEnc = defaultEncodedDate();
+
+    const p = {
+      id: cryptoId(),
+      team: targetTeam || team || 'Imported',
+      name: name || '',
+      phid: normalizePhilHealthId(phid || ''),
+      status: resolvedStatus,
+      facility: matchFacility(facility) || (resolvedStatus === 'registered' ? HOME_FACILITY : ''),
+      mca: isYesValue(mca),
+      dateEncoded: parsedEnc,
+      dateSubmitted: parsedSub,
+      within24: isYesValue(within24),
+      claim: claimRev[(claim||'').toLowerCase()] || 'pending',
+      rice: isYesValue(rice),
+      lab: isYesValue(lab),
+      notes: notes || '',
+      deleted: false
+    };
+    state.patients.push(p);
+    pendingIds.add(p.id);
+    added++;
+    const ym = (parsedEnc||'').slice(0,7);
+    if(ym) importedMonthCounts[ym] = (importedMonthCounts[ym] || 0) + 1;
+    else importedMonthCounts[''] = (importedMonthCounts[''] || 0) + 1;
+  }
+
+  const monthFilterEl = document.getElementById('monthFilter');
+  const currentMonth = monthFilterEl.value;
+  const monthKeys = Object.keys(importedMonthCounts).filter(k => k !== '');
+  let viewNote = '';
+  if(added > 0){
+    if(monthKeys.length === 1){
+      const only = monthKeys[0];
+      if(currentMonth && currentMonth !== only){
+        monthFilterEl.value = only;
+        viewNote = `\\n\\nSwitched the month filter to ${monthLabel(only)} so the imported patients are visible.`;
+      }
+    } else if(monthKeys.length > 1){
+      monthFilterEl.value = '';
+      viewNote = '\\n\\nImported patients span multiple months, so the month filter was set to "all months".';
+    }
+  }
+  savePending();
+  renderAll();
+  const aliveNow = state.patients.filter(p=>!p.deleted).length;
+  const savedOk = await saveLocalCache();
+  flushPending().catch(()=>{});
+  let msg = `Imported ${added} record(s)${targetTeam ? ' into "' + targetTeam + '"' : ''}.`;
+  msg += `\\n\\nTotal patients on this device now: ${aliveNow}.`;
+  if(!savedOk){
+    msg += `\\n\\nWARNING: Could not fully save to device storage. Export a CSV backup now.`;
+  }
+  if(skipped > 0){
+    msg += `\\n\\nSkipped ${skipped} row(s) with no Patient Name and no PhilHealth ID.`;
+  }
+  if(badDates > 0){
+    msg += `\\n\\n${badDates} row(s) had a date that could not be read. Those dates were left blank.`;
+  }
+  msg += viewNote;
+  alert(msg);
+}
+
+document.getElementById('importBtn').addEventListener('click', ()=>{ importTargetTeam = null; document.getElementById('importFile').click(); });
+document.getElementById('importFile').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file){ importTargetTeam = null; return; }
+  const targetTeam = importTargetTeam;
+  const isXlsx = /\.xlsx$/i.test(file.name);
+  const reader = new FileReader();
+
+  if(isXlsx){
+    if(!window.XLSX){
+      alert("Excel (.xlsx) import needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. In the meantime, save your workbook as CSV (File > Save As > CSV) and import that instead.");
+      e.target.value = ''; importTargetTeam = null; return;
+    }
+    reader.onload = evt=>{
+      try{
+        const wb = XLSX.read(evt.target.result, {type:'array', cellDates:true, raw:false});
+        const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
+      }catch(err){ alert("Could not read that Excel file. Make sure it matches the DR CARE import format (see the Excel template button)."); console.error(err); }
+      e.target.value = '';
+      importTargetTeam = null;
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = evt=>{
+      try{
+        const allRows = parseCsvRows(evt.target.result);
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
+      }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the CSV template button)."); console.error(err); }
+      e.target.value = '';
+      importTargetTeam = null;
+    };
+    reader.readAsText(file);
+  }
+});
+
+function isYesValue(v){
+  const c = (v||'').trim().toUpperCase();
+  return c === 'YES' || c === 'Y' || c === 'TRUE' || c === '1';
+}
+
+function matchFacility(raw){
+  const clean = (raw||'').trim();
+  if(!clean) return '';
+  const found = facilityOptionsAll.find(f => f.toLowerCase() === clean.toLowerCase());
+  return found || '';
+}
+
+function parseCsvRows(text){
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let row = [], cur = '', inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(inQ){
+      if(c === '"' && text[i+1] === '"'){ cur += '"'; i++; }
+      else if(c === '"'){ inQ = false; }
+      else cur += c;
+    } else {
+      if(c === '"') inQ = true;
+      else if(c === ',') { row.push(cur); cur = ''; }
+      else if(c === '\r') { /* skip, \n below ends the row */ }
+      else if(c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += c;
+    }
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
+}
+
+function printSingleTeam(team){
+  document.querySelectorAll('.team-group').forEach(g=>{
+    const head = g.querySelector('.team-head');
+    if(head && head.dataset.team !== team) g.classList.add('print-hide');
+  });
+  window.print();
+}
+function clearPrintIsolation(){
+  document.querySelectorAll('.team-group.print-hide').forEach(g=> g.classList.remove('print-hide'));
+}
+window.addEventListener('afterprint', clearPrintIsolation);
+document.getElementById('syncNowBtn').addEventListener('click', ()=>{ flushPending().then(pullRemote); });
+
+/* ---------------- Dashboard ---------------- */
+const dashBackdrop = document.getElementById('dashBackdrop');
+const dashMonthSelect = document.getElementById('dashMonthSelect');
+const dashTeamSelect = document.getElementById('dashTeamSelect');
+const dashBody = document.getElementById('dashBody');
+document.getElementById('dashCloseBtn').innerHTML = icon('x', 15);
+
+function getAllEncodedMonths(){
+  const set = new Set();
+  state.patients.forEach(p=>{
+    if(p.deleted || !p.dateEncoded) return;
+    const ym = p.dateEncoded.slice(0,7);
+    if(/^\d{4}-\d{2}$/.test(ym)) set.add(ym);
+  });
+  return [...set].sort().reverse();
+}
+
+function populateDashboardControls(){
+  const mainMonth = document.getElementById('monthFilter').value; // '' or 'YYYY-MM'
+  
+  const months = getAllEncodedMonths();
+  if(mainMonth && /^\d{4}-\d{2}$/.test(mainMonth) && !months.includes(mainMonth)) months.unshift(mainMonth);
+  months.sort().reverse();
+
+  const preferredMonth = mainMonth || 'all';
+  const prevMonthVal = dashMonthSelect.value || preferredMonth;
+  dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
+    months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : preferredMonth;
+
+  const teams = getTeams();
+  const prevTeamVal = dashTeamSelect.value || 'all';
+  dashTeamSelect.innerHTML = `<option value="all">All mobiles / sites</option>` +
+    teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
+}
+
+function dashboardScopePatients(){
+  const month = dashMonthSelect.value;
+  const team = dashTeamSelect.value;
+  return state.patients.filter(p=>{
+    if(p.deleted) return false;
+    if(month !== 'all'){
+      const enc = (p.dateEncoded||'').trim();
+      if(enc && enc.slice(0,7) !== month) return false;
+    }
+    if(team !== 'all' && p.team !== team) return false;
+    return true;
+  });
+}
+
+function dashBarRow(label, count, total, extraClass){
+  const pct = total > 0 ? Math.round((count/total)*100) : 0;
+  return `<div class="dash-bar-row">
+    <div class="dbr-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div>
+    <div class="dash-bar-track"><div class="dash-bar-fill ${extraClass||''}" style="width:${pct}%"></div></div>
+    <div class="dbr-num">${count}</div>
+  </div>`;
+}
+
+function renderDashboard(){
+  populateDashboardControls();
+  const scoped = dashboardScopePatients();
+  const total = scoped.length;
+  const registered = scoped.filter(p=>p.status==='registered').length;
+  const registeredOther = scoped.filter(p=>p.status==='registered_other').length;
+  const riceCount = scoped.filter(p=>p.rice).length;
+  const labCount = scoped.filter(p=>p.lab).length;
+  const bothCount = scoped.filter(p=>p.rice && p.lab).length;
+  const neitherCount = scoped.filter(p=>!p.rice && !p.lab).length;
+  const dupCount = countDuplicateExtras(scoped);
+  const missed24 = scoped.filter(p=>p.claim==='missed24').length;
+  const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const within24Count = scoped.filter(p=>p.within24).length;
+  const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
+  const t1Rate = pct(t1Count);
+  const within24Rate = pct(within24Count);
+  const riceRate = pct(riceCount);
+  const labRate = pct(labCount);
+  const missedRate = pct(missed24);
+
+  const monthVal = dashMonthSelect.value;
+  const teamVal = dashTeamSelect.value;
+  document.getElementById('dashScopeNote').textContent =
+    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles' : teamVal}`;
+
+  if(total === 0){
+    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope yet. Try "All months" / "All mobiles / sites".</div>`;
+    return;
+  }
+
+  const cardsHtml = `
+    <div class="dash-cards">
+      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Total patients</div></div>
+      <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
+      <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Registered — other facility</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice availed (${riceRate})</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab availed (${labRate})</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${bothCount}</div><div class="dc-lbl">Availed both</div></div>
+      <div class="dash-card"><div class="dc-num">${neitherCount}</div><div class="dc-lbl">Availed neither</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${t1Rate}</div><div class="dc-lbl">T1 submitted rate</div></div>
+      <div class="dash-card accent-amber"><div class="dc-num">${within24Rate}</div><div class="dc-lbl">Within 24h rate</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${missedRate}</div><div class="dc-lbl">Missed 24h rate</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${dupCount}</div><div class="dc-lbl">Duplicates</div></div>
+      <div class="dash-card accent-red"><div class="dc-num">${missed24}</div><div class="dc-lbl">Missed 24h claim</div></div>
+    </div>`;
+
+  // Facility breakdown (across the scoped set)
+  const facilityRows = facilityOptionsAll.map(f=>{
+    const c = scoped.filter(p=>p.facility===f).length;
+    return dashBarRow(f, c, total, f===HOME_FACILITY ? '' : 'accent-purple-fill');
+  }).join('');
+
+  // Rice / lab availment breakdown
+  const benefitRows = [
+    dashBarRow('Rice availed', riceCount, total),
+    dashBarRow('Lab availed', labCount, total),
+    dashBarRow('Both availed', bothCount, total),
+    dashBarRow('Neither availed', neitherCount, total)
+  ].join('');
+
+  // Per-mobile/site table (only meaningful when "All mobiles" is selected)
+  const teamsInScope = [...new Set(scoped.map(p=>p.team))];
+  const teamTableHtml = teamVal === 'all' ? `
+    <div class="dash-section">
+      <h4>Breakdown by mobile / site</h4>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead><tr><th>Mobile / site</th><th>Total</th><th>Registered</th><th>Other facility</th><th>Rice</th><th>Lab</th><th>Duplicates</th></tr></thead>
+          <tbody>
+            ${teamsInScope.map(t=>{
+              const rows = scoped.filter(p=>p.team===t);
+              return `<tr>
+                <td>${escapeHtml(t)}</td>
+                <td>${rows.length}</td>
+                <td>${rows.filter(p=>p.status==='registered').length}</td>
+                <td>${rows.filter(p=>p.status==='registered_other').length}</td>
+                <td>${rows.filter(p=>p.rice).length}</td>
+                <td>${rows.filter(p=>p.lab).length}</td>
+                <td>${rows.filter(p=>isDuplicate(p.phid,p.id)).length}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : '';
+
+  dashBody.innerHTML = `
+    ${cardsHtml}
+    <div class="dash-two-col">
+      <div class="dash-section">
+        <h4>By facility</h4>
+        ${facilityRows}
+      </div>
+      <div class="dash-section">
+        <h4>Rice &amp; lab availment</h4>
+        ${benefitRows}
+      </div>
+    </div>
+    ${teamTableHtml}
+    <div class="dash-section">
+      <h4>Patients encoded per month (all mobiles)</h4>
+      <div class="dash-trend-wrap" id="dashTrendWrap"></div>
+    </div>
+  `;
+  renderTrendChart(monthVal);
+}
+
+function renderTrendChart(selectedMonth){
+  const months = getAllEncodedMonths().slice().sort(); // ascending
+  const wrap = document.getElementById('dashTrendWrap');
+  if(!wrap) return;
+  if(months.length === 0){ wrap.innerHTML = `<div class="dash-empty">No dated records yet.</div>`; return; }
+
+  const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
+  const maxCount = Math.max(...counts, 1);
+  
+  const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
+  const barAreaH = chartH - topPad - bottomPad;
+  const svgW = months.length * (barW + gap) + leftPad;
+
+  let bars = '';
+  months.forEach((m, i)=>{
+    const c = counts[i];
+    const h = Math.round((c / maxCount) * barAreaH);
+    const x = leftPad + i * (barW + gap);
+    const y = chartH - bottomPad - h;
+    const isCurrent = m === selectedMonth;
+    const shortLabel = monthLabel(m).replace(' ', '\u00A0').slice(0, 3) + ' ' + m.slice(2,4);
+    bars += `
+      <text class="dash-trend-num" x="${x + barW/2}" y="${y - 7}" text-anchor="middle">${c}</text>
+      <rect class="dash-trend-bar ${isCurrent?'dtb-current':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4"></rect>
+      <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 6}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
+    `;
+  });
+
+  wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+function openDashboard(){
+  
+  dashMonthSelect.value = '';
+  dashTeamSelect.value = '';
+  populateDashboardControls();
+  renderDashboard();
+  dashBackdrop.classList.add('open');
+}
+function closeDashboard(){ dashBackdrop.classList.remove('open'); }
+document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
+document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
+dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
+dashMonthSelect.addEventListener('change', renderDashboard);
+dashTeamSelect.addEventListener('change', renderDashboard);
+
+/* ---------------- Admin panel ---------------- */
+const adminBackdrop = document.getElementById('adminBackdrop');
+document.getElementById('adminCloseBtn').innerHTML = icon('x', 15);
+
+async function openAdmin(){
+  if(!isAdmin()){
+    alert('Admin access only.');
+    return;
+  }
+  adminBackdrop.classList.add('open');
+  await renderAdminUsers();
+}
+function closeAdmin(){ adminBackdrop.classList.remove('open'); }
+document.getElementById('adminBtn').addEventListener('click', openAdmin);
+document.getElementById('adminCloseBtn').addEventListener('click', closeAdmin);
+adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeAdmin(); });
+
+async function renderAdminUsers(){
+  const body = document.getElementById('adminUsersBody');
+  body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
+  const users = await loadAllProfiles();
+  if(!users.length){
+    body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
+    return;
+  }
+  const roleOptions = (current) => ['admin','encoder','viewer'].map(r =>
+    `<option value="${r}" ${r===current?'selected':''}>${r}</option>`
+  ).join('');
+
+  // Sort: unapproved first, then by name
+  users.sort((a,b)=>{
+    const aa = (a.role === 'admin' || a.approved) ? 1 : 0;
+    const bb = (b.role === 'admin' || b.approved) ? 1 : 0;
+    if(aa !== bb) return aa - bb;
+    return String(a.full_name||a.email||'').localeCompare(String(b.full_name||b.email||''));
+  });
+
+  body.innerHTML = `
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Approved</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => {
+            const isSelf = u.id === currentUser.id;
+            const isUserAdmin = u.role === 'admin';
+            const approved = isUserAdmin ? true : !!u.approved;
+            return `
+            <tr data-uid="${u.id}" style="${!approved ? 'background:var(--amber-bg);' : ''}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
+                  ${approved ? 'checked' : ''}
+                  ${isSelf || isUserAdmin ? 'disabled title="Admins are always approved"' : ''}
+                  title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
+              </td>
+              <td>${escapeHtml(u.full_name || '—')}</td>
+              <td>${escapeHtml(u.email || '—')}</td>
+              <td>
+                <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled title="You cannot change your own role here"' : ''}>
+                  ${roleOptions(u.role || 'encoder')}
+                </select>
+              </td>
+              <td style="font-size:11px;color:var(--muted);">
+                ${isSelf ? 'You' : (!approved ? '<span style="color:var(--amber);font-weight:700;">Pending</span>' : 'OK')}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px;">
+      <b>Approved</b> = can log in. Uncheck to revoke access.<br>
+      Roles: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
+    </p>
+  `;
+
+  body.querySelectorAll('.admin-role-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const uid = sel.dataset.uid;
+      const role = sel.value;
+      sel.disabled = true;
+      try{
+        const patch = { role, updated_at: new Date().toISOString() };
+        // Promoting to admin also approves
+        if(role === 'admin') patch.approved = true;
+        const { error } = await sb.from('profiles').update(patch).eq('id', uid);
+        if(error) throw error;
+        if(profileCache[uid]){ profileCache[uid].role = role; if(role==='admin') profileCache[uid].approved = true; }
+        setSyncStatus('Role updated', '');
+        await renderAdminUsers();
+      }catch(e){
+        console.error(e);
+        alert('Could not update role: ' + (e.message || e));
+        await renderAdminUsers();
+      }finally{
+        sel.disabled = false;
+      }
+    });
+  });
+
+  body.querySelectorAll('.admin-approve-check').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      const uid = cb.dataset.uid;
+      const approved = cb.checked;
+      cb.disabled = true;
+      try{
+        const { error } = await sb.from('profiles').update({ approved, updated_at: new Date().toISOString() }).eq('id', uid);
+        if(error) throw error;
+        if(profileCache[uid]) profileCache[uid].approved = approved;
+        setSyncStatus(approved ? 'User approved' : 'Access revoked', '');
+        await renderAdminUsers();
+      }catch(e){
+        console.error(e);
+        alert('Could not update approval: ' + (e.message || e));
+        await renderAdminUsers();
+      }finally{
+        cb.disabled = false;
+      }
+    });
+  });
+}
+
+/* ---------------- Auth ---------------- */
+const loginOverlay = document.getElementById('loginOverlay');
+const loginErr = document.getElementById('loginErr');
+const whoAmI = document.getElementById('whoAmI');
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function setAuthMode(mode){
+  authMode = mode;
+  const isUp = mode === 'signup';
+  document.getElementById('loginTitle').textContent = isUp ? 'DR CARE — Create account' : 'DR CARE — Sign in';
+  document.getElementById('loginSub').textContent = isUp
+    ? 'New staff account · an admin will set your role after signup'
+    : 'Divine Rays Mobile Operations · individual accounts';
+  document.getElementById('signupNameWrap').style.display = isUp ? 'block' : 'none';
+  document.getElementById('loginBtn').textContent = isUp ? 'Create account' : 'Sign in';
+  document.getElementById('signupBtn').style.display = 'none';
+  document.getElementById('toggleAuthMode').textContent = isUp
+    ? 'Already have an account? Sign in'
+    : 'Need an account? Sign up';
+  document.getElementById('loginNote').textContent = isUp
+    ? 'Use your work email. After signup, ask an admin to set your role (encoder / viewer / admin).'
+    : 'Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.';
+  loginErr.style.display = 'none';
+}
+document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
+  setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+});
+
+async function doLogin(){
+  const emailEl = document.getElementById('loginEmail');
+  const passEl = document.getElementById('loginPassword');
+  const email = (emailEl.value || '').trim().toLowerCase();
+  const password = passEl.value || '';
+  const fullName = (document.getElementById('loginFullName').value || '').trim();
+  const btn = document.getElementById('loginBtn');
+  loginErr.style.display = 'none';
+  loginErr.textContent = '';
+
+  if(!email || !password){
+    loginErr.textContent = 'Enter email and password.';
+    loginErr.style.display = 'block';
+    return;
+  }
+  if(authMode === 'signup' && password.length < 6){
+    loginErr.textContent = 'Password must be at least 6 characters.';
+    loginErr.style.display = 'block';
+    return;
+  }
+  if(!navigator.onLine){
+    loginErr.textContent = "You're offline. Connect to the internet once to sign in on this device.";
+    loginErr.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
+
+  try{
+    if(authMode === 'signup'){
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName || email.split('@')[0] } }
+      });
+      if(error){
+        let msg = error.message || 'Sign up failed';
+        if(/already registered|already been registered/i.test(msg)) msg = 'That email is already registered. Sign in instead.';
+        loginErr.textContent = msg;
+        loginErr.style.display = 'block';
+        return;
+      }
+      if(data && data.session){
+        await onSignedIn(data.session);
+        return;
+      }
+      // Email confirmation may be required
+      loginErr.style.display = 'block';
+      loginErr.style.color = 'var(--green)';
+      loginErr.textContent = 'Account created. If email confirmation is enabled in Supabase, check your inbox, then sign in. Ask an admin to set your role.';
+      setAuthMode('signin');
+      return;
+    }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      let msg = error.message || 'Sign in failed';
+      if(/invalid login credentials/i.test(msg)) msg = 'Wrong email or password.';
+      if(/email not confirmed/i.test(msg)) msg = 'Email is not confirmed yet in Supabase.';
+      if(/failed to fetch|network/i.test(msg)) msg = 'Network error — check internet connection and that supabase.js is present.';
+      loginErr.textContent = msg;
+      loginErr.style.display = 'block';
+      return;
+    }
+    if(!data || !data.session){
+      loginErr.textContent = 'Sign in returned no session. Try clearing site data for this page, then sign in again.';
+      loginErr.style.display = 'block';
+      return;
+    }
+    await onSignedIn(data.session);
+  }catch(e){
+    console.error('login error', e);
+    let msg = (e && e.message) ? e.message : 'Sign in failed';
+    if(/quota|storage/i.test(msg)){
+      msg = 'Browser storage is full, so login session could not be saved. Export a CSV backup if needed, clear site data for this page, then try again.';
+    }
+    loginErr.textContent = msg;
+    loginErr.style.display = 'block';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
+});
+document.getElementById('loginEmail').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('loginPassword').focus(); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+});
+
+async function onSignedIn(session){
+  await loadCurrentProfile(session);
+
+  // Block unapproved users (admins always pass)
+  if(!currentUser.approved && currentUser.role !== 'admin'){
+    try{ await sb.auth.signOut(); }catch(e){}
+    loginOverlay.classList.remove('hidden');
+    loginErr.style.display = 'block';
+    loginErr.style.color = 'var(--red)';
+    loginErr.textContent = 'Your account is waiting for admin approval. Ask an admin to approve you in the Admin panel.';
+    return;
+  }
+
+  loginOverlay.classList.add('hidden');
+  const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
+  whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel}`;
+  const adminBtn = document.getElementById('adminBtn');
+  if(adminBtn){
+    adminBtn.style.display = isAdmin() ? '' : 'none';
+    adminBtn.innerHTML = `${icon('users')} Admin`;
+  }
+  applyRoleUI();
+  try{
+    await initApp();
+    if(navigator.onLine) await loadAllProfiles();
+  }catch(e){
+    console.error('initApp failed after login', e);
+    setSyncStatus('Loaded with errors — see console', 'err');
+  }
+}
+
+function applyRoleUI(){
+  const editable = canEdit();
+  // Disable primary write controls for viewers
+  ['addTeamBtn','importBtn','csvTemplateBtn','xlsxTemplateBtn'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = editable ? '' : 'none';
+  });
+  const bulkBar = document.getElementById('bulkBar');
+  if(bulkBar && !editable) bulkBar.classList.remove('show');
+}
+
+/* ---------------- Init ---------------- */
+async function initApp(){
+  setSyncStatus('Loading…', 'busy');
+  state.patients = await loadLocalCache();
+  loadTeamStaffCache();
+  if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
+  renderAll();
+  await pullOrg();
+  await pullTeamStaff();
+  renderAll();
+  if(navigator.onLine){ await flushPending(); await pullRemote(); }
+  else setSyncStatus('Offline — saved on this device', 'err');
+
+  setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
+  setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
+  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
+  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
+}
+
+(async function boot(){
+  updateOfflineBanner();
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){ onSignedIn(data.session); return; }
+  }catch(e){
+    console.error('getSession failed', e);
+  }
+  
+  loginOverlay.classList.remove('hidden');
+  if(!navigator.onLine){
+    loginErr.textContent = "You're offline and this device hasn't signed in before — connect once to sign in, then offline access will work.";
+    loginErr.style.display = 'block';
+  }
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      // New version waiting → show a small update toast
+      if(reg.waiting){
+        showSwUpdateToast(reg);
+      }
+      reg.addEventListener('updatefound', ()=>{
+        const worker = reg.installing;
+        if(!worker) return;
+        worker.addEventListener('statechange', ()=>{
+          if(worker.state === 'installed' && navigator.serviceWorker.controller){
+            showSwUpdateToast(reg);
+          }
+        });
+      });
+    }).catch(err=>{
+      console.warn('Service worker registration failed — offline app-shell caching is unavailable:', err);
+    });
+  });
+}
+
+function showSwUpdateToast(reg){
+  if(document.getElementById('swUpdateToast')) return;
+  const toast = document.createElement('div');
+  toast.id = 'swUpdateToast';
+  toast.style.cssText = 'position:fixed;bottom:24px;right:16px;z-index:300;background:var(--teal-deep);color:#f2ede0;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.25);font-size:13px;font-weight:600;display:flex;gap:12px;align-items:center;max-width:min(340px,calc(100vw - 24px));';
+  toast.innerHTML = `<span>Update available</span>
+    <button type="button" style="background:#fff;color:#0b3630;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px;">Refresh</button>
+    <button type="button" style="background:transparent;color:#c7dcd5;border:none;cursor:pointer;font-size:16px;line-height:1;" aria-label="Dismiss">×</button>`;
+  const [refreshBtn, dismissBtn] = toast.querySelectorAll('button');
+  refreshBtn.addEventListener('click', ()=>{
+    if(reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    window.location.reload();
+  });
+  dismissBtn.addEventListener('click', ()=> toast.remove());
+  document.body.appendChild(toast);
+}
+</script>
+</body>
 </html>
