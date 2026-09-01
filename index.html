@@ -1404,7 +1404,7 @@ function renderAll(){
           ${canEdit() && showArchived ? (totalInTeam === 0
             ? `<button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
             : `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
-          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete all forever</button>`) : ''}
+          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>`) : ''}
         </div>
       </div>
       ${collapsed ? '' : `
@@ -1516,7 +1516,7 @@ function rowHtml(p){
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
           ? `<button class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>
-             <button class="icon-btn" data-purge="${p.id}" title="Delete forever" style="color:var(--red);">${icon('trash',14)}</button>`
+             <button class="icon-btn" data-purge="${p.id}" title="Delete" style="color:var(--red);">${icon('trash',14)}</button>`
           : `<button class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
         : ''}
       </td>
@@ -1737,7 +1737,7 @@ async function permanentlyDeletePatients(ids){
       // Server confirmed — can forget purged markers for these ids
       ids.forEach(id => purgedIds.delete(id));
       savePurged();
-      setSyncStatus('Deleted forever ' + timeNow());
+      setSyncStatus('Deleted ' + timeNow());
     }catch(e){
       console.error(e);
       setSyncStatus('Removed here — server delete blocked (check RLS). Won\'t reappear on this device.', 'err');
