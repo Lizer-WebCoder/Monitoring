@@ -52,14 +52,253 @@
     min-height:100vh;
     overflow-x:hidden;
   }
+  /* ---------- Bulk action bar ---------- */
+  #bulkBar{
+    display:none; position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    z-index:90; background:var(--teal-deep); color:#f2ede0; border-radius:14px;
+    padding:10px 16px; box-shadow:0 10px 40px rgba(11,54,48,0.4);
+    align-items:center; gap:12px; flex-wrap:wrap; max-width:calc(100vw - 24px);
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  #bulkBar.show{ display:flex; }
+  #bulkBar .bulk-count{ font-weight:800; font-size:13px; white-space:nowrap; }
+  #bulkBar .bulk-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #bulkBar .btn{ background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); color:#f2ede0; box-shadow:none; }
+  #bulkBar .btn:hover{ background:rgba(255,255,255,0.22); color:#fff; border-color:rgba(255,255,255,0.35); }
+  #bulkBar select{ background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#f2ede0; font-size:12.5px; padding:7px 10px; border-radius:8px; }
+  #bulkBar select option{ color:#12312b; background:#fff; }
+  body.dark #bulkBar{ background:#0d2e29; }
+  th.col-select, td.col-select{ width:36px; text-align:center; }
+  tr.selected-row{ background:var(--amber-bg) !important; }
+  .app-shell{
+    max-width:1600px;
+    margin:0 auto;
+    padding:0 16px 24px;
+    box-sizing:border-box;
+  }
+  @media (min-width: 1100px){
+    .app-shell{ padding:0 28px 32px; }
+  }
+  /* Soft frame so content never looks cut off at the screen edge */
+  .app-frame{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-top:12px;
+  }
+  body > header{ /* keep header full-bleed */ }
+  .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
+
+  /* ---------- Offline banner ---------- */
+  #offlineBanner{
+    display:none; position:sticky; top:0; z-index:40; background:var(--amber-bg); color:var(--amber);
+    font-size:12px; font-weight:700; text-align:center; padding:6px 10px;
+  }
+  #offlineBanner.show{ display:block; }
+
+  /* ---------- Login overlay ---------- */
+  #loginOverlay{
+    position:fixed; inset:0; background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  #loginOverlay.hidden{ display:none; }
+  .login-card{
+    background:var(--card); border-radius:14px; padding:32px 30px; width:100%; max-width:360px;
+    box-shadow:0 20px 60px rgba(11,54,48,0.35);
+  }
+  .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
+  .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
+  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
+  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
+  .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
+  .login-card button:hover{ background:var(--teal-deep); }
+  .login-card button:disabled{ opacity:0.6; cursor:default; }
+  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; }
+  .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(180deg, var(--teal-deep), var(--teal));
+    color:#f2ede0; padding:22px 26px 20px; position:sticky; top:0; z-index:30;
+    box-shadow:0 4px 14px rgba(11,54,48,0.25);
+    position:relative; overflow:hidden;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .header-row, .toolbar, .team-group, .legend, .app-footer{
+    width:100%;
+    max-width:1600px;
+    margin-left:auto;
+    margin-right:auto;
+    box-sizing:border-box;
+  }
+  .toolbar{ padding-left:16px; padding-right:16px; }
+  .team-group{ padding-left:16px; padding-right:16px; }
+  .legend{ padding-left:16px; padding-right:16px; }
+  /* Outer edge frame around the page content */
+  html{ background:var(--teal-deep); }
+  body{
+    border-left:3px solid var(--teal);
+    border-right:3px solid var(--teal);
+    box-sizing:border-box;
+  }
+  header::before{
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(circle at 92% -20%, rgba(255,255,255,0.14), transparent 42%),
+      radial-gradient(circle at 6% 130%, rgba(255,255,255,0.10), transparent 45%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 26px);
+  }
+  header::after{
+    content:''; position:absolute; right:-30px; top:-30px; width:220px; height:220px; z-index:0; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='4'%3E%3Cpath d='M50 20v60M20 50h60'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-size:contain; opacity:0.9;
+  }
+  .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
+  .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
+  .brand-title{
+    font-family:'Sora', 'Inter', sans-serif; font-size:28px; font-weight:800; letter-spacing:.01em; margin:0;
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(100deg, #ffffff 10%, #bfe8da 55%, #ffffff 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 2px 18px rgba(0,0,0,0.15);
+  }
+  .pulse-badge{
+    flex:none; width:38px; height:30px; border-radius:9px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.14); color:#bfe8da;
+  }
+  .pulse-line{ stroke-dasharray:100; stroke-dashoffset:0; animation:pulse-travel 2.2s linear infinite; }
+  @keyframes pulse-travel{ 0%{ stroke-dashoffset:100; } 100%{ stroke-dashoffset:0; } }
+  .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
+  .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
+  .org-input::placeholder{ color:rgba(242,237,224,0.55); }
+  .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
+  .sync-row{ display:flex; align-items:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#c7dcd5; }
+  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; }
+  .sync-pill.err::before{ background:#e2897a; }
+  .sync-pill.busy::before{ background:#e0c479; }
+  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
+  .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
+
+  .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
+  .stat .num{ font-size:20px; font-weight:800; line-height:1; font-family:'IBM Plex Mono',monospace; }
+  .stat .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#c7dcd5; margin-top:3px; }
+  .stat.stat-warn{ background:rgba(232,171,92,0.22); border-color:rgba(232,171,92,0.55); }
+  .stat.stat-warn .num{ color:#f0c878; }
+  .stat.stat-warn .lbl{ color:#f0c878; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{ max-width:1400px; margin:16px auto 10px; padding:0 26px; display:flex; flex-direction:column; gap:10px; }
+  .toolbar-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .btn{ border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .12s ease; box-shadow:var(--shadow); }
+  .btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
+  .btn-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+  .btn-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .btn-primary:disabled{ opacity:0.45; cursor:not-allowed; transform:none; background:var(--teal); color:#fff; }
+  .btn-ghost{ box-shadow:none; }
+  input[type="text"], input[type="date"], input[type="month"], input[type="email"], input[type="password"], select{ font-family:inherit; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  select{ text-align:center; text-align-last:center; }
+  #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
+  #search{ min-width:220px; flex:1; }
+  .spacer{ flex:1; }
+  input[type="file"]{ display:none; }
+
+  /* ---------- Groups ---------- */
+  .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
+  .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
+  .team-head .chev{
+    flex:none; width:28px; height:28px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; line-height:1; color:var(--teal-deep);
+    background:var(--table-head); border:1px solid var(--line);
+    transition:transform .15s ease, background .12s ease, border-color .12s ease;
+  }
+  .team-head:hover .chev{ background:var(--line); border-color:var(--teal); }
+  .team-head.collapsed .chev{ transform:rotate(-90deg); }
+  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(420px, 40vw); }
+  .team-title-block{ display:flex; flex-direction:row; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; }
+  .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; flex:none; }
+  .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
+  .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
+  .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
+  .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
+  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; flex:none; white-space:nowrap; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  .team-head .team-tools .tt-btn{
+    display:inline-flex; align-items:center; gap:5px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font-size:12px; font-weight:600; padding:5px 10px; border-radius:8px;
+    cursor:pointer; text-decoration:none; box-shadow:var(--shadow);
+    transition:all .12s ease;
+  }
+  .team-head .team-tools .tt-btn:hover{ border-color:var(--teal); color:var(--teal-deep); transform:translateY(-1px); }
+  .team-head .team-tools .tt-btn.tt-primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+  .team-head .team-tools .tt-btn.tt-primary:hover{ background:var(--teal-deep); color:#fff; }
+  .team-head .team-tools .tt-btn.tt-danger{ color:var(--red); }
+  .team-head .team-tools .tt-btn.tt-danger:hover{ border-color:var(--red); background:var(--red-bg); }
+  .team-head{ flex-wrap:wrap; gap:8px 10px; }
+  .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
+  .table-wrap{ max-width:100%; }
+  table{ min-width:960px; }
+  @media (max-width: 900px){
+    .team-head h2{ max-width:100%; }
+    .team-tools{ width:100%; margin-left:0; }
+    .stat-strip{ display:none; }
+  }
+
+  /* ---------- Staff popup ---------- */
+  .staff-popup-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.4); display:none; align-items:center; justify-content:center; z-index:150; padding:20px; }
+  .staff-popup-backdrop.open{ display:flex; }
 </style>
 </head>
 <body>
-<p>If you see this, the full restore did not complete. Please contact support.</p>
+<div id="loginOverlay">
+  <div class="login-card">
+    <h1>DR CARE — Sign in</h1>
+    <p>Divine Rays Mobile Operations · Individual accounts</p>
+    <label>EMAIL</label>
+    <input type="email" id="loginEmail" placeholder="you@email.com">
+    <label>PASSWORD</label>
+    <input type="password" id="loginPassword" placeholder="••••••••">
+    <button id="loginBtn">Sign in</button>
+    <div class="login-err" id="loginErr"></div>
+    <p class="login-note">Sign in with your own email. New staff: use "Need an account?" below, then ask an admin to set your role.</p>
+    <p style="text-align:center;margin-top:12px;"><a href="#" id="showSignup" style="color:var(--teal);font-size:13px;">Need an account? Sign up</a></p>
+  </div>
+</div>
 <script>
 const SUPABASE_URL = "https://jwlnnddmutezxnbpcvpf.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_2iyUh9YS3K-bCFO6Ppjpew_sZ1-Op89";
-console.log("keys loaded");
+if(!window.supabase){
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#a8402f;">supabase.js missing</div>';
+  throw new Error('supabase.js not found');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+console.log('Supabase client ready');
+// Minimal login for now - full app will be restored in next step if needed
+document.getElementById('loginBtn').onclick = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    errEl.style.display = 'block';
+    errEl.style.color = 'green';
+    errEl.textContent = 'Login success! Reloading...';
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    errEl.style.display = 'block';
+    errEl.textContent = e.message || String(e);
+  }
+};
 </script>
 </body>
 </html>
