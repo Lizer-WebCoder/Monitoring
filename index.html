@@ -1124,10 +1124,10 @@ function getTeams(){
       .filter(p => showArchived ? p.deleted : !p.deleted)
       .map(p => p.team)
   );
-  // Empty mobiles (just created, no patients yet) only belong in the active roster
+  // Only surface brand-new empty mobiles created this session.
+  // Do NOT pull every teamStaff key — that caused empty mobiles to appear in every month.
   if(!showArchived){
     pendingEmptyTeams.forEach(x=>t.add(x));
-    Object.keys(teamStaff).forEach(x=>t.add(x));
   }
   return [...t];
 }
@@ -2084,9 +2084,14 @@ document.getElementById('filterBenefit').addEventListener('change', renderAll);
 document.getElementById('filterDup').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
-monthFilterEl.addEventListener('change', renderAll);
+monthFilterEl.addEventListener('change', ()=>{
+  // Empty mobiles belong only to the month they were created in.
+  pendingEmptyTeams.clear();
+  renderAll();
+});
 document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
   monthFilterEl.value = '';
+  pendingEmptyTeams.clear();
   renderAll();
 });
 
