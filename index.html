@@ -207,7 +207,8 @@
   #monthFilter{ font-weight:700; color:var(--teal-deep); cursor:pointer; }
   #search{ min-width:220px; flex:1; }
   .spacer{ flex:1; }
-  input[type="file"]{ display:none; }
+  #importFile{ display:none !important; }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
   /* ---------- Groups ---------- */
   .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
@@ -601,6 +602,89 @@
     outline: 2px solid var(--teal); outline-offset: 2px;
   }
 
+
+  /* ========== Design system: Clinical Minimal (professional field ops) ==========
+     Chosen over glass/neo/clay/cyberpunk: medical tools need trust, contrast,
+     readability in sunlight, and zero visual noise. Teal brand + soft surfaces. */
+  :root{
+    --ink:#0f2a24;
+    --paper:#f3f5f2;
+    --card:#ffffff;
+    --line:#d5ddd8;
+    --teal:#0f5c52;
+    --teal-deep:#0a3d37;
+    --muted:#5c6b66;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(15,42,36,0.04), 0 8px 24px rgba(15,42,36,0.06);
+  }
+  body{
+    background: var(--paper);
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  header{
+    background: linear-gradient(165deg, #0a3d37 0%, #0f5c52 55%, #147066 100%);
+    box-shadow: 0 8px 28px rgba(10,61,55,0.28);
+  }
+  .stat{
+    backdrop-filter: none;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  .toolbar-nav, .toolbar-filters{
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  .btn{
+    border-radius: 9px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary{
+    background: var(--teal);
+    border-color: var(--teal);
+    box-shadow: 0 1px 2px rgba(15,92,82,0.25);
+  }
+  .btn-primary:hover{
+    background: var(--teal-deep);
+    border-color: var(--teal-deep);
+  }
+  .team-head{
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+  .table-wrap{
+    box-shadow: var(--shadow);
+    border-color: var(--line);
+  }
+  thead th{
+    background: #e8eeeb;
+    color: #3d524c;
+    font-weight: 700;
+  }
+  tr:hover td{ background: #f7faf8; }
+  .modal{
+    border: 1px solid var(--line);
+    box-shadow: 0 24px 64px rgba(15,42,36,0.18);
+  }
+  .mca-photo-actions{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .mca-photo-preview{
+    margin-top: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    max-height: 200px;
+    background: #eef2f0;
+  }
+  #syncPill.err{
+    color: #f5d59a;
+  }
+
 </style>
 </head>
 <body>
@@ -817,11 +901,12 @@
       <div class="full mca-photo-wrap">
         <label>MCA photo / document</label>
         <div class="mca-photo-actions">
-          <input type="file" id="f_mcaPhoto" accept="image/*,.pdf" capture="environment">
-          <button type="button" class="btn btn-ghost" id="f_mcaPhotoClear">Clear photo</button>
+          <input type="file" id="f_mcaPhoto" class="sr-only" accept="image/*" capture="environment">
+          <button type="button" class="btn btn-primary" id="f_mcaPhotoBtn">📷 Choose / take photo</button>
+          <button type="button" class="btn btn-ghost" id="f_mcaPhotoClear">Clear</button>
         </div>
-        <img id="f_mcaPhotoPreview" class="mca-photo-preview" alt="" style="display:none;">
-        <div class="field-hint">Optional. Stored on this device; synced as a compact image when online. Max ~400KB.</div>
+        <img id="f_mcaPhotoPreview" class="mca-photo-preview" alt="MCA preview" style="display:none;">
+        <div class="field-hint" id="mcaPhotoHint">Optional. Use camera or gallery. Stored on device; syncs when Supabase has an mca_photo column.</div>
       </div>
       <div class="full" id="customBenefitsMount"></div>
       <div class="full" id="auditInfo" style="display:none;font-size:12px;color:var(--muted);padding:8px 10px;background:var(--table-head);border-radius:8px;line-height:1.5;"></div>
@@ -1242,12 +1327,33 @@ function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigato
 
 async function pushOne(p){
   try{
-    const { error } = await sb.from('patients').upsert(toRemote(p));
+    let payload = toRemote(p);
+    let { error } = await sb.from('patients').upsert(payload);
+    // If Supabase schema lacks extended columns, strip them and retry once
+    if(error){
+      const msg = (error.message || error.details || JSON.stringify(error) || '').toLowerCase();
+      if(/column|schema|mca_photo|custom_benefits|history|medicine|vitamins|referral|does not exist|could not find/i.test(msg)){
+        delete payload.mca_photo;
+        delete payload.custom_benefits;
+        delete payload.history;
+        delete payload.medicine;
+        delete payload.vitamins;
+        delete payload.referral;
+        const retry = await sb.from('patients').upsert(payload);
+        error = retry.error;
+        if(!error){
+          console.warn('Synced core fields only — run Supabase migration for extended columns');
+        }
+      }
+    }
     if(error) throw error;
     pendingIds.delete(p.id);
     savePending();
     return true;
-  }catch(e){ return false; }
+  }catch(e){
+    console.error('pushOne failed', p && p.id, e);
+    return false;
+  }
 }
 
 function prunePendingIds(){
@@ -1279,8 +1385,10 @@ async function flushPending(){
   savePending();
   saveLocalCache();
   const left = pendingIds.size;
-  if(left > 0) setSyncStatus(`Synced ${ok}, ${left} still uploading`, 'err');
-  else setSyncStatus('Synced ' + timeNow());
+  if(left > 0){
+    setSyncStatus(`${left} not synced — tap Sync now (schema or network)`, 'err');
+    syncPill.title = 'Upload failed. Often missing Supabase columns (medicine, mca_photo, etc.). Core data may still be local. Open browser console for details.';
+  } else setSyncStatus('Synced ' + timeNow());
 }
 
 async function pullRemote(){
@@ -3933,6 +4041,11 @@ function compressImageFile(file, maxDim, quality){
     img.src = url;
   });
 }
+
+document.getElementById('f_mcaPhotoBtn') && document.getElementById('f_mcaPhotoBtn').addEventListener('click', ()=>{
+  const inp = document.getElementById('f_mcaPhoto');
+  if(inp) inp.click();
+});
 document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
   const file = e.target.files && e.target.files[0];
   if(!file) return;
