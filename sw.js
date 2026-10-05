@@ -1,7 +1,13 @@
-const CACHE_NAME = 'dr-care-v5';
+const CACHE_NAME = 'dr-care-v6';
 const APP_SHELL = [
   './',
   './index.html',
+  './css/app.css',
+  './js/core.js',
+  './js/ui.js',
+  './js/screens.js',
+  './js/features.js',
+  './js/boot.js',
   './supabase.js',
   './xlsx.full.min.js',
   './manifest.json',
@@ -12,9 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => Promise.all(
-        APP_SHELL.map(url =>
-          cache.add(url).catch(() => {})
-        )
+        APP_SHELL.map(url => cache.add(url).catch(() => {}))
       ))
       .then(() => self.skipWaiting())
   );

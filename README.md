@@ -1,59 +1,27 @@
 # DR CARE — Divine Rays Mobile Operations Tracker
 
-Offline-first field roster for mobile medical / relief operations: patients, PhilHealth, MCA (with photo), claims, benefits, GPS sites, multi-user Supabase sync, reports, and more.
+Offline-first field roster for mobile medical operations (PhilHealth, MCA, benefits, claims, multi-user Supabase sync).
 
----
+## Architecture (modular)
 
-## Features
-
-| Area | Details |
-|------|---------|
-| **Auth & roles** | Admin / encoder / viewer. New accounts need admin approval. |
-| **Offline-first** | Works offline; queues sync; PWA installable. |
-| **Patients** | Name, PhilHealth (12-digit check), status, facility, MCA + **photo**, dates, claim, notes. |
-| **Benefits** | Rice, lab, medicines, vitamins, referral + **custom benefits** (admin-defined). |
-| **Duplicates** | Live PhilHealth duplicate detection. |
-| **Teams** | Staff list + **GPS location** (use my location → OpenStreetMap link). |
-| **Audit** | Added/edited by + timestamps + **change history** on each patient. |
-| **Recycle bin** | Permanently deleted patients kept ~30 days on-device for restore. |
-| **Reports** | CSV export, **Daily report** CSV, **PDF/print report**, **Email / Slack** send. |
-| **Language** | **EN / TL** (Tagalog) toggle for main toolbar labels. |
-| **Bulk** | Select rows → benefits, MCA, claim, status. |
-| **Dashboard / Activity / Archive / Admin** | Metrics, recent changes, soft-archive, user roles. |
-
----
-
-## Supabase (optional columns)
-
-```sql
-alter table patients
-  add column if not exists medicine boolean default false,
-  add column if not exists vitamins boolean default false,
-  add column if not exists referral boolean default false,
-  add column if not exists mca_photo text,
-  add column if not exists custom_benefits jsonb default '{}'::jsonb,
-  add column if not exists history jsonb default '[]'::jsonb;
+```
+index.html          → shell markup only
+css/app.css         → all styles
+js/core.js          → config, state, auth helpers, sync, storage
+js/ui.js            → roster render, rows, filters, stats
+js/screens.js       → modals, dashboard, admin, activity, import/export
+js/features.js      → drawer, merge, checklist, shortcuts, print queue
+js/boot.js          → SW update toast
+supabase.js         → vendor
+xlsx.full.min.js    → vendor
+sw.js               → PWA cache (v6)
+manifest.json
 ```
 
-Settings keys used: `orgName`, `customBenefits`, `teamGeo`.
+Scripts load in order at the bottom of `index.html` (no bundler). Shared state uses globals intentionally for a simple static deploy.
 
-Without new columns, core fields still sync; photo/history/custom benefits stay local until columns exist.
+## Deploy
 
----
-
-## Field workflow
-
-1. Admin approves users; optionally **Custom benefits…** in Admin.
-2. **+ Add Mobile** → staff + optional GPS.
-3. Encode patients (MCA photo optional). Offline OK.
-4. End of day: **Daily report** / **PDF report** / **Send report** (email or Slack webhook).
-5. Mistaken permanent delete → **Recycle bin** → Restore.
-
----
-
-## Files
-
-- `index.html` — app  
-- `supabase.js`, `xlsx.full.min.js`, `sw.js`, `manifest.json`
+Upload the whole folder. After deploy, hard-refresh so `sw.js` picks up **dr-care-v6**.
 
 **Boyz at the Back · © 2026**
