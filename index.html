@@ -2284,7 +2284,9 @@ groupsContainer.addEventListener('click', e=>{
     return;
   }
   const teamHead = e.target.closest('.team-head');
-  if(teamHead && !e.target.closest('.team-tools') && !e.target.closest('[data-staff-popup]')){
+  // Don't toggle expand/collapse when interacting with checklist, tools, or staff
+  if(teamHead && !e.target.closest('.team-tools') && !e.target.closest('[data-staff-popup]')
+      && !e.target.closest('.team-checklist') && !e.target.closest('[data-team-check]')){
     const team = teamHead.dataset.team;
     if(expandedTeams.has(team)) expandedTeams.delete(team); else expandedTeams.add(team);
     renderAll();
@@ -5006,15 +5008,21 @@ function teamChecklistHtml(teamName){
     `<label><input type="checkbox" data-tc="${k}" ${m[k]?'checked':''}> ${lab}</label>`
   ).join('')}</div>`;
 }
+document.addEventListener('click', e=>{
+  if(e.target.closest('.team-checklist') || e.target.closest('[data-team-check]')){
+    e.stopPropagation();
+  }
+}, true);
 document.addEventListener('change', e=>{
   const inp = e.target.closest('[data-tc]');
   if(!inp) return;
+  e.stopPropagation();
   const wrap = inp.closest('[data-team-check]');
   if(!wrap) return;
   const team = wrap.dataset.teamCheck;
   const all = loadTeamChecklist();
   if(!all[team]) all[team] = {};
-  all[team][inp.dataset.tc] = inp.checked;
+  all[team][inp.dataset.tc] = !!inp.checked;
   saveTeamChecklist(all);
 });
 
