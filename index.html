@@ -8,13 +8,11 @@
 <meta name="theme-color" content="#14524a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
-<!-- Offline: keep ./supabase.js next to this file (do not load from CDN). -->
+<!-- Offline: keep ./supabase.js and ./xlsx.full.min.js next to this file. -->
 <script src="./supabase.js"></script>
-<!-- Offline: keep ./xlsx.full.min.js next to this file for Excel import. -->
 <script src="./xlsx.full.min.js"></script>
-
 <style>
-  :root{
+:root{
     --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
     --teal:#14524a; --teal-deep:#0b3630;
     --amber:#c8862b; --amber-bg:#fbeed9;
@@ -863,6 +861,7 @@
 </head>
 <body>
 
+
 <div id="offlineBanner">You're offline — changes are saved on this device and will sync once you're back online.</div>
 
 <!-- ============ LOGIN OVERLAY ============ -->
@@ -1278,7 +1277,10 @@
   </div>
 </div>
 
+
 <script>
+/* DR CARE — core: config, state, auth helpers, sync, storage */
+
 /* =========================================================================
    STEP 1 — PASTE YOUR SUPABASE KEYS HERE
    Find these in your Supabase project: Settings → API
@@ -2012,6 +2014,7 @@ function restoreScrollPositions(positions){
   });
 }
 
+/* DR CARE — UI: render roster, rows, filters, stats */
 function renderAll(){
   const savedScroll = captureScrollPositions();
   autoFlagMissedClaims();
@@ -2626,6 +2629,7 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   updateSaveEnabled();
 });
 
+/* DR CARE — screens: patient/team modals, dashboard, admin, activity */
 function openModal(id, presetTeam){
   if(!id && !canEdit()){
     alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
@@ -4814,7 +4818,7 @@ function openFacilitiesAdmin(){
   });
 })();
 
-
+/* DR CARE — features: drawer, merge, checklist, shortcuts, print */
 /* ============================================================
    Feature pack: drawer, shortcuts, merge, checklist, reminders,
    mobile assignment, photo queue, print queue, denser UX
@@ -5178,6 +5182,7 @@ setTimeout(()=>{
   updatePhotoQueueBadge();
 }, 800);
 
+/* DR CARE — boot: service worker toast, final init hooks */
 function showSwUpdateToast(reg){
   if(document.getElementById('swUpdateToast')) return;
   const toast = document.createElement('div');
@@ -5194,6 +5199,7 @@ function showSwUpdateToast(reg){
   dismissBtn.addEventListener('click', ()=> toast.remove());
   document.body.appendChild(toast);
 }
+
 </script>
 </body>
 </html>
