@@ -1,8 +1,20 @@
 {
   "name": "DR CARE — Divine Rays Mobile Operations Tracker",
   "short_name": "DR CARE",
+  "description": "Offline-first field roster for mobile medical operations: patients, PhilHealth, claims, benefits, and multi-user sync.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f6f4ef",
-  "theme_color": "#14524a"
+  "theme_color": "#14524a",
+  "categories": ["medical", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2314524a'/%3E%3Cpath fill='%23f2ede0' d='M256 96c-18 0-32 14-32 32v96h-96c-18 0-32 14-32 32s14 32 32 32h96v96c0 18 14 32 32 32s32-14 32-32v-96h96c18 0 32-14 32-32s-14-32-32-32h-96v-96c0-18-14-32-32-32z'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

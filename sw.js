@@ -1,10 +1,11 @@
-const CACHE_NAME = 'dr-care-v4';
+const CACHE_NAME = 'dr-care-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './supabase.js',
   './xlsx.full.min.js',
-  './manifest.json'
+  './manifest.json',
+  './sw.js'
 ];
 
 self.addEventListener('install', event => {
@@ -12,9 +13,7 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => Promise.all(
         APP_SHELL.map(url =>
-          cache.add(url).catch(() => {
-            // Optional assets (xlsx) may be missing during first install — ignore
-          })
+          cache.add(url).catch(() => {})
         )
       ))
       .then(() => self.skipWaiting())
@@ -42,7 +41,6 @@ self.addEventListener('fetch', event => {
     url.pathname.endsWith('/');
 
   if (isHtml) {
-    // Network-first for HTML so updates ship quickly; fall back to cache offline
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -59,7 +57,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for static assets (JS, JSON, etc.)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -76,7 +73,6 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Optional: let the page know a new SW is waiting (for an “Update available” toast)
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
