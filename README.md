@@ -1,27 +1,43 @@
 # DR CARE — Divine Rays Mobile Operations Tracker
 
-Offline-first field roster for mobile medical operations (PhilHealth, MCA, benefits, claims, multi-user Supabase sync).
+Offline-first field roster for Divine Rays mobile medical operations.
 
-## Architecture (modular)
+## Deploy (GitHub Pages / static host)
+
+**Production file:** `index.html` (single file, includes all CSS/JS).
+
+Also required next to it:
+- `supabase.js`
+- `xlsx.full.min.js`
+- `sw.js`
+- `manifest.json`
+
+After updating `index.html`, hard-refresh the site (or clear cache once) so the service worker picks up changes.
+
+## Local modular layout (optional, for development)
 
 ```
-index.html          → shell markup only
-css/app.css         → all styles
-js/core.js          → config, state, auth helpers, sync, storage
-js/ui.js            → roster render, rows, filters, stats
-js/screens.js       → modals, dashboard, admin, activity, import/export
-js/features.js      → drawer, merge, checklist, shortcuts, print queue
-js/boot.js          → SW update toast
-supabase.js         → vendor
-xlsx.full.min.js    → vendor
-sw.js               → PWA cache (v6)
-manifest.json
+css/app.css
+js/core.js      — config, state, sync
+js/ui.js        — roster render
+js/screens.js   — modals, dashboard, admin
+js/features.js  — drawer, merge, checklist
+js/boot.js      — SW toast
+index.modular.html
 ```
 
-Scripts load in order at the bottom of `index.html` (no bundler). Shared state uses globals intentionally for a simple static deploy.
+The modular tree mirrors the same app; `index.html` is the bundled deploy artifact.
 
-## Deploy
+## Supabase optional columns
 
-Upload the whole folder. After deploy, hard-refresh so `sw.js` picks up **dr-care-v6**.
+```sql
+alter table patients
+  add column if not exists medicine boolean default false,
+  add column if not exists vitamins boolean default false,
+  add column if not exists referral boolean default false,
+  add column if not exists mca_photo text,
+  add column if not exists custom_benefits jsonb default '{}'::jsonb,
+  add column if not exists history jsonb default '[]'::jsonb;
+```
 
 **Boyz at the Back · © 2026**
