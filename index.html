@@ -12,6 +12,7 @@
 <script src="./supabase.js"></script>
 <!-- Offline: keep ./xlsx.full.min.js next to this file for Excel import. -->
 <script src="./xlsx.full.min.js"></script>
+
 <style>
   :root{
     --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
@@ -425,6 +426,181 @@
   .benefit-admin-row{ display:flex; gap:8px; margin-bottom:6px; align-items:center; }
   .benefit-admin-row input{ flex:1; }
 
+
+  /* ========== UI polish v2 ========== */
+  :root{
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(18,49,43,0.05), 0 4px 12px rgba(18,49,43,0.04);
+  }
+  body{
+    padding-bottom: 100px;
+  }
+  /* Header tighter */
+  header{ padding: 16px 20px 14px; }
+  .brand-title{ font-size: 22px; }
+  .brand-eyebrow{ font-size: 10px; letter-spacing: .12em; }
+  .stat-strip{ gap: 6px; margin-top: 10px; }
+  .stat{
+    min-width: 72px; padding: 6px 10px; border-radius: 8px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);
+  }
+  .stat .num{ font-size: 17px; }
+  .stat .lbl{ font-size: 9px; letter-spacing: .04em; margin-top: 2px; opacity: .9; }
+  .stat.stat-warn{ background: rgba(232,171,92,0.28); border-color: rgba(232,171,92,0.5); }
+
+  /* Toolbar: structured rows */
+  .toolbar{
+    max-width: 1600px; margin: 12px auto 8px; padding: 0 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toolbar-row{
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  }
+  .toolbar-nav{
+    padding: 10px 12px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+  .toolbar-filters{
+    padding: 8px 12px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .toolbar-actions{
+    padding: 6px 4px; gap: 6px;
+  }
+  .tb-group{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .tb-group-end{ margin-left: auto; }
+  .tb-divider{
+    width: 1px; height: 22px; background: var(--line); margin: 0 4px; flex: none;
+  }
+  #search{
+    flex: 1 1 220px; min-width: 180px; max-width: 420px;
+    border-radius: 8px; border: 1px solid var(--line);
+    padding: 8px 12px; font-size: 13px;
+  }
+  #search:focus{ outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(20,82,74,0.12); }
+  .toolbar select, .toolbar input[type=month]{
+    padding: 8px 10px; border-radius: 8px; font-size: 12.5px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink);
+  }
+
+  /* Buttons — hierarchy */
+  .btn{
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
+    box-shadow: none; white-space: nowrap;
+  }
+  .btn:hover{
+    border-color: var(--teal); color: var(--teal-deep); background: var(--paper);
+    transform: none;
+  }
+  .btn-primary{
+    background: var(--teal); color: #fff; border-color: var(--teal);
+  }
+  .btn-primary:hover{ background: var(--teal-deep); color: #fff; border-color: var(--teal-deep); }
+  .btn-ghost{
+    background: transparent; border-color: transparent; box-shadow: none; color: var(--muted);
+  }
+  .btn-ghost:hover{ background: var(--table-head); color: var(--ink); border-color: var(--line); }
+  .btn-sm{ padding: 6px 10px; font-size: 12px; }
+
+  /* Team groups */
+  .team-group{ max-width: 1600px; margin: 14px auto; padding: 0 16px; }
+  .team-head{
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px 12px 0 0;
+    padding: 12px 14px; margin: 0; border-bottom: none;
+  }
+  .team-head.collapsed{ border-radius: 12px; border-bottom: 1px solid var(--line); }
+  .table-wrap{
+    border: 1px solid var(--line); border-top: none; border-radius: 0 0 12px 12px;
+    overflow-x: auto; box-shadow: var(--shadow); background: var(--card); margin-top: 0;
+  }
+  table{ min-width: 1100px; }
+  thead th{
+    font-size: 10px; padding: 9px 8px; background: var(--table-head);
+  }
+  tbody td{ padding: 8px; font-size: 13px; }
+  tr.pending-row{ box-shadow: inset 3px 0 0 var(--amber); }
+  .sync-tag{
+    display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; color: var(--amber);
+    background: var(--amber-bg); padding: 1px 6px; border-radius: 4px;
+  }
+
+  /* Legend collapsible */
+  .legend-wrap{
+    max-width: 1600px; margin: 16px auto 8px; padding: 0 16px;
+  }
+  .legend-summary{
+    cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--muted);
+    padding: 8px 12px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; list-style: none; user-select: none;
+  }
+  .legend-summary::-webkit-details-marker{ display: none; }
+  .legend-summary::before{ content: '▸ '; color: var(--teal); }
+  details[open] .legend-summary::before{ content: '▾ '; }
+  details[open] .legend-summary{ border-radius: 8px 8px 0 0; border-bottom-color: transparent; }
+  .legend{
+    font-size: 11.5px; line-height: 1.55; color: var(--muted);
+    padding: 12px 14px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 0 0 8px 8px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .legend span{ display: block; }
+  .legend b{ color: var(--ink); }
+
+  /* Footer */
+  .app-footer{
+    text-align: center; font-size: 11px; color: var(--muted);
+    padding: 20px 16px 8px; opacity: .75;
+  }
+
+  /* Empty state */
+  .empty-state{
+    text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px;
+  }
+
+  /* Modal polish */
+  .modal{
+    border-radius: 14px; box-shadow: 0 20px 50px rgba(11,54,48,0.2);
+  }
+  .modal h3{ font-size: 17px; }
+  .modal-sub{ font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .form-grid label{ margin-bottom: 3px; }
+  .field-hint{ font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Bulk bar */
+  #bulkBar{
+    border-radius: 12px; padding: 10px 14px; gap: 10px;
+  }
+  #bulkBar .btn{ font-size: 12px; padding: 6px 10px; }
+
+  /* Sync pill clearer */
+  .sync-pill{ font-size: 11px; }
+  .sync-pill.err{ color: #f0c878; }
+
+  /* Mobile */
+  @media (max-width: 900px){
+    .tb-group-end{ margin-left: 0; width: 100%; }
+    .tb-divider{ display: none; }
+    #search{ max-width: none; flex: 1 1 100%; }
+    .stat-strip{ gap: 4px; }
+    .stat{ min-width: 64px; padding: 5px 8px; }
+    .stat .num{ font-size: 15px; }
+  }
+  @media (max-width: 720px){
+    header{ padding: 12px 14px; }
+    .brand-title{ font-size: 18px; }
+    .toolbar{ padding: 0 10px; }
+    .team-group{ padding: 0 10px; }
+    .toolbar-nav, .toolbar-filters{ padding: 8px; }
+  }
+
+  /* Focus visibility */
+  .btn:focus-visible, input:focus-visible, select:focus-visible{
+    outline: 2px solid var(--teal); outline-offset: 2px;
+  }
+
 </style>
 </head>
 <body>
@@ -479,17 +655,27 @@
 </header>
 
 <div class="toolbar">
-  <div class="toolbar-row">
-    <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
-    <button class="btn btn-ghost" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
-    <button class="btn" id="addTeamBtn">+ Add Mobile</button>
-    <button class="btn" id="dashboardBtn"></button>
-    <button class="btn" id="activityBtn"></button>
-    <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
-    <button class="btn" id="adminBtn" style="display:none;"></button>
-    <button class="btn" id="themeToggle"></button>
-    <button class="btn" id="langToggle" title="Toggle English / Tagalog">EN</button>
-    <button class="btn" id="recycleBtn" title="Recycle bin — recently deleted"></button>
+  <!-- Row 1: navigation + primary actions -->
+  <div class="toolbar-row toolbar-nav">
+    <div class="tb-group">
+      <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
+      <button class="btn btn-ghost btn-sm" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
+    </div>
+    <div class="tb-group">
+      <button class="btn btn-primary" id="addTeamBtn">+ Add Mobile</button>
+      <button class="btn" id="dashboardBtn"></button>
+      <button class="btn" id="activityBtn"></button>
+      <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
+      <button class="btn" id="adminBtn" style="display:none;"></button>
+    </div>
+    <div class="tb-group tb-group-end">
+      <button class="btn btn-ghost btn-sm" id="themeToggle"></button>
+      <button class="btn btn-ghost btn-sm" id="langToggle" title="Toggle English / Tagalog">EN</button>
+      <button class="btn btn-ghost btn-sm" id="recycleBtn" title="Recycle bin — recently deleted"></button>
+    </div>
+  </div>
+  <!-- Row 2: search + filters -->
+  <div class="toolbar-row toolbar-filters">
     <input type="text" id="search" placeholder="Search name, PhilHealth ID, notes, or team…">
     <select id="filterStatus">
       <option value="">All statuses</option>
@@ -515,22 +701,28 @@
       <option value="unique-only">Unique only</option>
     </select>
   </div>
-  <div class="toolbar-row">
+  <!-- Row 3: data actions -->
+  <div class="toolbar-row toolbar-actions">
     <button class="btn" id="syncNowBtn"></button>
+    <div class="tb-divider"></div>
     <button class="btn" id="exportBtn"></button>
     <button class="btn" id="dailyReportBtn" title="Download a daily summary CSV for the current month filter"></button>
     <button class="btn" id="pdfReportBtn" title="Open a printable PDF-style daily summary"></button>
     <button class="btn" id="sendReportBtn" title="Email or Slack the daily summary"></button>
+    <div class="tb-divider"></div>
     <button class="btn" id="importBtn"></button>
-    <button class="btn btn-ghost" id="csvTemplateBtn"></button>
-    <button class="btn btn-ghost" id="xlsxTemplateBtn"></button>
-    <button class="btn btn-ghost" id="installBtn" style="display:none;" title="Install DR CARE as an app"></button>
+    <button class="btn btn-ghost btn-sm" id="csvTemplateBtn"></button>
+    <button class="btn btn-ghost btn-sm" id="xlsxTemplateBtn"></button>
+    <button class="btn btn-ghost btn-sm" id="installBtn" style="display:none;" title="Install DR CARE as an app"></button>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
 
 <div id="groupsContainer"></div>
-<div class="legend" id="legend"></div>
+<details class="legend-wrap">
+  <summary class="legend-summary">How to use this tracker</summary>
+  <div class="legend" id="legend"></div>
+</details>
 <div class="app-footer">By : ʙᴏʏꜱ ᴀᴛ ᴛʜᴇ ʙᴀᴄᴋ · © 2026 All rights reserved</div>
 
 <!-- Bulk action bar (appears when rows are selected) -->
@@ -3502,10 +3694,8 @@ if('serviceWorker' in navigator){
 }
 
 
-/* ============================================================
-   DR CARE — extended features pack
-   MCA photo, GPS, custom benefits, i18n, recycle, PDF, send report, history
-   ============================================================ */
+
+/* features pack */
 
 const LANG_KEY = 'drcare_lang';
 const CUSTOM_BENEFITS_KEY = 'drcare_custom_benefits';
@@ -4104,23 +4294,39 @@ if(typeof renderAll === 'function'){
     _ra();
     try{
       const geo = loadTeamGeo();
+      document.querySelectorAll('.team-head .map-chip').forEach(el=>el.remove());
       document.querySelectorAll('.team-head h2').forEach(h2=>{
         const team = h2.textContent.trim();
         const g = geo[team];
-        if(g && g.lat && g.lng && !h2.parentElement.querySelector('.map-chip')){
+        if(g && g.lat && g.lng){
           const a = document.createElement('a');
           a.className = 'map-chip map-link';
           a.target = '_blank';
           a.rel = 'noopener';
           a.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lng}#map=16/${g.lat}/${g.lng}`;
           a.textContent = '📍 Map';
-          a.style.marginLeft = '6px';
+          a.style.cssText = 'margin-left:6px;font-size:11px;font-weight:600;text-decoration:none;';
           h2.parentElement.appendChild(a);
         }
       });
     }catch(e){}
   };
 }
+
+
+
+/* UI fix: clear ghost pending uploads that block the sync pill */
+setInterval(()=>{
+  try{
+    if(typeof pendingIds === 'undefined' || !pendingIds) return;
+    let changed = false;
+    [...pendingIds].forEach(id=>{
+      const p = state.patients.find(x=>x.id===id);
+      if(!p){ pendingIds.delete(id); changed = true; }
+    });
+    if(changed && typeof savePending === 'function'){ savePending(); if(typeof setSyncStatus === 'function') setSyncStatus('Synced ' + (typeof timeNow==='function'?timeNow():'')); }
+  }catch(e){}
+}, 15000);
 
 
 function showSwUpdateToast(reg){
