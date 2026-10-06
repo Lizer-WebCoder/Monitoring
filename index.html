@@ -1027,6 +1027,19 @@
   </div>
 </div>
 
+
+<!-- Encoder T1/T2 patients modal -->
+<div class="modal-backdrop" id="encT1T2Backdrop">
+  <div class="modal" style="max-width:760px;width:95%">
+    <h3 id="encT1T2Title">T1 & T2 patients</h3>
+    <div class="modal-sub" id="encT1T2Sub">Patients this encoder marked as T1 or T2 Submitted (newest first).</div>
+    <div id="encT1T2Body" style="max-height:60vh;overflow:auto;margin-top:12px"></div>
+    <div style="margin-top:16px;text-align:right">
+      <button type="button" class="btn" id="encT1T2CloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Patient Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
@@ -3499,6 +3512,11 @@ function renderDashboard(){
         <td>${u.wah}</td>
         <td>${u.bizbox}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
+        <td style="text-align:center">
+          <button type="button" class="btn btn-ghost enc-t1t2-btn" data-encoder-uid="${escapeAttr(uid)}" data-encoder-name="${escapeAttr(u.name)}" title="View T1 & T2 patients" style="padding:4px 10px;font-size:11px;white-space:nowrap">
+            T1/T2 list
+          </button>
+        </td>
       </tr>`;
     }).join('');
 
@@ -3586,9 +3604,10 @@ function renderDashboard(){
               <th>WAH</th>
               <th>BIZBOX</th>
               <th style="text-align:left">Mobiles</th>
+              <th></th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="9">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="10">No encoder data</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -3671,12 +3690,102 @@ function openDashboard(){
   renderDashboard();
   dashBackdrop.classList.add('open');
 }
+
+/* ---- Encoder T1/T2 patient list ---- */
+function openEncoderT1T2List(uid, displayName){
+  const backdrop = document.getElementById('encT1T2Backdrop');
+  const title = document.getElementById('encT1T2Title');
+  const sub = document.getElementById('encT1T2Sub');
+  const body = document.getElementById('encT1T2Body');
+  if(!backdrop || !body) return;
+
+  title.textContent = (displayName || 'Encoder') + ' — T1 & T2 patients';
+  sub.textContent = 'Patients this encoder submitted as T1 or T2 (newest first). Labels show mobile / walk-in.';
+
+  // Use current dashboard scope if open, otherwise all non-deleted patients
+  let pool = [];
+  try {
+    if(typeof dashboardScopePatients === 'function') pool = dashboardScopePatients();
+  } catch(e){ pool = []; }
+  if(!pool || !pool.length){
+    pool = (state.patients || []).filter(p => !p.deleted);
+  }
+
+  const list = pool.filter(p => {
+    const creator = p.createdBy || p.updatedBy || '';
+    if(String(creator) !== String(uid) && !(uid === '_unknown' && !p.createdBy && !p.updatedBy)) return false;
+    return p.claim === 't1' || p.claim === 't2';
+  }).sort((a, b) => {
+    // Newest first: prefer dateSubmitted, then dateEncoded
+    const da = (a.dateSubmitted || a.dateEncoded || '');
+    const db = (b.dateSubmitted || b.dateEncoded || '');
+    if(da !== db) return db.localeCompare(da);
+    return (b.name || '').localeCompare(a.name || '');
+  });
+
+  if(!list.length){
+    body.innerHTML = '<div class="dash-empty">No T1 or T2 patients found for this encoder in the current scope.</div>';
+  } else {
+    const rows = list.map(p => {
+      const claimBadge = p.claim === 't2'
+        ? '<span class="badge-select cl-t2" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T2 Submitted</span>'
+        : '<span class="badge-select cl-t1" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T1 Submitted</span>';
+      const mobileLabel = p.team
+        ? `<span style="background:var(--table-head);border:1px solid var(--line);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">${escapeHtml(p.team)}</span>`
+        : '<span style="color:var(--muted)">—</span>';
+      const when = p.dateSubmitted || p.dateEncoded || '—';
+      return `<tr>
+        <td style="text-align:left;font-weight:600">${escapeHtml(p.name || '')}</td>
+        <td class="mono" style="font-size:12px">${escapeHtml(p.phid || '')}</td>
+        <td style="text-align:center">${claimBadge}</td>
+        <td style="text-align:left">${mobileLabel}</td>
+        <td style="text-align:center;font-size:12px;color:var(--muted)">${escapeHtml(when)}</td>
+      </tr>`;
+    }).join('');
+    body.innerHTML = `
+      <div class="table-wrap" style="box-shadow:none;margin:0">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">Patient</th>
+              <th>PhilHealth ID</th>
+              <th>Claim</th>
+              <th style="text-align:left">Mobile / Walk-in</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">${list.length} patient${list.length===1?'':'s'}</div>
+    `;
+  }
+  backdrop.classList.add('open');
+}
+function closeEncoderT1T2List(){
+  const backdrop = document.getElementById('encT1T2Backdrop');
+  if(backdrop) backdrop.classList.remove('open');
+}
+
+
 function closeDashboard(){ dashBackdrop.classList.remove('open'); }
 document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
 document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
 dashMonthSelect.addEventListener('change', renderDashboard);
 dashTeamSelect.addEventListener('change', renderDashboard);
+
+/* Encoder T1/T2 list button (delegated — buttons are re-rendered) */
+document.getElementById('dashBody').addEventListener('click', e=>{
+  const btn = e.target.closest('.enc-t1t2-btn');
+  if(!btn) return;
+  e.preventDefault();
+  openEncoderT1T2List(btn.dataset.encoderUid, btn.dataset.encoderName);
+});
+document.getElementById('encT1T2CloseBtn').addEventListener('click', closeEncoderT1T2List);
+document.getElementById('encT1T2Backdrop').addEventListener('click', e=>{
+  if(e.target === document.getElementById('encT1T2Backdrop')) closeEncoderT1T2List();
+});
 
 /* ---------------- Recent Activity ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
