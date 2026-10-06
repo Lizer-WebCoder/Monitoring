@@ -948,10 +948,7 @@
       <option value="lab-no">Lab not yet availed</option>
       <option value="med-yes">Medicines availed</option>
       <option value="med-no">Medicines not yet</option>
-      <option value="vit-yes">Vitamins availed</option>
-      <option value="vit-no">Vitamins not yet</option>
-      <option value="ref-yes">Referral done</option>
-      <option value="ref-no">Referral not yet</option>
+
     </select>
     <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
       <option value="">All records</option>
@@ -1014,8 +1011,6 @@
     <button class="btn" type="button" id="bulkRiceYes">Rice ✓</button>
     <button class="btn" type="button" id="bulkLabYes">Lab ✓</button>
     <button class="btn" type="button" id="bulkMedYes">Meds ✓</button>
-    <button class="btn" type="button" id="bulkVitYes">Vits ✓</button>
-    <button class="btn" type="button" id="bulkRefYes">Referral ✓</button>
     <button class="btn" type="button" id="bulkMcaYes">MCA ✓</button>
     <select id="bulkClaim">
       <option value="">Set claim…</option>
@@ -1094,8 +1089,6 @@
         <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
         <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Already availed laboratory</label></div>
         <div class="check-row"><input type="checkbox" id="f_medicine"><label for="f_medicine">Already availed medicines</label></div>
-        <div class="check-row"><input type="checkbox" id="f_vitamins"><label for="f_vitamins">Already availed vitamins</label></div>
-        <div class="check-row"><input type="checkbox" id="f_referral"><label for="f_referral">Referral completed</label></div>
       </div>
       <div class="full">
         <label>PhilHealth ID check</label>
@@ -1219,13 +1212,13 @@
     <div class="dash-head">
       <div>
         <h3>Custom benefits</h3>
-        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines, vitamins, referral. Stored for this organization.</div>
+        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines. Stored for this organization.</div>
       </div>
       <button class="dash-close" id="benefitsAdminCloseBtn" title="Close"></button>
     </div>
     <div id="benefitsAdminList"></div>
     <div class="benefit-admin-row" style="margin-top:12px;">
-      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Vitamins B">
+      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Other">
       <button class="btn btn-primary" type="button" id="addBenefitBtn">Add</button>
     </div>
     <div class="modal-foot">
@@ -1868,10 +1861,6 @@ function filteredPatients(){
     if(bf === 'lab-no' && p.lab) return false;
     if(bf === 'med-yes' && !p.medicine) return false;
     if(bf === 'med-no' && p.medicine) return false;
-    if(bf === 'vit-yes' && !p.vitamins) return false;
-    if(bf === 'vit-no' && p.vitamins) return false;
-    if(bf === 'ref-yes' && !p.referral) return false;
-    if(bf === 'ref-no' && p.referral) return false;
     if(dupFilter === 'dup-only' && !isDuplicate(p.phid, p.id)) return false;
     if(dupFilter === 'unique-only' && isDuplicate(p.phid, p.id)) return false;
     return true;
@@ -1977,8 +1966,7 @@ function renderStats(){
     ["Rice", all.filter(p=>p.rice).length, ''],
     ["Lab", all.filter(p=>p.lab).length, ''],
     ["Meds", all.filter(p=>p.medicine).length, ''],
-    ["Vits", all.filter(p=>p.vitamins).length, ''],
-    ["Referral", all.filter(p=>p.referral).length, ''],
+
     ["Duplicates", countDuplicateExtras(all), ''],
     ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
   ];
@@ -1996,7 +1984,7 @@ function renderLegend(){
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
     <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
-    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/vits/referral/MCA, or set claim and status for many patients at once</span>
+    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/MCA, or set claim and status for many patients at once</span>
     <span><b>Daily report:</b> downloads a per-team summary CSV for the current month filter (totals, benefits, claims, duplicates)</span>
     <span><b>PhilHealth ID:</b> auto-formats to ####-####-####; save warns if the ID is not a full 12 digits</span>
     <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
@@ -2129,11 +2117,11 @@ function renderAll(){
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
               <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Encoded in</th><th>Duplicate tracker</th>
-              <th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th></th>
+              <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="17" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="15" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2234,8 +2222,6 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="vitamins" ${p.vitamins?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="referral" ${p.referral?'checked':''}></td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
@@ -2552,11 +2538,9 @@ document.getElementById('bulkLabYes').addEventListener('click', ()=>{
 document.getElementById('bulkMedYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.medicine = true; });
 });
-document.getElementById('bulkVitYes').addEventListener('click', ()=>{
-  applyBulkChange(p => { p.vitamins = true; });
+
 });
-document.getElementById('bulkRefYes').addEventListener('click', ()=>{
-  applyBulkChange(p => { p.referral = true; });
+
 });
 document.getElementById('bulkMcaYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.mca = true; });
@@ -2668,8 +2652,6 @@ function openModal(id, presetTeam){
   document.getElementById('f_rice').checked = p ? p.rice : false;
   document.getElementById('f_lab').checked = p ? p.lab : false;
   document.getElementById('f_medicine').checked = p ? !!p.medicine : false;
-  document.getElementById('f_vitamins').checked = p ? !!p.vitamins : false;
-  document.getElementById('f_referral').checked = p ? !!p.referral : false;
   document.getElementById('f_notes').value = p ? (p.notes||'') : '';
   document.getElementById('dupWarning').style.display = 'none';
 
@@ -2746,8 +2728,6 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     rice: document.getElementById('f_rice').checked,
     lab: document.getElementById('f_lab').checked,
     medicine: document.getElementById('f_medicine').checked,
-    vitamins: document.getElementById('f_vitamins').checked,
-    referral: document.getElementById('f_referral').checked,
     notes: document.getElementById('f_notes').value.trim(),
     deleted: false
   };
@@ -2944,17 +2924,15 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const byTeam = {};
   rows.forEach(p => {
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0, missed24:0, dups:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, mca:0, t1:0, missed24:0, dups:0};
     const b = byTeam[t];
     b.total++;
     if(p.status==='registered') b.registered++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
     if(p.mca) b.mca++;
-    if(p.claim==='t1') b.t1++;
+    if(p.claim==='t1'||p.claim==='t2') b.t1++;
     if(p.claim==='missed24') b.missed24++;
   });
   // Approximate dups per team
@@ -2969,9 +2947,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const lines = [
     ['DR CARE Daily Summary', scope, new Date().toISOString()].map(csvSafe).join(','),
     '',
-    ['Team','Total','Registered','MCA','Rice','Lab','Meds','Vits','Referral','T1','Missed 24h','Dup flags'].join(','),
+    ['Team','Total','Registered','MCA','Rice','Lab','Meds','T1','Missed 24h','Dup flags'].join(','),
     ...Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([team,b]) =>
-      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.vitamins, b.referral, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
+      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
     ),
     '',
     ['TOTAL', total,
@@ -2982,7 +2960,7 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
       rows.filter(p=>p.medicine).length,
       rows.filter(p=>p.vitamins).length,
       rows.filter(p=>p.referral).length,
-      rows.filter(p=>p.claim==='t1').length,
+      rows.filter(p=>p.claim==='t1'||p.claim==='t2').length,
       rows.filter(p=>p.claim==='missed24').length,
       countDuplicateExtras(rows)
     ].map(csvSafe).join(',')
@@ -3018,7 +2996,7 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Encoded In","Rice Availed","Lab Availed","Medicines Availed","Vitamins Availed","Referral","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Encoded In","Rice Availed","Lab Availed","Medicines Availed","Notes"];
 
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
@@ -3027,7 +3005,7 @@ function patientToCsvRow(p){
     p.team||'', p.name||'', p.phid||'', statusLabel[p.status]||p.status||'', p.facility||'',
     p.mca?'YES':'NO', p.dateSubmitted||'', p.within24?'YES':'NO',
     claimLabel[p.claim]||p.claim||'', p.encodedIn||'', p.rice?'YES':'NO', p.lab?'YES':'NO',
-    p.medicine?'YES':'NO', p.vitamins?'YES':'NO', p.referral?'YES':'NO', p.notes||''
+    p.medicine?'YES':'NO', p.notes||''
   ].map(csvSafe).join(',');
 }
 
@@ -3142,8 +3120,6 @@ const IMPORT_HEADER_MAP = {
   rice: ['rice availed','rice'],
   lab: ['lab availed','lab'],
   medicine: ['medicines availed','medicine availed','medicines','medicine','meds'],
-  vitamins: ['vitamins availed','vitamin availed','vitamins','vitamin','vits'],
-  referral: ['referral','referral completed','referral done'],
   notes: ['notes','remarks','comment']
 };
 
@@ -3214,7 +3190,7 @@ async function processImportRows(allRows, targetTeam){
     // Positional fallback when there is no header:
     // 5 cols  -> Name, PhilHealth ID, Status, Facility, Digital MCA
     // 6+ cols -> Team, Name, PhilHealth ID, Status, Facility, Digital MCA, ...
-    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, encodedIn, rice, lab, medicine, vitamins, referral, notes;
+    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, encodedIn, rice, lab, medicine, notes;
     if(colIndex){
       team = cell(cols,'team');
       name = cell(cols,'name');
@@ -3230,22 +3206,20 @@ async function processImportRows(allRows, targetTeam){
       rice = cell(cols,'rice');
       lab = cell(cols,'lab');
       medicine = cell(cols,'medicine');
-      vitamins = cell(cols,'vitamins');
-      referral = cell(cols,'referral');
       notes = cell(cols,'notes');
     } else if(cols.length <= 5){
       [name, phid, status, facility, mca] = cols;
-      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; encodedIn = ''; rice = ''; lab = ''; medicine = ''; vitamins = ''; referral = ''; notes = '';
+      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; encodedIn = ''; rice = ''; lab = ''; medicine = ''; notes = '';
     } else {
       team = cols[0]||''; name = cols[1]||''; phid = cols[2]||''; status = cols[3]||'';
       facility = cols[4]||''; mca = cols[5]||'';
       dateEnc = cols[6]||''; dateSub = cols[7]||''; within24 = cols[8]||'';
       claim = cols[9]||''; encodedIn = ''; rice = cols[10]||''; lab = cols[11]||'';
       // Support both old 13-col and new 15-col layouts
-      if(cols.length >= 15){
-        medicine = cols[12]||''; vitamins = cols[13]||''; referral = cols[14]||''; notes = cols[15]||'';
+      if(cols.length >= 13){
+        medicine = cols[12]||''; notes = cols[13]||'';
       } else {
-        medicine = ''; vitamins = ''; referral = ''; notes = cols[12]||'';
+        medicine = ''; notes = cols[12]||'';
       }
     }
 
@@ -3274,8 +3248,6 @@ async function processImportRows(allRows, targetTeam){
       rice: isYesValue(rice),
       lab: isYesValue(lab),
       medicine: isYesValue(medicine),
-      vitamins: isYesValue(vitamins),
-      referral: isYesValue(referral),
       notes: notes || '',
       deleted: false
     };
@@ -3477,16 +3449,13 @@ function renderDashboard(){
   const riceCount = scoped.filter(p=>p.rice).length;
   const labCount = scoped.filter(p=>p.lab).length;
   const medCount = scoped.filter(p=>p.medicine).length;
-  const vitCount = scoped.filter(p=>p.vitamins).length;
-  const refCount = scoped.filter(p=>p.referral).length;
   const mcaCount = scoped.filter(p=>p.mca).length;
   const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
-  const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const t1Count = scoped.filter(p=>p.claim==='t1' || p.claim==='t2').length;  // T2 implies T1
   const t2Count = scoped.filter(p=>p.claim==='t2').length;
   const wahCount = scoped.filter(p=>p.encodedIn==='WAH').length;
   const bizboxCount = scoped.filter(p=>p.encodedIn==='BIZBOX').length;
-  const pendingClaim = scoped.filter(p=>p.claim==='pending' || !p.claim).length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
   const pctNum = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
@@ -3510,7 +3479,7 @@ function renderDashboard(){
     if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0, wah: 0, bizbox: 0 };
     byUser[uid].total++;
     if(p.mca) byUser[uid].mca++;
-    if(p.claim==='t1') byUser[uid].t1++;
+    if(p.claim==='t1' || p.claim==='t2') byUser[uid].t1++;  // T2 implies T1
     if(p.claim==='t2') byUser[uid].t2++;
     if(p.encodedIn==='WAH') byUser[uid].wah++;
     if(p.encodedIn==='BIZBOX') byUser[uid].bizbox++;
@@ -3541,16 +3510,14 @@ function renderDashboard(){
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0, wah:0, bizbox:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, t1:0, t2:0, missed24:0, dups:0, wah:0, bizbox:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
-    if(p.claim==='t1') b.t1++;
+    if(p.claim==='t1' || p.claim==='t2') b.t1++;  // T2 implies T1
     if(p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
     if(p.encodedIn==='WAH') b.wah++;
@@ -3571,8 +3538,6 @@ function renderDashboard(){
       <td>${b.rice}</td>
       <td>${b.lab}</td>
       <td>${b.medicine}</td>
-      <td>${b.vitamins}</td>
-      <td>${b.referral}</td>
       <td>${b.t1}</td>
       <td>${b.t2}</td>
       <td>${b.missed24}</td>
@@ -3604,9 +3569,6 @@ function renderDashboard(){
       <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice (${pct(riceCount)})</div></div>
       <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab (${pct(labCount)})</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds (${pct(medCount)})</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${vitCount}</div><div class="dc-lbl">Vits (${pct(vitCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${refCount}</div><div class="dc-lbl">Referral (${pct(refCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${wahCount}</div><div class="dc-lbl">WAH</div></div>
       <div class="dash-card accent-blue"><div class="dc-num">${bizboxCount}</div><div class="dc-lbl">BIZBOX</div></div>
     </div>`;
@@ -3648,8 +3610,6 @@ function renderDashboard(){
               <th>Rice</th>
               <th>Lab</th>
               <th>Meds</th>
-              <th>Vits</th>
-              <th>Ref</th>
               <th>T1</th>
               <th>T2</th>
               <th>Missed</th>
@@ -4542,9 +4502,8 @@ function buildSummaryText(){
   lines.push('Generated: ' + new Date().toLocaleString());
   lines.push('Total patients: ' + rows.length);
   lines.push('Rice: ' + rows.filter(p=>p.rice).length + ' | Lab: ' + rows.filter(p=>p.lab).length +
-    ' | Meds: ' + rows.filter(p=>p.medicine).length + ' | Vits: ' + rows.filter(p=>p.vitamins).length +
-    ' | Referral: ' + rows.filter(p=>p.referral).length);
-  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1').length +
+    ' | Meds: ' + rows.filter(p=>p.medicine).length);
+  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1'||p.claim==='t2').length +
     ' | Missed 24h: ' + rows.filter(p=>p.claim==='missed24').length);
   const byTeam = {};
   rows.forEach(p=>{ const t=p.team||'Unknown'; byTeam[t]=(byTeam[t]||0)+1; });
@@ -4563,12 +4522,12 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
   const byTeam = {};
   rows.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, mca:0, t1:0};
     const b = byTeam[t];
-    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1')b.t1++;
+    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1'||p.claim==='t2')b.t1++;
   });
   const teamRows = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>
-    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.vitamins}</td><td>${b.referral}</td><td>${b.t1}</td></tr>`
+    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.t1}</td></tr>`
   ).join('');
   w.document.write(`<!DOCTYPE html><html><head><title>DR CARE Report</title>
     <style>
@@ -4583,7 +4542,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
     <h1>${org}</h1>
     <div class="sub">Daily operations summary · ${scope} · ${new Date().toLocaleString()}</div>
     <p><b>Total patients:</b> ${rows.length}</p>
-    <table><thead><tr><th>Mobile</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th>T1</th></tr></thead>
+    <table><thead><tr><th>Mobile</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>T1</th></tr></thead>
     <tbody>${teamRows || '<tr><td colspan="9">No data</td></tr>'}</tbody></table>
     <p style="margin-top:24px;font-size:11px;color:#888">Generated by DR CARE · Boyz at the Back</p>
     </body></html>`);
@@ -5007,12 +4966,14 @@ document.getElementById('mergeBtn')?.addEventListener('click', ()=>{
   const others = pts.slice(1);
   // Merge flags OR-style
   others.forEach(o=>{
-    ['mca','rice','lab','medicine','vitamins','referral','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
+    ['mca','rice','lab','medicine','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
     if(o.mcaPhoto && !master.mcaPhoto) master.mcaPhoto = o.mcaPhoto;
     if(o.notes && master.notes) master.notes = master.notes + ' | ' + o.notes;
     else if(o.notes) master.notes = o.notes;
-    if(o.claim === 't1') master.claim = 't1';
-    else if(o.claim === 'missed24' && master.claim !== 't1') master.claim = 'missed24';
+    // Claim priority: t2 > t1 > missed24 > pending (T2 implies T1 was done)
+    if(o.claim === 't2') master.claim = 't2';
+    else if(o.claim === 't1' && master.claim !== 't2') master.claim = 't1';
+    else if(o.claim === 'missed24' && master.claim !== 't1' && master.claim !== 't2') master.claim = 'missed24';
     if(!master.dateSubmitted && o.dateSubmitted) master.dateSubmitted = o.dateSubmitted;
     // soft-delete other
     o.deleted = true;
@@ -5183,7 +5144,7 @@ function printMcaPackets(ids){
       <p><b>Mobile:</b> ${escapeHtml(p.team||'')} &nbsp; <b>Facility:</b> ${escapeHtml(p.facility||'')}</p>
       <p><b>Status:</b> ${escapeHtml(p.status||'')} &nbsp; <b>Claim:</b> ${escapeHtml(p.claim||'')}</p>
       <p><b>Encoded:</b> ${escapeHtml(p.dateEncoded||'')} &nbsp; <b>Submitted:</b> ${escapeHtml(p.dateSubmitted||'')}</p>
-      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds',p.vitamins&&'Vits',p.referral&&'Referral'].filter(Boolean).join(', ')||'—'}</p>
+      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds'].filter(Boolean).join(', ')||'—'}</p>
       <p><b>Notes:</b> ${escapeHtml(p.notes||'—')}</p>
       ${p.mcaPhoto ? `<img src="${p.mcaPhoto}" style="max-width:280px;margin-top:8px;">` : '<p><i>No MCA photo on file</i></p>'}
       <hr>
