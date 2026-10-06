@@ -3483,6 +3483,9 @@ function renderDashboard(){
   const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
   const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const t2Count = scoped.filter(p=>p.claim==='t2').length;
+  const wahCount = scoped.filter(p=>p.encodedIn==='WAH').length;
+  const bizboxCount = scoped.filter(p=>p.encodedIn==='BIZBOX').length;
   const pendingClaim = scoped.filter(p=>p.claim==='pending' || !p.claim).length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
@@ -3504,10 +3507,13 @@ function renderDashboard(){
     const uid = p.createdBy || p.updatedBy || '_unknown';
     const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
       || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 12));
-    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0 };
+    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0, wah: 0, bizbox: 0 };
     byUser[uid].total++;
     if(p.mca) byUser[uid].mca++;
     if(p.claim==='t1') byUser[uid].t1++;
+    if(p.claim==='t2') byUser[uid].t2++;
+    if(p.encodedIn==='WAH') byUser[uid].wah++;
+    if(p.encodedIn==='BIZBOX') byUser[uid].bizbox++;
     const t = p.team || 'Unknown';
     byUser[uid].teams[t] = (byUser[uid].teams[t] || 0) + 1;
   });
@@ -3524,6 +3530,9 @@ function renderDashboard(){
         <td>${total ? Math.round(u.total/total*100) : 0}%</td>
         <td>${u.mca}</td>
         <td>${u.t1}</td>
+        <td>${u.t2}</td>
+        <td>${u.wah}</td>
+        <td>${u.bizbox}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
       </tr>`;
     }).join('');
@@ -3532,7 +3541,7 @@ function renderDashboard(){
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, missed24:0, dups:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0, wah:0, bizbox:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
@@ -3542,7 +3551,10 @@ function renderDashboard(){
     if(p.vitamins) b.vitamins++;
     if(p.referral) b.referral++;
     if(p.claim==='t1') b.t1++;
+    if(p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
+    if(p.encodedIn==='WAH') b.wah++;
+    if(p.encodedIn==='BIZBOX') b.bizbox++;
   });
   // dups per team approx
   scoped.forEach(p=>{
@@ -3562,7 +3574,10 @@ function renderDashboard(){
       <td>${b.vitamins}</td>
       <td>${b.referral}</td>
       <td>${b.t1}</td>
+      <td>${b.t2}</td>
       <td>${b.missed24}</td>
+      <td>${b.wah}</td>
+      <td>${b.bizbox}</td>
       <td>${b.dups}</td>
     </tr>`).join('');
 
@@ -3572,9 +3587,12 @@ function renderDashboard(){
       <div class="dash-cards kpi-cards">
         <div class="dash-card"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">MCA on file<br><span class="kpi-sub">${mcaCount}/${total}</span></div></div>
         <div class="dash-card accent-green"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">T1 submitted<br><span class="kpi-sub">${t1Count}/${total}</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24}/${total}</span></div></div>
         <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h flag<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
         <div class="dash-card accent-purple"><div class="dc-num">${pct(dupCount)}</div><div class="dc-lbl">Duplicates<br><span class="kpi-sub">${dupCount}/${total}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pct(wahCount)}</div><div class="dc-lbl">Encoded in WAH<br><span class="kpi-sub">${wahCount}/${total}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pct(bizboxCount)}</div><div class="dc-lbl">Encoded in BIZBOX<br><span class="kpi-sub">${bizboxCount}/${total}</span></div></div>
       </div>
     </div>`;
 
@@ -3589,6 +3607,8 @@ function renderDashboard(){
       <div class="dash-card accent-blue"><div class="dc-num">${vitCount}</div><div class="dc-lbl">Vits (${pct(vitCount)})</div></div>
       <div class="dash-card"><div class="dc-num">${refCount}</div><div class="dc-lbl">Referral (${pct(refCount)})</div></div>
       <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${wahCount}</div><div class="dc-lbl">WAH</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${bizboxCount}</div><div class="dc-lbl">BIZBOX</div></div>
     </div>`;
 
   const encoderHtml = `
@@ -3604,10 +3624,13 @@ function renderDashboard(){
               <th>Share</th>
               <th>MCA</th>
               <th>T1</th>
+              <th>T2</th>
+              <th>WAH</th>
+              <th>BIZBOX</th>
               <th style="text-align:left">Mobiles</th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="6">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="9">No encoder data</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -3628,7 +3651,10 @@ function renderDashboard(){
               <th>Vits</th>
               <th>Ref</th>
               <th>T1</th>
+              <th>T2</th>
               <th>Missed</th>
+              <th>WAH</th>
+              <th>BIZBOX</th>
               <th>Dups</th>
             </tr>
           </thead>
