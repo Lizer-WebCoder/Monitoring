@@ -2026,19 +2026,40 @@ function saveKnownTeams(){
 }
 function registerKnownTeam(name){
   if(!name) return;
+  // User explicitly re-created this group — allow it again
+  removedTeams = new Set([...removedTeams].filter(t => t.toLowerCase() !== name.toLowerCase()));
+  saveRemovedTeams();
   if(!knownTeams.some(t => t.toLowerCase() === name.toLowerCase())){
     knownTeams.push(name);
     saveKnownTeams();
   } else {
-    // keep canonical casing from first register; update if renaming handled separately
     const i = knownTeams.findIndex(t => t.toLowerCase() === name.toLowerCase());
     if(i >= 0) knownTeams[i] = name;
     saveKnownTeams();
   }
 }
+const REMOVED_TEAMS_KEY = 'drcare_removed_teams';
+let removedTeams = new Set();
+function loadRemovedTeams(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(REMOVED_TEAMS_KEY) || '[]');
+    removedTeams = new Set(Array.isArray(arr) ? arr.map(String) : []);
+  }catch(e){ removedTeams = new Set(); }
+}
+function saveRemovedTeams(){
+  try{ localStorage.setItem(REMOVED_TEAMS_KEY, JSON.stringify([...removedTeams])); }catch(e){}
+}
+loadRemovedTeams();
+
 function unregisterKnownTeam(name){
-  knownTeams = knownTeams.filter(t => t !== name && t.toLowerCase() !== String(name||'').toLowerCase());
+  if(!name) return;
+  knownTeams = knownTeams.filter(t => t !== name && t.toLowerCase() !== String(name).toLowerCase());
   saveKnownTeams();
+  removedTeams.add(name);
+  // also match case variants already in set
+  [...removedTeams].forEach(x=>{ if(x.toLowerCase()===name.toLowerCase()) removedTeams.add(x); });
+  removedTeams.add(name);
+  saveRemovedTeams();
 }
 function renameKnownTeam(oldName, newName){
   knownTeams = knownTeams.map(t => t === oldName ? newName : t);
@@ -2050,13 +2071,14 @@ async function pushKnownTeams(){
 }
 async function pullKnownTeams(){
   try{
+    loadRemovedTeams();
     const { data } = await sb.from('settings').select('value').eq('key','knownTeams').maybeSingle();
     if(data && data.value){
       const arr = JSON.parse(data.value);
       if(Array.isArray(arr)){
-        // merge remote + local
         const set = new Set([...knownTeams, ...arr.map(String)].filter(Boolean));
-        knownTeams = [...set];
+        // Drop anything the user removed on this device
+        knownTeams = [...set].filter(t => ![...removedTeams].some(r => r.toLowerCase() === String(t).toLowerCase()));
         saveKnownTeams();
       }
     }
@@ -2075,15 +2097,15 @@ function getTeams(){
   if(!showArchived){
     pendingEmptyTeams.forEach(x=>t.add(x));
   }
-  // Persisted groups (empty or not) — survives refresh
+  // Persisted empty/known groups (survives refresh). Staff/meta alone do NOT recreate a removed group.
   if(!showArchived){
     knownTeams.forEach(x=>{ if(x) t.add(x); });
-    // Also any teamMeta / teamStaff keys
-    try{
-      Object.keys(teamMeta || {}).forEach(x=>{ if(x) t.add(x); });
-      Object.keys(teamStaff || {}).forEach(x=>{ if(x) t.add(x); });
-    }catch(e){}
   }
+  // Never show groups the user explicitly removed
+  try{
+    loadRemovedTeams();
+    removedTeams.forEach(x => t.delete(x));
+  }catch(e){}
   return [...t];
 }
 const pendingEmptyTeams = new Set();
@@ -2315,7 +2337,10 @@ function renderAll(){
   let teamsToShow = teams;
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team));
-    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t) || knownTeams.includes(t));
+    teamsToShow = teams.filter(t => {
+      if([...removedTeams].some(r => r.toLowerCase() === String(t).toLowerCase())) return false;
+      return teamsWithPatients.has(t) || pendingEmptyTeams.has(t) || knownTeams.includes(t);
+    });
   }
   const typeFilter = (document.getElementById('filterType') || {}).value || '';
   if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
@@ -2713,20 +2738,14 @@ groupsContainer.addEventListener('click', e=>{
 });
 
 function removeEmptyTeam(team){
+  if(!team) return;
   pendingEmptyTeams.delete(team);
   unregisterKnownTeam(team);
-  delete teamStaff[team];
-  if(typeof teamMeta !== 'undefined'){ delete teamMeta[team]; saveTeamMeta(); pushTeamMeta(); }
+  try{ delete teamStaff[team]; saveTeamStaffCache(); pushTeamStaff(); }catch(e){}
+  try{ delete teamMeta[team]; saveTeamMeta(); pushTeamMeta(); }catch(e){}
+  try{ pushKnownTeams(); }catch(e){}
   expandedTeams.delete(team);
-  saveTeamStaffCache();
-  pushTeamStaff();
-  // Only remove the team shell — don't touch patients that still exist under other filters
-  const stillHasPatients = state.patients.some(p => p.team === team);
-  if(!stillHasPatients){
-    renderAll();
-  } else {
-    renderAll();
-  }
+  renderAll();
 }
 
 async function permanentlyDeletePatients(ids){
