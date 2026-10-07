@@ -289,6 +289,7 @@
   .fac-fixed.fac-other{ background:var(--purple-bg); color:var(--purple); }
   .cl-pending{ background:var(--amber-bg); color:var(--amber); }
   .cl-t1{ background:var(--blue-bg); color:var(--blue); }
+  .cl-t2{ background:var(--purple-bg); color:var(--purple); }
   .cl-missed24{ background:var(--red-bg); color:var(--red); }
   .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
   .dup-new{ background:var(--green-bg); color:var(--green); }
@@ -327,12 +328,14 @@
   .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
   .dash-head h3{ margin:0 0 4px; font-size:18px; }
   .dash-head .modal-sub{ margin-bottom:0; }
+  .dash-head{ position:relative; padding-right:40px; }
   .dash-close{
-    border:1px solid var(--line); background:var(--card); color:var(--ink);
-    border-radius:8px; padding:6px 12px; cursor:pointer; flex:none;
-    font-size:16px; line-height:1; font-weight:700; min-width:36px; min-height:36px;
+    position:absolute; top:0; right:0;
+    border:none; background:transparent; color:var(--muted);
+    border-radius:8px; padding:4px 8px; cursor:pointer; flex:none;
+    font-size:18px; line-height:1; font-weight:500; min-width:0; min-height:0;
   }
-  .dash-close:hover{ color:var(--teal-deep); background:var(--table-head); border-color:var(--teal); }
+  .dash-close:hover{ color:var(--ink); background:var(--table-head); }
   .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
   .dash-controls select{ min-width:190px; }
   .dash-scope-note{ font-size:11px; color:var(--muted); }
@@ -880,6 +883,7 @@
   }
   .type-badge.mobile{ background:var(--blue-bg); color:var(--blue); }
   .type-badge.walkin{ background:var(--amber-bg); color:var(--amber); }
+  .type-badge.profiling{ background:var(--purple-bg); color:var(--purple); }
 
 </style>
 </head>
@@ -977,10 +981,11 @@
       <option value="ref-yes">Referral done</option>
       <option value="ref-no">Referral not yet</option>
     </select>
-    <select id="filterType" title="Mobile vs walk-in">
+    <select id="filterType" title="Mobile / walk-in / profiling">
       <option value="">All types</option>
       <option value="mobile">Mobile only</option>
-      <option value="walkin">Walk-in / profiling only</option>
+      <option value="walkin">Walk-in only</option>
+      <option value="profiling">Profiling only</option>
     </select>
     <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
       <option value="">All records</option>
@@ -1050,6 +1055,7 @@
       <option value="">Set claim…</option>
       <option value="pending">Pending</option>
       <option value="t1">T1 Submitted</option>
+      <option value="t2">T2 Submitted</option>
       <option value="missed24">Missed 24h</option>
     </select>
     <select id="bulkStatus">
@@ -1097,6 +1103,7 @@
         <select id="f_claim">
           <option value="pending">Pending</option>
           <option value="t1">T1 Submitted</option>
+          <option value="t2">T2 Submitted</option>
           <option value="missed24">Missed 24h</option>
         </select>
       </div>
@@ -1105,8 +1112,12 @@
         <input type="date" id="f_dateEncoded">
       </div>
       <div>
-        <label>Date validated &amp; submitted</label>
-        <input type="date" id="f_dateSubmitted">
+        <label>T1 submitted date</label>
+        <input type="date" id="f_dateT1">
+      </div>
+      <div>
+        <label>T2 submitted date</label>
+        <input type="date" id="f_dateT2">
       </div>
       <div class="full check-grid">
         <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA attachment on file</label></div>
@@ -1159,7 +1170,8 @@
         <label>Type</label>
         <div class="type-switch" id="tm_typeSwitch" role="radiogroup" aria-label="Group type">
           <label class="active" data-type-lbl="mobile"><input type="radio" name="tm_type" id="tm_type_mobile" value="mobile" checked> Mobile</label>
-          <label data-type-lbl="walkin"><input type="radio" name="tm_type" id="tm_type_walkin" value="walkin"> Walk-in / profiling</label>
+          <label data-type-lbl="walkin"><input type="radio" name="tm_type" id="tm_type_walkin" value="walkin"> Walk-in</label>
+          <label data-type-lbl="profiling"><input type="radio" name="tm_type" id="tm_type_profiling" value="profiling"> Profiling</label>
         </div>
         <label>Name</label>
         <input type="text" id="tm_name" placeholder="e.g. Tacloban Mobile">
@@ -1481,7 +1493,7 @@ function toRemote(p){
   const uid = (currentUser && currentUser.id) || null;
   return {
     id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
-    mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateSubmitted || null,
+    mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateT1 || p.dateSubmitted || null, date_t1: p.dateT1 || p.dateSubmitted || null, date_t2: p.dateT2 || null,
     within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab,
     medicine: !!p.medicine, vitamins: !!p.vitamins, referral: !!p.referral,
     notes: p.notes || '',
@@ -1496,7 +1508,7 @@ function toRemote(p){
 function fromRemote(r){
   return {
     id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
-    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
+    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '', dateT1: r.date_t1 || r.date_submitted || '', dateT2: r.date_t2 || '',
     within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab,
     medicine: !!r.medicine, vitamins: !!r.vitamins, referral: !!r.referral,
     notes: r.notes || '',
@@ -1751,13 +1763,20 @@ function saveTeamMeta(){
   try{ localStorage.setItem(TEAM_META_KEY, JSON.stringify(teamMeta)); }catch(e){}
 }
 function getTeamType(name){
-  if(teamMeta[name] && teamMeta[name].type === 'walkin') return 'walkin';
+  const t = teamMeta[name] && teamMeta[name].type;
+  if(t === 'walkin' || t === 'profiling') return t;
   return 'mobile';
 }
 function setTeamType(name, type){
   if(!name) return;
-  teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { type: type === 'walkin' ? 'walkin' : 'mobile' });
+  const allowed = { mobile:1, walkin:1, profiling:1 };
+  teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { type: allowed[type] ? type : 'mobile' });
   saveTeamMeta();
+}
+function teamTypeLabel(t){
+  if(t === 'walkin') return 'Walk-in';
+  if(t === 'profiling') return 'Profiling';
+  return 'Mobile';
 }
 async function pushTeamMeta(){
   try{ await sb.from('settings').upsert({ key: 'teamMeta', value: JSON.stringify(teamMeta) }); }catch(e){}
@@ -2016,7 +2035,7 @@ function autoFlagMissedClaims(){
     // Already marked within 24h — do not force Missed 24h
     if(p.within24) return;
     // Prefer date submitted; fall back to date encoded. No date → leave Pending.
-    const base = (p.dateSubmitted || p.dateEncoded || '').trim();
+    const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
     if(!base) return;
     const deadline = claimDeadline(base);
     if(deadline && now >= deadline){
@@ -2031,8 +2050,8 @@ function autoFlagMissedClaims(){
 
 const statusLabel = { registered:"Registered", registered_other:"Registered to other DR facility" };
 const statusClass = { registered:"st-registered", registered_other:"st-registered-other" };
-const claimLabel = {pending:"Pending", t1:"T1 Submitted", missed24:"Missed 24h"};
-const claimClass = {pending:"cl-pending", t1:"cl-t1", missed24:"cl-missed24"};
+const claimLabel = {pending:"Pending", t1:"T1 Submitted", t2:"T2 Submitted", missed24:"Missed 24h"};
+const claimClass = {pending:"cl-pending", t1:"cl-t1", t2:"cl-t2", missed24:"cl-missed24"};
 
 function normalizeFacility(p){
   facilityOptionsAll = loadFacilityOptions();
@@ -2127,12 +2146,13 @@ function renderAll(){
     teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
   }
   const typeFilter = (document.getElementById('filterType') || {}).value || '';
-  if(typeFilter === 'mobile' || typeFilter === 'walkin'){
+  if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
     teamsToShow = teamsToShow.filter(t => getTeamType(t) === typeFilter);
   }
   teamsToShow = teamsToShow.slice().sort(function(a,b){
+    const order = { mobile:0, walkin:1, profiling:2 };
     const ta = getTeamType(a), tb = getTeamType(b);
-    if(ta !== tb) return ta === 'mobile' ? -1 : 1;
+    if(ta !== tb) return (order[ta]||0) - (order[tb]||0);
     return a.localeCompare(b);
   });
 
@@ -2190,7 +2210,7 @@ function renderAll(){
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
-          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${getTeamType(team)==='walkin'?'Walk-in':'Mobile'}</span></h2>
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
@@ -2214,7 +2234,7 @@ function renderAll(){
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
+              <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th></th>
             </tr>
@@ -2307,7 +2327,7 @@ function rowHtml(p){
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
-      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
+      <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
@@ -2360,12 +2380,16 @@ function populateTeamSelect(teams){
   const current = sel.value;
   const mobiles = teams.filter(t => getTeamType(t) === 'mobile');
   const walkins = teams.filter(t => getTeamType(t) === 'walkin');
+  const profiling = teams.filter(t => getTeamType(t) === 'profiling');
   let htmlOpts = '';
   if(mobiles.length){
     htmlOpts += `<optgroup label="Mobile">${mobiles.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
   }
   if(walkins.length){
-    htmlOpts += `<optgroup label="Walk-in / profiling">${walkins.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
+    htmlOpts += `<optgroup label="Walk-in">${walkins.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
+  }
+  if(profiling.length){
+    htmlOpts += `<optgroup label="Profiling">${profiling.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
   }
   if(!htmlOpts){
     htmlOpts = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
@@ -2757,7 +2781,8 @@ function openModal(id, presetTeam){
   updateFacilityField(p ? p.facility : HOME_FACILITY);
   document.getElementById('f_claim').value = p ? p.claim : 'pending';
   document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
-  document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
+  document.getElementById('f_dateT1').value = p ? (p.dateT1 || p.dateSubmitted || '') : '';
+  document.getElementById('f_dateT2').value = p ? (p.dateT2 || '') : '';
   document.getElementById('f_mca').checked = p ? p.mca : false;
   document.getElementById('f_within24').checked = p ? p.within24 : false;
   document.getElementById('f_rice').checked = p ? p.rice : false;
@@ -2834,7 +2859,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     facility: document.getElementById('f_facility').value,
     claim: document.getElementById('f_claim').value || 'pending',
     dateEncoded: document.getElementById('f_dateEncoded').value || defaultEncodedDate(),
-    dateSubmitted: document.getElementById('f_dateSubmitted').value,
+    dateT1: document.getElementById('f_dateT1').value, dateT2: document.getElementById('f_dateT2').value, dateSubmitted: document.getElementById('f_dateT1').value,
     mca: document.getElementById('f_mca').checked,
     within24: document.getElementById('f_within24').checked,
     rice: document.getElementById('f_rice').checked,
@@ -2894,9 +2919,12 @@ function openTeamModal(existingName){
   const _tt = existingName ? getTeamType(existingName) : 'mobile';
   const _rm = document.getElementById('tm_type_mobile');
   const _rw = document.getElementById('tm_type_walkin');
-  if(_rm && _rw){ _rm.checked = _tt !== 'walkin'; _rw.checked = _tt === 'walkin'; }
+  const _rp = document.getElementById('tm_type_profiling');
+  if(_rm) _rm.checked = _tt === 'mobile';
+  if(_rw) _rw.checked = _tt === 'walkin';
+  if(_rp) _rp.checked = _tt === 'profiling';
   document.querySelectorAll('#tm_typeSwitch label').forEach(function(l){
-    l.classList.toggle('active', l.getAttribute('data-type-lbl') === (_tt === 'walkin' ? 'walkin' : 'mobile'));
+    l.classList.toggle('active', l.getAttribute('data-type-lbl') === _tt);
   });
   renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
   teamModalBackdrop.classList.add('open');
@@ -2937,7 +2965,9 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     pendingEmptyTeams.add(name);
   }
   teamStaff[name] = staffNames;
-  var typ = document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked ? 'walkin' : 'mobile';
+  var typ = 'mobile';
+  if(document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked) typ = 'walkin';
+  else if(document.getElementById('tm_type_profiling') && document.getElementById('tm_type_profiling').checked) typ = 'profiling';
   if(editingTeamOriginalName && editingTeamOriginalName !== name && teamMeta[editingTeamOriginalName]){
     delete teamMeta[editingTeamOriginalName];
   }
@@ -2958,9 +2988,13 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     var inp = lbl.querySelector('input');
     if(inp) inp.checked = true;
     sw.querySelectorAll('label').forEach(function(l){ l.classList.toggle('active', l === lbl); });
-    var t = document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked ? 'walkin' : 'mobile';
+    var t = 'mobile';
+    if(document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked) t = 'walkin';
+    else if(document.getElementById('tm_type_profiling') && document.getElementById('tm_type_profiling').checked) t = 'profiling';
     var ph = document.getElementById('tm_name');
-    if(ph && !ph.value) ph.placeholder = t === 'walkin' ? 'e.g. Oct 7, 2026 Walk-in' : 'e.g. Tacloban Mobile';
+    if(ph && !ph.value){
+      ph.placeholder = t === 'walkin' ? 'e.g. Oct 7, 2026 Walk-in' : (t === 'profiling' ? 'e.g. Oct 7 Profiling' : 'e.g. Tacloban Mobile');
+    }
   });
 })();
 
