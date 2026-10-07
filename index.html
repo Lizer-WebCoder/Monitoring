@@ -1596,7 +1596,10 @@
     height: 100% !important;
     z-index: 0 !important;
     pointer-events: none !important;
+    display: block !important;
+    opacity: 1 !important;
   }
+  #loginOverlay .login-card{ z-index: 2 !important; }
   #loginOverlay .login-liquid{ display: none !important; }
 
 </style>
@@ -5337,21 +5340,14 @@ async function initApp(){
   if(!canvas) return;
   const ctx = canvas.getContext('2d', { alpha: false });
   let raf = 0, w = 0, h = 0;
-  const colors = [
-    { r:240,g:253,b:244 },
-    { r:240,g:249,b:255 },
-    { r:230,g:244,b:234 },
-    { r:236,g:253,b:245 },
-    { r:224,g:242,b:254 }
+  // Slightly richer pastels so motion is visible but still calm
+  const nodes = [
+    { color:{r:167,g:243,b:208}, ampX:0.22, ampY:0.18, speed:1/18, phase:0.0,   radius:0.55 }, // mint
+    { color:{r:186,g:230,b:253}, ampX:0.20, ampY:0.20, speed:1/20, phase:1.2,   radius:0.50 }, // sky
+    { color:{r:167,g:243,b:208}, ampX:0.18, ampY:0.22, speed:1/16, phase:2.4,   radius:0.48 }, // sage-ish
+    { color:{r:153,g:246,b:228}, ampX:0.24, ampY:0.14, speed:1/22, phase:3.1,   radius:0.42 }, // teal
+    { color:{r:254,g:243,b:199}, ampX:0.15, ampY:0.20, speed:1/19, phase:4.0,   radius:0.38 }  // soft warm
   ];
-  const nodes = colors.map((c,i)=>({
-    x: 0.15 + (i * 0.18) % 0.7,
-    y: 0.2 + ((i * 0.23) % 0.6),
-    vx: (0.00008 + i * 0.00002) * (i % 2 === 0 ? 1 : -1),
-    vy: (0.00006 + i * 0.000015) * (i % 2 === 0 ? -1 : 1),
-    color: c,
-    radius: 0.35 + (i % 3) * 0.08
-  }));
   function resize(){
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth; h = window.innerHeight;
@@ -5361,19 +5357,20 @@ async function initApp(){
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  function draw(){
+  function draw(now){
+    const t = (now || performance.now()) / 1000;
     ctx.fillStyle = '#f0fdf4';
     ctx.fillRect(0, 0, w, h);
     for(const n of nodes){
-      n.x += n.vx; n.y += n.vy;
-      if(n.x < 0.05 || n.x > 0.95) n.vx *= -1;
-      if(n.y < 0.05 || n.y > 0.95) n.vy *= -1;
-      const px = n.x * w, py = n.y * h;
+      // Organic 16–22s loops — clearly visible without being distracting
+      const x = 0.5 + Math.sin(t * Math.PI * 2 * n.speed + n.phase) * n.ampX;
+      const y = 0.5 + Math.cos(t * Math.PI * 2 * n.speed * 0.85 + n.phase * 1.3) * n.ampY;
+      const px = x * w, py = y * h;
       const rad = Math.max(w, h) * n.radius;
       const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
       const { r, g: gg, b } = n.color;
-      g.addColorStop(0, `rgba(${r},${gg},${b},0.95)`);
-      g.addColorStop(0.45, `rgba(${r},${gg},${b},0.45)`);
+      g.addColorStop(0, `rgba(${r},${gg},${b},0.55)`);
+      g.addColorStop(0.4, `rgba(${r},${gg},${b},0.28)`);
       g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
@@ -5381,16 +5378,18 @@ async function initApp(){
     raf = requestAnimationFrame(draw);
   }
   function start(){
+    resize();
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      resize();
       ctx.fillStyle = '#f0fdf4';
       ctx.fillRect(0,0,w,h);
       return;
     }
-    resize(); draw();
+    raf = requestAnimationFrame(draw);
   }
   window.addEventListener('resize', resize);
+  // Start immediately + again on load (in case layout was 0)
   start();
+  window.addEventListener('load', ()=>{ resize(); });
 })();
 
 (async function boot(){
