@@ -1,7 +1,7 @@
 {
-  "name": "DR CARE — Divine Rays Mobile Operations Tracker",
+  "name": "DR CARE — Divine Rays Patient Care Tracker",
   "short_name": "DR CARE",
-  "description": "Offline-first field roster for mobile medical operations: patients, PhilHealth, claims, benefits, and multi-user sync.",
+  "description": "Offline-first patient care tracker for mobiles, walk-ins, and profiling: roster, PhilHealth, claims, benefits, multi-user sync.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
