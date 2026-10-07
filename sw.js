@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dr-care-v6';
+const CACHE_NAME = 'dr-care-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', event => {
 
   if (isHtml) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then(response => {
           if (response && response.ok) {
             const copy = response.clone();
