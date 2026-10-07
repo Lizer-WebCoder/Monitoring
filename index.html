@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DR CARE — Divine Rays Mobile Operations Tracker</title>
+<title>DR CARE — Divine Rays Patient Care Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,22 +98,111 @@
   #offlineBanner.show{ display:block; }
 
   /* ---------- Login overlay ---------- */
-  #loginOverlay{
-    position:fixed; inset:0; background:linear-gradient(180deg, var(--teal-deep), var(--teal));
-    display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
+    #loginOverlay{
+    position:fixed; inset:0; z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    background:#0b2f2a;
+    overflow:hidden;
   }
   #loginOverlay.hidden{ display:none; }
-  .login-card{
-    background:var(--card); border-radius:14px; padding:32px 30px; width:100%; max-width:360px;
-    box-shadow:0 20px 60px rgba(11,54,48,0.35);
+  .login-bg{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
   }
-  .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
-  .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
+  .login-orb{
+    position:absolute; border-radius:50%; filter:blur(40px); opacity:.55;
+    animation: loginFloat 18s ease-in-out infinite;
+  }
+  .login-orb-a{
+    width:min(520px, 70vw); height:min(520px, 70vw);
+    background:radial-gradient(circle, #2a9d8f 0%, transparent 70%);
+    top:-12%; left:-10%;
+  }
+  .login-orb-b{
+    width:min(420px, 55vw); height:min(420px, 55vw);
+    background:radial-gradient(circle, #4ecdc4 0%, transparent 68%);
+    bottom:-18%; right:-8%;
+    animation-delay: -6s; opacity:.4;
+  }
+  .login-orb-c{
+    width:min(280px, 40vw); height:min(280px, 40vw);
+    background:radial-gradient(circle, #f4a261 0%, transparent 70%);
+    top:42%; left:48%;
+    animation-delay: -11s; opacity:.22;
+  }
+  .login-grid{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 75%);
+    animation: loginGrid 28s linear infinite;
+  }
+  .login-wave{
+    position:absolute; left:-10%; right:-10%; bottom:-8%;
+    height:42%;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 100%, rgba(42,157,143,.35), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(15,61,54,.5), transparent 55%);
+    animation: loginWave 14s ease-in-out infinite alternate;
+  }
+  @keyframes loginFloat{
+    0%,100%{ transform: translate(0,0) scale(1); }
+    33%{ transform: translate(3%, 4%) scale(1.05); }
+    66%{ transform: translate(-2%, 2%) scale(.97); }
+  }
+  @keyframes loginGrid{
+    0%{ background-position: 0 0, 0 0; }
+    100%{ background-position: 48px 48px, 48px 48px; }
+  }
+  @keyframes loginWave{
+    from{ transform: translateY(0); opacity:.9; }
+    to{ transform: translateY(-12px); opacity:1; }
+  }
+  .login-card{
+    position:relative; z-index:1;
+    background:rgba(255,255,255,.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius:18px;
+    padding:30px 28px 26px;
+    width:100%; max-width:400px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.35);
+  }
+  .login-brand-mark{
+    width:44px; height:44px; border-radius:12px;
+    background:linear-gradient(145deg, #1a7a6d, #0f4c44);
+    color:#fff; font-weight:800; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    letter-spacing:.04em; margin-bottom:14px;
+    box-shadow: 0 8px 20px rgba(15,76,68,.35);
+  }
+  .login-card h1{ font-size:19px; margin:0 0 4px; color:var(--ink); font-weight:800; letter-spacing:-0.02em; }
+  .login-card p{ font-size:12.5px; color:var(--muted); margin:0 0 18px; line-height:1.45; }
   .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
-  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
-  .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
-  .login-card button:hover{ background:var(--teal-deep); }
-  .login-card button:disabled{ opacity:0.6; cursor:default; }
+  .login-card input{
+    width:100%; font-family:inherit; font-size:14px; padding:11px 12px;
+    border-radius:10px; border:1px solid var(--line); background:#fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .login-card input:focus{
+    outline:none; border-color:var(--teal);
+    box-shadow: 0 0 0 3px rgba(26,122,109,.15);
+  }
+  .login-card button#loginBtn, .login-card > button{
+    width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none;
+    padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;
+    box-shadow: 0 4px 14px rgba(26,122,109,.3);
+  }
+  .login-card button#loginBtn:hover, .login-card > button:hover{ background:var(--teal-deep); }
+  .login-card button:disabled{ opacity:0.6; cursor:default; box-shadow:none; }
+  .login-note{ font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.45; }
+  #toggleAuthMode{
+    display:block; text-align:center; margin-top:12px;
+    color:var(--teal-deep); font-weight:600; font-size:13px;
+  }
+
   .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; font-weight:600; min-height:1.2em; }
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
@@ -925,6 +1014,204 @@
   .role-pill.encoder{ background:var(--blue-bg); color:var(--blue); }
   .role-pill.viewer{ background:var(--table-head); color:var(--muted); }
 
+
+  /* ========== System-wide UI polish ========== */
+  :root{
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-soft: 0 1px 2px rgba(18,49,43,.04), 0 8px 24px rgba(18,49,43,.06);
+  }
+  body{ letter-spacing: -0.01em; }
+  .btn{
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{ box-shadow: 0 1px 2px rgba(18,49,43,.12); }
+  .toolbar{ gap: 12px; margin-top: 14px; margin-bottom: 14px; }
+  .toolbar-row{ gap: 8px; }
+  .team-group{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    padding: 12px 14px 10px;
+    margin-bottom: 14px;
+  }
+  .team-head{
+    border-bottom: 1px solid var(--line);
+    padding: 6px 2px 12px;
+    margin-bottom: 8px;
+  }
+  .team-head h2{ font-size: 15px; font-weight: 700; }
+  .table-wrap{
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    overflow: auto;
+  }
+  table th{
+    position: sticky; top: 0; z-index: 2;
+    background: var(--table-head);
+  }
+  .modal, .dash-modal{
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(18,49,43,.18);
+    border: 1px solid var(--line);
+  }
+  .dash-modal{
+    max-width: 960px;
+    width: 100%;
+    padding: 22px 22px 20px;
+  }
+  .dash-head{ margin-bottom: 12px; }
+  .dash-head h3{ font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+  .dash-head .modal-sub{ font-size: 12.5px; line-height: 1.45; color: var(--muted); max-width: 52ch; }
+
+  /* Dashboard controls */
+  .dash-controls{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px 14px !important;
+    align-items: end;
+    margin: 8px 0 20px !important;
+    padding: 14px;
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .dash-controls > div{ min-width: 0; }
+  .dash-controls label{
+    font-size: 10px !important;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted) !important;
+    margin-bottom: 5px !important;
+  }
+  .dash-controls select,
+  .dash-controls input[type=date]{
+    width: 100%;
+    min-width: 0 !important;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 13px;
+  }
+  .dash-controls #dashEncoderSelect{
+    min-height: 38px !important;
+    height: auto;
+  }
+  .dash-scope-note{
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 2px 2px 0;
+    font-weight: 600;
+  }
+  .dash-controls .field-hint{ display: none; }
+
+  /* KPI + metric cards */
+  .dash-cards{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px !important;
+    margin-bottom: 18px;
+  }
+  .kpi-cards{
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    margin-bottom: 16px;
+  }
+  .dash-card{
+    border-radius: var(--radius) !important;
+    padding: 14px 12px !important;
+    border: 1px solid var(--line);
+    background: var(--card);
+    box-shadow: none;
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .dash-card .dc-num{
+    font-size: 22px !important;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .dash-card .dc-lbl{
+    font-size: 10.5px !important;
+    line-height: 1.35;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 650;
+  }
+  .dash-card .kpi-sub{
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    opacity: .85;
+  }
+  .dash-section{
+    margin-bottom: 28px !important;
+  }
+  .dash-section h4{
+    font-size: 11px !important;
+    letter-spacing: .08em !important;
+    margin: 0 0 10px !important;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dash-table-wrap, .dash-section .table-wrap{
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    overflow-x: auto;
+  }
+  .dash-table th, .dash-table td{
+    padding: 10px 12px !important;
+  }
+  .dash-trend-wrap{
+    padding: 12px 8px 4px;
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* Admin user cards spacing */
+  .admin-stats{ gap: 10px; margin-bottom: 16px; }
+  .admin-stat{ border-radius: var(--radius); padding: 12px; }
+  .admin-user-card{ border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+
+  /* Stat strip denser */
+  .stat-strip{ gap: 8px; margin: 8px auto 4px; }
+  .stat-chip{
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* Login */
+  #loginOverlay .login-card, .login-card{
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Footer breathing room */
+  .app-footer{ padding: 28px 16px 36px; opacity: .7; }
+
+  @media (max-width: 720px){
+    .dash-modal{ padding: 16px 14px; }
+    .dash-controls{ grid-template-columns: 1fr 1fr; }
+    .team-group{ padding: 10px; }
+  }
+
 </style>
 </head>
 <body>
@@ -935,9 +1222,17 @@
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
+  <div class="login-bg" aria-hidden="true">
+    <div class="login-orb login-orb-a"></div>
+    <div class="login-orb login-orb-b"></div>
+    <div class="login-orb login-orb-c"></div>
+    <div class="login-grid"></div>
+    <div class="login-wave"></div>
+  </div>
   <div class="login-card">
+    <div class="login-brand-mark">DR</div>
     <h1 id="loginTitle">DR CARE — Sign in</h1>
-    <p id="loginSub">Divine Rays Mobile Operations · individual accounts</p>
+    <p id="loginSub">Divine Rays · Patient Care Tracker · staff accounts</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
     <label for="loginPassword">Password</label>
@@ -961,7 +1256,7 @@
 <header>
   <div class="header-row">
     <div>
-      <div class="brand-eyebrow">Divine Rays Mobile Operations</div>
+      <div class="brand-eyebrow">Divine Rays · Patient Care Tracker</div>
       <h1 class="brand-title">
         <span class="pulse-badge" aria-hidden="true">
           <svg viewBox="0 0 60 24" width="34" height="18" fill="none">
@@ -1335,7 +1630,7 @@
 
 <!-- Dashboard -->
 <div class="dash-backdrop" id="dashBackdrop">
-  <div class="dash-modal">
+  <div class="dash-modal" style="max-width:980px;">
     <div class="dash-head">
       <div>
         <h3>Metrics Dashboard</h3>
@@ -3868,7 +4163,7 @@ function populateDashboardControls(){
       const sel = prev.has(id) ? 'selected' : '';
       return `<option value="${escapeAttr(id)}" ${sel}>${escapeHtml(name)}</option>`;
     }).join('');
-    encSel.size = Math.min(4, Math.max(1, encSel.options.length));
+    encSel.size = 1; // single-line dropdown; multi-select still works with Ctrl/Cmd
   }
   if(encWrap){
     if(typeof isAdmin === 'function' && isAdmin()){
@@ -4145,7 +4440,7 @@ function renderDashboard(){
     ${encoderHtml}
     ${teamTableHtml}
     <div class="dash-section">
-      <h4>Trend (${mode === 'day' ? 'by hour N/A — daily count' : mode === 'week' ? 'days in week' : 'by month'})</h4>
+      <h4>${mode === 'day' ? 'Daily total' : mode === 'week' ? 'Trend · days this week' : mode === 'month' ? 'Trend · months' : 'Trend · all months'}</h4>
       <div class="dash-trend-wrap" id="dashTrendWrap"></div>
     </div>
   `;
@@ -4474,8 +4769,8 @@ function setAuthMode(mode){
   const isUp = mode === 'signup';
   document.getElementById('loginTitle').textContent = isUp ? 'DR CARE — Create account' : 'DR CARE — Sign in';
   document.getElementById('loginSub').textContent = isUp
-    ? 'New staff account · an admin will set your role after signup'
-    : 'Divine Rays Mobile Operations · individual accounts';
+    ? 'Create your staff account · an admin approves access and sets your role'
+    : 'Divine Rays · Patient Care Tracker · staff accounts';
   document.getElementById('signupNameWrap').style.display = isUp ? 'block' : 'none';
   document.getElementById('loginBtn').textContent = isUp ? 'Create account' : 'Sign in';
   document.getElementById('signupBtn').style.display = 'none';
