@@ -1289,6 +1289,103 @@
     .team-group{ padding: 10px; }
   }
 
+
+  /* Login card — solid & readable (overrides glass) */
+  #loginOverlay .login-card{
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    opacity: 1 !important;
+    color: #12312b;
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.08),
+      0 24px 48px rgba(0,0,0,.35) !important;
+  }
+  #loginOverlay .login-card h1{
+    color: #0f2924 !important;
+    opacity: 1 !important;
+  }
+  #loginOverlay .login-card p,
+  #loginOverlay .login-card .login-note,
+  #loginOverlay #loginNote{
+    color: #5a6f6a !important;
+    opacity: 1 !important;
+  }
+  #loginOverlay .login-card label{
+    color: #1a5c52 !important;
+  }
+  #loginOverlay .login-card input{
+    background: #fff !important;
+    color: #12312b !important;
+    border: 1.5px solid #d5e0dc !important;
+  }
+  #loginOverlay .login-card input::placeholder{
+    color: #9aada7;
+  }
+  #loginOverlay #loginBtn{
+    background: #1a7a6d !important;
+    color: #fff !important;
+    opacity: 1 !important;
+  }
+  #loginOverlay #toggleAuthMode{
+    color: #1a5c52 !important;
+    background: #f3f7f6 !important;
+    border: 1px solid #d5e0dc;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-decoration: none !important;
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+  /* Stronger background motion */
+  #loginOverlay .login-orb-a{
+    opacity: .75 !important;
+    animation: loginDriftA 9s ease-in-out infinite alternate !important;
+  }
+  #loginOverlay .login-orb-b{
+    opacity: .55 !important;
+    animation: loginDriftB 7s ease-in-out infinite alternate !important;
+  }
+  #loginOverlay .login-orb-c{
+    opacity: .35 !important;
+    animation: loginDriftC 11s ease-in-out infinite alternate !important;
+  }
+  #loginOverlay .login-ring{
+    border-width: 2px !important;
+  }
+  #loginOverlay .login-ring-1{
+    border-color: rgba(78,205,196,.35) !important;
+    animation: loginSpin 18s linear infinite !important;
+  }
+  #loginOverlay .login-ring-2{
+    border-color: rgba(255,255,255,.18) !important;
+    animation: loginSpin 24s linear infinite reverse !important;
+  }
+  #loginOverlay .login-cross{
+    opacity: .45 !important;
+  }
+  #loginOverlay .login-particle{
+    width: 7px; height: 7px;
+    background: rgba(255,255,255,.75) !important;
+    box-shadow: 0 0 14px rgba(78,205,196,.85) !important;
+  }
+  #loginOverlay .login-line{
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(78,205,196,.35), transparent);
+    animation: loginLine 6s ease-in-out infinite;
+  }
+  #loginOverlay .login-line.l1{ top: 22%; left: 0; width: 40%; animation-delay: 0s; }
+  #loginOverlay .login-line.l2{ top: 58%; right: 0; width: 35%; animation-delay: -2s; }
+  #loginOverlay .login-line.l3{ top: 78%; left: 20%; width: 45%; animation-delay: -4s; }
+  @keyframes loginLine{
+    0%,100%{ opacity: .2; transform: translateX(-8%); }
+    50%{ opacity: .7; transform: translateX(8%); }
+  }
+
 </style>
 </head>
 <body>
@@ -1315,6 +1412,9 @@
     <div class="login-particle p6"></div>
     <div class="login-particle p7"></div>
     <div class="login-particle p8"></div>
+    <div class="login-line l1"></div>
+    <div class="login-line l2"></div>
+    <div class="login-line l3"></div>
     <div class="login-wave"></div>
   </div>
   <div class="login-card">
