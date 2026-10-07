@@ -1386,6 +1386,208 @@
     50%{ opacity: .7; transform: translateX(8%); }
   }
 
+
+  /* ===== Light medical login (liquid gradient) ===== */
+  #loginOverlay{
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 200 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+    background: #f0fdf4 !important;
+    overflow: hidden !important;
+  }
+  #loginOverlay.hidden{ display: none !important; }
+  #loginOverlay .login-bg{
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    background: #f0fdf4 !important;
+  }
+  #loginOverlay .login-liquid{
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    will-change: transform, opacity;
+    opacity: 0.85;
+  }
+  #loginOverlay .login-liquid-1{
+    width: 55vmax; height: 55vmax;
+    top: -20%; left: -15%;
+    background: #f0fdf4;
+    box-shadow: 0 0 120px 80px #bbf7d0;
+    animation: liquidA 22s ease-in-out infinite alternate;
+  }
+  #loginOverlay .login-liquid-2{
+    width: 50vmax; height: 50vmax;
+    bottom: -25%; right: -18%;
+    background: #f0f9ff;
+    box-shadow: 0 0 100px 70px #bae6fd;
+    animation: liquidB 26s ease-in-out infinite alternate;
+  }
+  #loginOverlay .login-liquid-3{
+    width: 40vmax; height: 40vmax;
+    top: 30%; left: 40%;
+    background: #e6f4ea;
+    box-shadow: 0 0 90px 60px #a7f3d0;
+    opacity: 0.7;
+    animation: liquidC 20s ease-in-out infinite alternate;
+  }
+  #loginOverlay .login-liquid-4{
+    width: 35vmax; height: 35vmax;
+    top: 10%; right: 20%;
+    background: #ecfdf5;
+    box-shadow: 0 0 80px 50px #99f6e4;
+    opacity: 0.55;
+    animation: liquidD 24s ease-in-out infinite alternate;
+  }
+  @keyframes liquidA{
+    from{ transform: translate(0, 0) scale(1); }
+    to{ transform: translate(12%, 14%) scale(1.15); }
+  }
+  @keyframes liquidB{
+    from{ transform: translate(0, 0) scale(1); }
+    to{ transform: translate(-14%, -10%) scale(1.18); }
+  }
+  @keyframes liquidC{
+    from{ transform: translate(0, 0) scale(1); }
+    to{ transform: translate(-10%, 8%) scale(1.12); }
+  }
+  @keyframes liquidD{
+    from{ transform: translate(0, 0) scale(1); }
+    to{ transform: translate(8%, -12%) scale(1.1); }
+  }
+  /* Hide old dark-theme decorations */
+  #loginOverlay .login-orb,
+  #loginOverlay .login-ring,
+  #loginOverlay .login-cross,
+  #loginOverlay .login-particle,
+  #loginOverlay .login-line,
+  #loginOverlay .login-wave,
+  #loginOverlay .login-grid{
+    display: none !important;
+  }
+  /* Crisp glass card */
+  #loginOverlay .login-card{
+    position: relative !important;
+    z-index: 2 !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    padding: 32px 28px 28px !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    outline: 1px solid rgba(15, 118, 110, 0.12) !important;
+    border-radius: 16px !important;
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 12px 40px rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+    opacity: 1 !important;
+  }
+  #loginOverlay .login-brand-mark{
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #059669 !important;
+    color: #fff !important;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.28);
+  }
+  #loginOverlay .login-card h1{
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 0 6px !important;
+    letter-spacing: -0.02em;
+    opacity: 1 !important;
+  }
+  #loginOverlay .login-card p,
+  #loginOverlay #loginSub{
+    font-size: 13px !important;
+    color: #64748b !important;
+    margin: 0 0 20px !important;
+    line-height: 1.45 !important;
+    opacity: 1 !important;
+  }
+  #loginOverlay .login-card label{
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    color: #334155 !important;
+    margin: 14px 0 6px !important;
+  }
+  #loginOverlay .login-card input{
+    width: 100% !important;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+  #loginOverlay .login-card input:focus{
+    outline: none !important;
+    border-color: #059669 !important;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15) !important;
+  }
+  #loginOverlay #loginBtn{
+    width: 100% !important;
+    margin-top: 20px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: #059669 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
+  }
+  #loginOverlay #loginBtn:hover{
+    background: #047857 !important;
+  }
+  #loginOverlay #loginBtn:disabled{
+    opacity: 0.6 !important;
+    cursor: default !important;
+  }
+  #loginOverlay .login-note,
+  #loginOverlay #loginNote{
+    font-size: 12px !important;
+    color: #64748b !important;
+    margin-top: 14px !important;
+    line-height: 1.45 !important;
+  }
+  #loginOverlay #toggleAuthMode{
+    display: block !important;
+    text-align: center !important;
+    margin-top: 14px !important;
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #047857 !important;
+    background: rgba(255,255,255,0.7) !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+  }
+  #loginOverlay #toggleAuthMode:hover{
+    background: #fff !important;
+    border-color: #059669 !important;
+  }
+  @media (prefers-reduced-motion: reduce){
+    #loginOverlay .login-liquid{ animation: none !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -1397,32 +1599,17 @@
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
   <div class="login-bg" aria-hidden="true">
-    <div class="login-orb login-orb-a"></div>
-    <div class="login-orb login-orb-b"></div>
-    <div class="login-orb login-orb-c"></div>
-    <div class="login-ring login-ring-1"></div>
-    <div class="login-ring login-ring-2"></div>
-    <div class="login-cross login-cross-1"></div>
-    <div class="login-cross login-cross-2"></div>
-    <div class="login-particle p1"></div>
-    <div class="login-particle p2"></div>
-    <div class="login-particle p3"></div>
-    <div class="login-particle p4"></div>
-    <div class="login-particle p5"></div>
-    <div class="login-particle p6"></div>
-    <div class="login-particle p7"></div>
-    <div class="login-particle p8"></div>
-    <div class="login-line l1"></div>
-    <div class="login-line l2"></div>
-    <div class="login-line l3"></div>
-    <div class="login-wave"></div>
+    <div class="login-liquid login-liquid-1"></div>
+    <div class="login-liquid login-liquid-2"></div>
+    <div class="login-liquid login-liquid-3"></div>
+    <div class="login-liquid login-liquid-4"></div>
   </div>
   <div class="login-card">
     <div class="login-brand-mark">DR</div>
     <h1 id="loginTitle">DR CARE — Sign in</h1>
     <p id="loginSub">Divine Rays · Patient Care Tracker · staff accounts</p>
-    <label for="loginEmail">Email</label>
-    <input type="email" id="loginEmail" autocomplete="username">
+    <label for="loginEmail">Medical ID / Email</label>
+    <input type="email" id="loginEmail" placeholder="name@clinic.com" autocomplete="username">
     <label for="loginPassword">Password</label>
     <input type="password" id="loginPassword" autocomplete="current-password">
     <div id="signupNameWrap" style="display:none;">
