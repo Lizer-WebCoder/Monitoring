@@ -1901,16 +1901,77 @@ function setTeamPage(team, page){
 }
 
 
+const KNOWN_TEAMS_KEY = 'drcare_known_teams';
+let knownTeams = []; // persisted list of site/group names (survives refresh)
+function loadKnownTeams(){
+  try{
+    const raw = localStorage.getItem(KNOWN_TEAMS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    knownTeams = Array.isArray(arr) ? arr.map(String).filter(Boolean) : [];
+  }catch(e){ knownTeams = []; }
+}
+function saveKnownTeams(){
+  try{ localStorage.setItem(KNOWN_TEAMS_KEY, JSON.stringify(knownTeams)); }catch(e){}
+}
+function registerKnownTeam(name){
+  if(!name) return;
+  if(!knownTeams.some(t => t.toLowerCase() === name.toLowerCase())){
+    knownTeams.push(name);
+    saveKnownTeams();
+  } else {
+    // keep canonical casing from first register; update if renaming handled separately
+    const i = knownTeams.findIndex(t => t.toLowerCase() === name.toLowerCase());
+    if(i >= 0) knownTeams[i] = name;
+    saveKnownTeams();
+  }
+}
+function unregisterKnownTeam(name){
+  knownTeams = knownTeams.filter(t => t !== name && t.toLowerCase() !== String(name||'').toLowerCase());
+  saveKnownTeams();
+}
+function renameKnownTeam(oldName, newName){
+  knownTeams = knownTeams.map(t => t === oldName ? newName : t);
+  if(!knownTeams.includes(newName)) knownTeams.push(newName);
+  saveKnownTeams();
+}
+async function pushKnownTeams(){
+  try{ await sb.from('settings').upsert({ key: 'knownTeams', value: JSON.stringify(knownTeams) }); }catch(e){}
+}
+async function pullKnownTeams(){
+  try{
+    const { data } = await sb.from('settings').select('value').eq('key','knownTeams').maybeSingle();
+    if(data && data.value){
+      const arr = JSON.parse(data.value);
+      if(Array.isArray(arr)){
+        // merge remote + local
+        const set = new Set([...knownTeams, ...arr.map(String)].filter(Boolean));
+        knownTeams = [...set];
+        saveKnownTeams();
+      }
+    }
+  }catch(e){}
+}
+loadKnownTeams();
+
 function getTeams(){
   const t = new Set(
     state.patients
       .filter(p => showArchived ? p.deleted : !p.deleted)
       .map(p => p.team)
+      .filter(Boolean)
   );
-  // Only surface brand-new empty mobiles created this session.
-  // Do NOT pull every teamStaff key — that caused empty mobiles to appear in every month.
+  // Session-only empty groups (legacy)
   if(!showArchived){
     pendingEmptyTeams.forEach(x=>t.add(x));
+  }
+  // Persisted groups (empty or not) — survives refresh
+  if(!showArchived){
+    knownTeams.forEach(x=>{ if(x) t.add(x); });
+    // Also any teamMeta / teamStaff keys
+    try{
+      Object.keys(teamMeta || {}).forEach(x=>{ if(x) t.add(x); });
+      Object.keys(teamStaff || {}).forEach(x=>{ if(x) t.add(x); });
+    }catch(e){}
   }
   return [...t];
 }
@@ -2143,7 +2204,7 @@ function renderAll(){
   let teamsToShow = teams;
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team));
-    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
+    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t) || knownTeams.includes(t));
   }
   const typeFilter = (document.getElementById('filterType') || {}).value || '';
   if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
@@ -2542,6 +2603,7 @@ groupsContainer.addEventListener('click', e=>{
 
 function removeEmptyTeam(team){
   pendingEmptyTeams.delete(team);
+  unregisterKnownTeam(team);
   delete teamStaff[team];
   if(typeof teamMeta !== 'undefined'){ delete teamMeta[team]; saveTeamMeta(); pushTeamMeta(); }
   expandedTeams.delete(team);
@@ -2964,6 +3026,11 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   } else if(!editingTeamOriginalName && !existingTeams.includes(name)){
     pendingEmptyTeams.add(name);
   }
+  if(editingTeamOriginalName && editingTeamOriginalName !== name){
+    renameKnownTeam(editingTeamOriginalName, name);
+  } else {
+    registerKnownTeam(name);
+  }
   teamStaff[name] = staffNames;
   var typ = 'mobile';
   if(document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked) typ = 'walkin';
@@ -2974,6 +3041,7 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   setTeamType(name, typ);
   pushTeamStaff();
   pushTeamMeta();
+  pushKnownTeams();
   renderAll();
   closeTeamModal();
 });
@@ -4241,6 +4309,7 @@ async function initApp(){
   await pullOrg();
   await pullTeamStaff();
   try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
+  try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
