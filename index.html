@@ -324,6 +324,7 @@
   /* ---------- Dashboard ---------- */
   .dash-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:120; padding:30px 16px; overflow-y:auto; }
   .dash-backdrop.open{ display:flex; }
+  .dash-backdrop.nested{ z-index: 200; background: rgba(18,49,43,0.55); }
   .dash-modal{ background:var(--card); border-radius:14px; max-width:1180px; width:100%; padding:24px 26px 26px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
   .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
   .dash-head h3{ margin:0 0 4px; font-size:18px; }
@@ -1289,8 +1290,30 @@
   </div>
 </div>
 
+
+<!-- Facilities admin (opened from Admin) -->
+<div class="dash-backdrop nested" id="facilitiesAdminBackdrop">
+  <div class="dash-modal" style="max-width:520px;">
+    <div class="dash-head">
+      <div>
+        <h3>Facilities / branches</h3>
+        <div class="modal-sub">These names appear in the Facility dropdown on patient forms.</div>
+      </div>
+      <button class="dash-close" id="facilitiesAdminCloseBtn" type="button" title="Close">✕</button>
+    </div>
+    <div id="facilitiesAdminList"></div>
+    <div class="benefit-admin-row" style="margin-top:12px;">
+      <input type="text" id="newFacilityLabel" placeholder="e.g. Catbalogan, Calbayog">
+      <button class="btn btn-primary" type="button" id="addFacilityBtn">Add</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" id="facilitiesAdminDone">Save &amp; close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Custom benefits admin (opened from Admin) -->
-<div class="dash-backdrop" id="benefitsAdminBackdrop">
+<div class="dash-backdrop nested" id="benefitsAdminBackdrop">
   <div class="dash-modal" style="max-width:520px;">
     <div class="dash-head">
       <div>
@@ -1381,8 +1404,13 @@
       <b style="color:var(--ink);">How to add a new user:</b><br>
       1. Staff opens the app → “Need an account? Sign up” → creates email + password.<br>
       2. They appear here as <b>Pending</b> (highlighted) and cannot log in yet.<br>
-      3. Check <b>Approved</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
+      3. Check <b>Approve login</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
     </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;">
+      <button type="button" class="btn" id="openBenefitsAdminBtn">Custom benefits…</button>
+      <button type="button" class="btn" id="openFacilitiesAdminBtn">Manage facilities / branches…</button>
+    </div>
+    <div class="field-hint" style="margin:-8px 0 14px;">Benefits and facilities open <b>on top</b> of this panel. Add, rename, or remove items, then Done.</div>
     <div id="adminUsersBody"></div>
   </div>
 </div>
@@ -4630,13 +4658,15 @@ function readCustomBenefitsFromForm(){
 
 function openBenefitsAdmin(){
   const list = document.getElementById('benefitsAdminList');
+  if(!list){ alert('Benefits panel missing — re-upload index.html'); return; }
   const defs = loadCustomBenefits();
   list.innerHTML = defs.length ? defs.map((d,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
       <input type="text" value="${escapeAttr(d.label)}" data-edit-ben="${i}">
       <button type="button" class="btn btn-ghost" data-del-ben="${i}">Remove</button>
-    </div>`).join('') : '<div class="empty-state">No custom benefits yet.</div>';
-  document.getElementById('benefitsAdminBackdrop').classList.add('open');
+    </div>`).join('') : '<div class="empty-state">No custom benefits yet. Add one below.</div>';
+  const bd = document.getElementById('benefitsAdminBackdrop');
+  if(bd){ bd.classList.add('nested','open'); }
 }
 document.getElementById('benefitsAdminCloseBtn')?.addEventListener('click', ()=> document.getElementById('benefitsAdminBackdrop').classList.remove('open'));
 document.getElementById('benefitsAdminDone')?.addEventListener('click', ()=> document.getElementById('benefitsAdminBackdrop').classList.remove('open'));
@@ -5169,14 +5199,15 @@ setInterval(()=>{
 /* Facilities admin */
 function openFacilitiesAdmin(){
   const list = document.getElementById('facilitiesAdminList');
-  if(!list) return;
+  if(!list){ alert('Facilities panel missing — re-upload index.html'); return; }
   const defs = loadFacilityOptions();
   list.innerHTML = defs.map((f,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
       <input type="text" value="${escapeAttr(f)}" data-edit-fac="${i}">
       <button type="button" class="btn btn-ghost" data-del-fac="${i}">Remove</button>
-    </div>`).join('') || '<div class="empty-state">No facilities</div>';
-  document.getElementById('facilitiesAdminBackdrop')?.classList.add('open');
+    </div>`).join('') || '<div class="empty-state">No facilities yet. Add one below.</div>';
+  const bd = document.getElementById('facilitiesAdminBackdrop');
+  if(bd){ bd.classList.add('nested','open'); }
 }
 (function enhanceAdminFacilities(){
   const tryInject = ()=>{
@@ -5715,6 +5746,20 @@ function startPresence(){
     if(document.visibilityState === 'visible') beatPresence();
   });
 }
+
+
+(function wireAdminSubpanels(){
+  const ben = document.getElementById('openBenefitsAdminBtn');
+  const fac = document.getElementById('openFacilitiesAdminBtn');
+  if(ben && !ben.dataset.wired){
+    ben.dataset.wired = '1';
+    ben.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openBenefitsAdmin(); });
+  }
+  if(fac && !fac.dataset.wired){
+    fac.dataset.wired = '1';
+    fac.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openFacilitiesAdmin(); });
+  }
+})();
 
 function showSwUpdateToast(reg){
   if(document.getElementById('swUpdateToast')) return;
