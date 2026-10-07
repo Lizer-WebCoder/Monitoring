@@ -1339,14 +1339,42 @@
     <div class="dash-head">
       <div>
         <h3>Metrics Dashboard</h3>
-        <div class="modal-sub">KPIs, encoder productivity (who encoded what), and per-mobile totals for the selected month/scope.</div>
+        <div class="modal-sub">Your accomplishments (encoders) or team-wide KPIs (admins). Filter by day, week, month, site, and encoder.</div>
       </div>
       <button class="dash-close" id="dashCloseBtn" title="Close">✕</button>
     </div>
-    <div class="dash-controls">
-      <select id="dashMonthSelect"></select>
-      <select id="dashTeamSelect"></select>
-      <span class="dash-scope-note" id="dashScopeNote"></span>
+    <div class="dash-controls" style="flex-wrap:wrap;gap:8px;align-items:flex-end;">
+      <div>
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Period</label>
+        <select id="dashRangeMode">
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month" selected>Month</option>
+          <option value="all">All time</option>
+        </select>
+      </div>
+      <div id="dashDayWrap" style="display:none;">
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Date</label>
+        <input type="date" id="dashDayInput">
+      </div>
+      <div id="dashWeekWrap" style="display:none;">
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Week of</label>
+        <input type="date" id="dashWeekInput">
+      </div>
+      <div id="dashMonthWrap">
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Month</label>
+        <select id="dashMonthSelect"></select>
+      </div>
+      <div>
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Site / group</label>
+        <select id="dashTeamSelect"></select>
+      </div>
+      <div id="dashEncoderWrap" style="min-width:160px;">
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
+        <select id="dashEncoderSelect" multiple size="1" style="min-width:160px;min-height:34px;"></select>
+        <div class="field-hint" id="dashEncoderHint" style="margin:2px 0 0;">Admin: multi-select encoders. Leave empty = all.</div>
+      </div>
+      <span class="dash-scope-note" id="dashScopeNote" style="align-self:center;"></span>
     </div>
     <div id="dashBody"></div>
   </div>
@@ -3806,35 +3834,124 @@ function getAllEncodedMonths(){
 }
 
 function populateDashboardControls(){
-  const mainMonth = document.getElementById('monthFilter').value; // '' or 'YYYY-MM'
-  
-  const months = getAllEncodedMonths();
-  if(mainMonth && /^\d{4}-\d{2}$/.test(mainMonth) && !months.includes(mainMonth)) months.unshift(mainMonth);
-  months.sort().reverse();
+  const months = getAllEncodedMonths().slice().sort().reverse();
+  const preferredMonth = (document.getElementById('monthFilter') && document.getElementById('monthFilter').value) || (months[0] || '');
+  if(dashMonthSelect){
+    const prevMonthVal = dashMonthSelect.value || preferredMonth || 'all';
+    dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
+      months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+    dashMonthSelect.value = (months.includes(prevMonthVal) || prevMonthVal === 'all') ? prevMonthVal : (preferredMonth || 'all');
+  }
+  const teams = [...new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team).filter(Boolean))].sort();
+  if(dashTeamSelect){
+    const prevTeamVal = dashTeamSelect.value || 'all';
+    dashTeamSelect.innerHTML = `<option value="all">All sites / groups</option>` +
+      teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+    dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
+  }
+  // Encoder multi-select (admin only useful)
+  const encSel = document.getElementById('dashEncoderSelect');
+  const encWrap = document.getElementById('dashEncoderWrap');
+  const encHint = document.getElementById('dashEncoderHint');
+  if(encSel){
+    const encoders = {};
+    state.patients.forEach(p=>{
+      if(p.deleted) return;
+      const uid = p.createdBy || p.updatedBy;
+      if(!uid) return;
+      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
+      encoders[uid] = name;
+    });
+    if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
+    const prev = new Set([...encSel.selectedOptions].map(o=>o.value));
+    encSel.innerHTML = Object.entries(encoders).sort((a,b)=>String(a[1]).localeCompare(String(b[1]))).map(([id,name])=>{
+      const sel = prev.has(id) ? 'selected' : '';
+      return `<option value="${escapeAttr(id)}" ${sel}>${escapeHtml(name)}</option>`;
+    }).join('');
+    encSel.size = Math.min(4, Math.max(1, encSel.options.length));
+  }
+  if(encWrap){
+    if(typeof isAdmin === 'function' && isAdmin()){
+      encWrap.style.display = '';
+      if(encHint) encHint.textContent = 'Admin: select one or more encoders (Ctrl/Cmd+click). Empty = all.';
+    } else {
+      encWrap.style.display = 'none';
+    }
+  }
+  // Default date inputs
+  const today = new Date().toISOString().slice(0,10);
+  const dayIn = document.getElementById('dashDayInput');
+  const weekIn = document.getElementById('dashWeekInput');
+  if(dayIn && !dayIn.value) dayIn.value = today;
+  if(weekIn && !weekIn.value) weekIn.value = today;
+  updateDashRangeVisibility();
+}
 
-  const preferredMonth = mainMonth || 'all';
-  const prevMonthVal = dashMonthSelect.value || preferredMonth;
-  dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
-    months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
-  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : preferredMonth;
+function updateDashRangeVisibility(){
+  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
+  const dayW = document.getElementById('dashDayWrap');
+  const weekW = document.getElementById('dashWeekWrap');
+  const monthW = document.getElementById('dashMonthWrap');
+  if(dayW) dayW.style.display = mode === 'day' ? '' : 'none';
+  if(weekW) weekW.style.display = mode === 'week' ? '' : 'none';
+  if(monthW) monthW.style.display = (mode === 'month') ? '' : 'none';
+}
 
-  const teams = getTeams();
-  const prevTeamVal = dashTeamSelect.value || 'all';
-  dashTeamSelect.innerHTML = `<option value="all">All mobiles / sites</option>` +
-    teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
-  dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
+function dashWeekBounds(dateStr){
+  const d = new Date(dateStr + 'T12:00:00');
+  if(isNaN(d.getTime())) return null;
+  const day = d.getDay(); // 0 Sun
+  const start = new Date(d);
+  start.setDate(d.getDate() - day); // week starts Sunday
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const fmt = x => x.toISOString().slice(0,10);
+  return { start: fmt(start), end: fmt(end) };
 }
 
 function dashboardScopePatients(){
-  const month = dashMonthSelect.value;
-  const team = dashTeamSelect.value;
+  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
+  const team = dashTeamSelect ? dashTeamSelect.value : 'all';
+  const encSel = document.getElementById('dashEncoderSelect');
+  const selectedEnc = encSel ? [...encSel.selectedOptions].map(o=>o.value) : [];
+
+  // Role scope: non-admin encoders only see their own encodes
+  const forceSelf = !(typeof isAdmin === 'function' && isAdmin());
+  const selfId = currentUser && currentUser.id;
+
   return state.patients.filter(p=>{
     if(p.deleted) return false;
-    if(month !== 'all'){
-      const enc = (p.dateEncoded||'').trim();
-      if(enc && enc.slice(0,7) !== month) return false;
-    }
     if(team !== 'all' && p.team !== team) return false;
+
+    // Encoder filter
+    const owner = p.createdBy || p.updatedBy || '';
+    if(forceSelf){
+      if(selfId && owner && owner !== selfId) return false;
+      if(selfId && !owner) return false; // imported unknown — hide from encoder personal view
+    } else if(selectedEnc.length){
+      if(!selectedEnc.includes(owner)) return false;
+    }
+
+    const enc = (p.dateEncoded || '').trim();
+    if(mode === 'all') return true;
+    if(mode === 'month'){
+      const month = dashMonthSelect ? dashMonthSelect.value : 'all';
+      if(month === 'all') return true;
+      if(!enc) return true;
+      return enc.slice(0,7) === month;
+    }
+    if(mode === 'day'){
+      const day = (document.getElementById('dashDayInput') || {}).value;
+      if(!day) return true;
+      return enc === day || (!enc && false);
+    }
+    if(mode === 'week'){
+      const weekOf = (document.getElementById('dashWeekInput') || {}).value;
+      if(!weekOf) return true;
+      const b = dashWeekBounds(weekOf);
+      if(!b || !enc) return false;
+      return enc >= b.start && enc <= b.end;
+    }
     return true;
   });
 }
@@ -3860,59 +3977,70 @@ function renderDashboard(){
   const vitCount = scoped.filter(p=>p.vitamins).length;
   const refCount = scoped.filter(p=>p.referral).length;
   const mcaCount = scoped.filter(p=>p.mca).length;
-  const dupCount = countDuplicateExtras(scoped);
+  const dupCount = typeof countDuplicateExtras === 'function' ? countDuplicateExtras(scoped) : 0;
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
   const t1Count = scoped.filter(p=>p.claim==='t1').length;
-  const pendingClaim = scoped.filter(p=>p.claim==='pending' || !p.claim).length;
+  const t2Count = scoped.filter(p=>p.claim==='t2').length;
+  const pendingClaim = scoped.filter(p=>!p.claim || p.claim==='pending').length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
-  const pctNum = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
 
-  const monthVal = dashMonthSelect.value;
-  const teamVal = dashTeamSelect.value;
-  document.getElementById('dashScopeNote').textContent =
-    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles' : teamVal}`;
+  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
+  const teamVal = dashTeamSelect ? dashTeamSelect.value : 'all';
+  let rangeLabel = 'All time';
+  if(mode === 'day') rangeLabel = (document.getElementById('dashDayInput') || {}).value || 'Day';
+  else if(mode === 'week'){
+    const w = (document.getElementById('dashWeekInput') || {}).value;
+    const b = w ? dashWeekBounds(w) : null;
+    rangeLabel = b ? `Week ${b.start} → ${b.end}` : 'Week';
+  } else if(mode === 'month'){
+    const m = dashMonthSelect ? dashMonthSelect.value : 'all';
+    rangeLabel = m === 'all' ? 'All months' : monthLabel(m);
+  }
+  const isAdm = typeof isAdmin === 'function' && isAdmin();
+  const scopeWho = isAdm ? 'All selected encoders' : 'My encodes only';
+  const note = document.getElementById('dashScopeNote');
+  if(note) note.textContent = `${rangeLabel} · ${teamVal==='all'?'all sites':teamVal} · ${scopeWho}`;
 
   if(total === 0){
-    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope yet. Try "All months" / "All mobiles / sites".</div>`;
+    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope. Try another day/week/month or encoder filter.</div>`;
     return;
   }
 
-  /* ---- Encoder productivity (who created the record) ---- */
+  /* Encoder productivity */
   const byUser = {};
   scoped.forEach(p=>{
     const uid = p.createdBy || p.updatedBy || '_unknown';
     const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
       || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 12));
-    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0 };
+    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0 };
     byUser[uid].total++;
     if(p.mca) byUser[uid].mca++;
     if(p.claim==='t1') byUser[uid].t1++;
+    if(p.claim==='t2') byUser[uid].t2++;
     const t = p.team || 'Unknown';
     byUser[uid].teams[t] = (byUser[uid].teams[t] || 0) + 1;
   });
   const userRows = Object.entries(byUser)
     .sort((a,b)=> b[1].total - a[1].total)
     .map(([uid, u])=>{
-      const teamBreakdown = Object.entries(u.teams)
-        .sort((a,b)=> b[1]-a[1])
-        .map(([t,c])=> `${escapeHtml(t)} (${c})`)
-        .join(', ');
+      const teamBreakdown = Object.entries(u.teams).sort((a,b)=>b[1]-a[1])
+        .map(([t,c])=> `${escapeHtml(t)} (${c})`).join(', ');
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
         <td>${u.total}</td>
         <td>${total ? Math.round(u.total/total*100) : 0}%</td>
         <td>${u.mca}</td>
         <td>${u.t1}</td>
+        <td>${u.t2}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
       </tr>`;
     }).join('');
 
-  /* ---- Per mobile ---- */
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, missed24:0, dups:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
@@ -3922,14 +4050,8 @@ function renderDashboard(){
     if(p.vitamins) b.vitamins++;
     if(p.referral) b.referral++;
     if(p.claim==='t1') b.t1++;
+    if(p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
-  });
-  // dups per team approx
-  scoped.forEach(p=>{
-    if(typeof isDuplicate === 'function' && isDuplicate(p.phid, p.id)){
-      const t = p.team || 'Unknown';
-      if(byTeam[t]) byTeam[t].dups++;
-    }
   });
   const teamRowsHtml = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>`
     <tr>
@@ -3942,25 +4064,25 @@ function renderDashboard(){
       <td>${b.vitamins}</td>
       <td>${b.referral}</td>
       <td>${b.t1}</td>
+      <td>${b.t2}</td>
       <td>${b.missed24}</td>
-      <td>${b.dups}</td>
     </tr>`).join('');
 
   const kpiHtml = `
     <div class="dash-section" style="margin-bottom:14px">
-      <h4>Quality KPIs</h4>
+      <h4>${isAdm ? 'Team quality KPIs' : 'My quality KPIs'}</h4>
       <div class="dash-cards kpi-cards">
         <div class="dash-card"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">MCA on file<br><span class="kpi-sub">${mcaCount}/${total}</span></div></div>
         <div class="dash-card accent-green"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">T1 submitted<br><span class="kpi-sub">${t1Count}/${total}</span></div></div>
+        <div class="dash-card accent-purple"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24}/${total}</span></div></div>
-        <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h flag<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
-        <div class="dash-card accent-purple"><div class="dc-num">${pct(dupCount)}</div><div class="dc-lbl">Duplicates<br><span class="kpi-sub">${dupCount}/${total}</span></div></div>
+        <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
       </div>
     </div>`;
 
   const cardsHtml = `
     <div class="dash-cards">
-      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Total patients</div></div>
+      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients encoded</div></div>
       <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
       <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Other facility</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice (${pct(riceCount)})</div></div>
@@ -3973,8 +4095,7 @@ function renderDashboard(){
 
   const encoderHtml = `
     <div class="dash-section">
-      <h4>Encoded by user (this scope)</h4>
-      <div class="field-hint" style="margin-bottom:8px">Counts patients each person <b>added</b> (created by). Mobile column shows where they encoded.</div>
+      <h4>${isAdm ? 'Encoded by user' : 'My encoding summary'}</h4>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
@@ -3984,22 +4105,23 @@ function renderDashboard(){
               <th>Share</th>
               <th>MCA</th>
               <th>T1</th>
-              <th style="text-align:left">Mobiles</th>
+              <th>T2</th>
+              <th style="text-align:left">Sites / groups</th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="6">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="7">No encoder data</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
 
   const teamTableHtml = `
     <div class="dash-section">
-      <h4>By mobile / site</h4>
+      <h4>By site / group</h4>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
-              <th style="text-align:left">Mobile</th>
+              <th style="text-align:left">Site / group</th>
               <th>Total</th>
               <th>MCA</th>
               <th>Rice</th>
@@ -4008,8 +4130,8 @@ function renderDashboard(){
               <th>Vits</th>
               <th>Ref</th>
               <th>T1</th>
+              <th>T2</th>
               <th>Missed</th>
-              <th>Dups</th>
             </tr>
           </thead>
           <tbody>${teamRowsHtml}</tbody>
@@ -4023,41 +4145,66 @@ function renderDashboard(){
     ${encoderHtml}
     ${teamTableHtml}
     <div class="dash-section">
-      <h4>Patients encoded per month (all mobiles)</h4>
+      <h4>Trend (${mode === 'day' ? 'by hour N/A — daily count' : mode === 'week' ? 'days in week' : 'by month'})</h4>
       <div class="dash-trend-wrap" id="dashTrendWrap"></div>
     </div>
   `;
-  renderTrendChart(monthVal);
+  renderTrendChart(mode);
 }
 
-function renderTrendChart(selectedMonth){
-  const months = getAllEncodedMonths().slice().sort(); // ascending
+function renderTrendChart(mode){
   const wrap = document.getElementById('dashTrendWrap');
   if(!wrap) return;
-  if(months.length === 0){ wrap.innerHTML = `<div class="dash-empty">No dated records yet.</div>`; return; }
-
-  const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
+  const scoped = dashboardScopePatients();
+  let buckets = {};
+  if(mode === 'week'){
+    const weekOf = (document.getElementById('dashWeekInput') || {}).value;
+    const b = weekOf ? dashWeekBounds(weekOf) : null;
+    if(b){
+      for(let i=0;i<7;i++){
+        const d = new Date(b.start + 'T12:00:00');
+        d.setDate(d.getDate()+i);
+        const key = d.toISOString().slice(0,10);
+        buckets[key] = 0;
+      }
+    }
+    scoped.forEach(p=>{
+      const enc = (p.dateEncoded||'').slice(0,10);
+      if(enc && buckets[enc] != null) buckets[enc]++;
+      else if(enc) buckets[enc] = (buckets[enc]||0)+1;
+    });
+  } else if(mode === 'day'){
+    const day = (document.getElementById('dashDayInput') || {}).value || '';
+    buckets[day || 'selected day'] = scoped.length;
+  } else {
+    // month / all → by month
+    scoped.forEach(p=>{
+      const m = (p.dateEncoded||'').slice(0,7) || 'undated';
+      buckets[m] = (buckets[m]||0)+1;
+    });
+  }
+  const keys = Object.keys(buckets).sort();
+  if(!keys.length){ wrap.innerHTML = `<div class="dash-empty">No dated records in scope.</div>`; return; }
+  const counts = keys.map(k => buckets[k]);
   const maxCount = Math.max(...counts, 1);
-  
   const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
   const barAreaH = chartH - topPad - bottomPad;
-  const svgW = months.length * (barW + gap) + leftPad;
-
+  const svgW = Math.max(keys.length * (barW + gap) + leftPad, 120);
   let bars = '';
-  months.forEach((m, i)=>{
+  keys.forEach((k, i)=>{
     const c = counts[i];
     const h = Math.round((c / maxCount) * barAreaH);
     const x = leftPad + i * (barW + gap);
     const y = chartH - bottomPad - h;
-    const isCurrent = m === selectedMonth;
-    const shortLabel = monthLabel(m).replace(' ', '\u00A0').slice(0, 3) + ' ' + m.slice(2,4);
+    let shortLabel = k;
+    if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + ' ' + k.slice(2,4);
+    else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
     bars += `
       <text class="dash-trend-num" x="${x + barW/2}" y="${y - 7}" text-anchor="middle">${c}</text>
-      <rect class="dash-trend-bar ${isCurrent?'dtb-current':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4"></rect>
+      <rect class="dash-trend-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h,2)}" rx="4"></rect>
       <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 6}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
     `;
   });
-
   wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
@@ -4073,8 +4220,12 @@ function closeDashboard(){ dashBackdrop.classList.remove('open'); }
 document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
 document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
-dashMonthSelect.addEventListener('change', renderDashboard);
-dashTeamSelect.addEventListener('change', renderDashboard);
+if(dashMonthSelect) dashMonthSelect.addEventListener('change', renderDashboard);
+if(dashTeamSelect) dashTeamSelect.addEventListener('change', renderDashboard);
+document.getElementById('dashRangeMode')?.addEventListener('change', ()=>{ updateDashRangeVisibility(); renderDashboard(); });
+document.getElementById('dashDayInput')?.addEventListener('change', renderDashboard);
+document.getElementById('dashWeekInput')?.addEventListener('change', renderDashboard);
+document.getElementById('dashEncoderSelect')?.addEventListener('change', renderDashboard);
 
 /* ---------------- Recent Activity ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
