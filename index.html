@@ -1489,21 +1489,53 @@ function cryptoId(){
   return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
 }
 
-function toRemote(p){
+function emptyToNull(v){
+  if(v == null) return null;
+  const s = String(v).trim();
+  return s ? s : null;
+}
+function toRemote(p, mode){
+  // mode: 'full' | 'core' (strip extended cols unknown to older schemas)
   const uid = (currentUser && currentUser.id) || null;
-  return {
-    id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
-    mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateT1 || p.dateSubmitted || null, date_t1: p.dateT1 || p.dateSubmitted || null, date_t2: p.dateT2 || null,
-    within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab,
-    medicine: !!p.medicine, vitamins: !!p.vitamins, referral: !!p.referral,
+  let claim = p.claim || 'pending';
+  // Older DBs may only allow pending/t1/missed24 — map t2 for core mode
+  const core = {
+    id: p.id,
+    team: p.team || null,
+    name: p.name || '',
+    phid: p.phid || '',
+    status: p.status || 'registered',
+    facility: p.facility || null,
+    mca: !!p.mca,
+    date_encoded: emptyToNull(p.dateEncoded),
+    date_submitted: emptyToNull(p.dateT1 || p.dateSubmitted),
+    within24: !!p.within24,
+    claim: claim,
+    rice: !!p.rice,
+    lab: !!p.lab,
     notes: p.notes || '',
+    deleted: !!p.deleted,
+    updated_at: new Date().toISOString()
+  };
+  if(uid && /^[0-9a-f-]{36}$/i.test(uid)){
+    core.created_by = p.createdBy && /^[0-9a-f-]{36}$/i.test(p.createdBy) ? p.createdBy : uid;
+    core.updated_by = uid;
+  }
+  if(mode === 'core'){
+    // Prefer safe claim values if t2 unsupported
+    if(claim === 't2') core.claim = 't1';
+    return core;
+  }
+  return Object.assign({}, core, {
+    date_t1: emptyToNull(p.dateT1 || p.dateSubmitted),
+    date_t2: emptyToNull(p.dateT2),
+    medicine: !!p.medicine,
+    vitamins: !!p.vitamins,
+    referral: !!p.referral,
     mca_photo: p.mcaPhoto ? String(p.mcaPhoto).slice(0, 350000) : null,
     custom_benefits: p.customBenefits || {},
-    history: Array.isArray(p.history) ? p.history.slice(-40) : [],
-    deleted: !!p.deleted, updated_at: new Date().toISOString(),
-    created_by: p.createdBy || uid,
-    updated_by: uid
-  };
+    history: Array.isArray(p.history) ? p.history.slice(-40) : []
+  });
 }
 function fromRemote(r){
   return {
@@ -1608,23 +1640,25 @@ function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigato
 
 async function pushOne(p){
   try{
-    let payload = toRemote(p);
+    // Attempt 1: full payload (new columns)
+    let payload = toRemote(p, 'full');
     let { error } = await sb.from('patients').upsert(payload);
-    // If Supabase schema lacks extended columns, strip them and retry once
     if(error){
-      const msg = (error.message || error.details || JSON.stringify(error) || '').toLowerCase();
-      if(/column|schema|mca_photo|custom_benefits|history|medicine|vitamins|referral|does not exist|could not find/i.test(msg)){
-        delete payload.mca_photo;
-        delete payload.custom_benefits;
-        delete payload.history;
-        delete payload.medicine;
-        delete payload.vitamins;
-        delete payload.referral;
-        const retry = await sb.from('patients').upsert(payload);
+      const msg = (error.message || error.details || error.hint || JSON.stringify(error) || '');
+      console.warn('pushOne full failed', p && p.id, msg, error);
+      // Attempt 2: core columns only (always retry on any 400/schema/check error)
+      payload = toRemote(p, 'core');
+      let retry = await sb.from('patients').upsert(payload);
+      error = retry.error;
+      if(error){
+        // Attempt 3: drop created_by/updated_by (UUID / RLS edge cases)
+        delete payload.created_by;
+        delete payload.updated_by;
+        retry = await sb.from('patients').upsert(payload);
         error = retry.error;
-        if(!error){
-          console.warn('Synced core fields only — run Supabase migration for extended columns');
-        }
+      }
+      if(!error){
+        console.warn('Synced core fields only for', p.id, '— add missing columns in Supabase if needed');
       }
     }
     if(error) throw error;
