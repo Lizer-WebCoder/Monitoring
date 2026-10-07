@@ -289,7 +289,6 @@
   .fac-fixed.fac-other{ background:var(--purple-bg); color:var(--purple); }
   .cl-pending{ background:var(--amber-bg); color:var(--amber); }
   .cl-t1{ background:var(--blue-bg); color:var(--blue); }
-  .cl-t2{ background:var(--purple-bg); color:var(--purple); }
   .cl-missed24{ background:var(--red-bg); color:var(--red); }
   .dup-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
   .dup-new{ background:var(--green-bg); color:var(--green); }
@@ -328,8 +327,12 @@
   .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
   .dash-head h3{ margin:0 0 4px; font-size:18px; }
   .dash-head .modal-sub{ margin-bottom:0; }
-  .dash-close{ border:none; background:var(--table-head); color:var(--muted); border-radius:8px; padding:6px 8px; cursor:pointer; flex:none; }
-  .dash-close:hover{ color:var(--ink); background:var(--line); }
+  .dash-close{
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:8px; padding:6px 12px; cursor:pointer; flex:none;
+    font-size:16px; line-height:1; font-weight:700; min-width:36px; min-height:36px;
+  }
+  .dash-close:hover{ color:var(--teal-deep); background:var(--table-head); border-color:var(--teal); }
   .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
   .dash-controls select{ min-width:190px; }
   .dash-scope-note{ font-size:11px; color:var(--muted); }
@@ -948,7 +951,10 @@
       <option value="lab-no">Lab not yet availed</option>
       <option value="med-yes">Medicines availed</option>
       <option value="med-no">Medicines not yet</option>
-
+      <option value="vit-yes">Vitamins availed</option>
+      <option value="vit-no">Vitamins not yet</option>
+      <option value="ref-yes">Referral done</option>
+      <option value="ref-no">Referral not yet</option>
     </select>
     <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
       <option value="">All records</option>
@@ -1011,6 +1017,8 @@
     <button class="btn" type="button" id="bulkRiceYes">Rice ✓</button>
     <button class="btn" type="button" id="bulkLabYes">Lab ✓</button>
     <button class="btn" type="button" id="bulkMedYes">Meds ✓</button>
+    <button class="btn" type="button" id="bulkVitYes">Vits ✓</button>
+    <button class="btn" type="button" id="bulkRefYes">Referral ✓</button>
     <button class="btn" type="button" id="bulkMcaYes">MCA ✓</button>
     <select id="bulkClaim">
       <option value="">Set claim…</option>
@@ -1024,19 +1032,6 @@
       <option value="registered_other">Other facility</option>
     </select>
     <button class="btn" type="button" id="bulkClear">Clear</button>
-  </div>
-</div>
-
-
-<!-- Encoder T1/T2 patients modal -->
-<div class="modal-backdrop" id="encT1T2Backdrop">
-  <div class="modal" style="max-width:760px;width:95%">
-    <h3 id="encT1T2Title">T1 & T2 patients</h3>
-    <div class="modal-sub" id="encT1T2Sub">Patients this encoder marked as T1 or T2 Submitted (newest first).</div>
-    <div id="encT1T2Body" style="max-height:60vh;overflow:auto;margin-top:12px"></div>
-    <div style="margin-top:16px;text-align:right">
-      <button type="button" class="btn" id="encT1T2CloseBtn">Close</button>
-    </div>
   </div>
 </div>
 
@@ -1072,19 +1067,10 @@
         <div class="field-hint" id="facilityHint"></div>
       </div>
       <div>
-        <label>Encoded in</label>
-        <select id="f_encodedIn">
-          <option value="">—</option>
-          <option value="WAH">WAH</option>
-          <option value="BIZBOX">BIZBOX</option>
-        </select>
-      </div>
-      <div>
         <label>Status of claim</label>
         <select id="f_claim">
           <option value="pending">Pending</option>
           <option value="t1">T1 Submitted</option>
-          <option value="t2">T2 Submitted</option>
           <option value="missed24">Missed 24h</option>
         </select>
       </div>
@@ -1102,6 +1088,8 @@
         <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
         <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Already availed laboratory</label></div>
         <div class="check-row"><input type="checkbox" id="f_medicine"><label for="f_medicine">Already availed medicines</label></div>
+        <div class="check-row"><input type="checkbox" id="f_vitamins"><label for="f_vitamins">Already availed vitamins</label></div>
+        <div class="check-row"><input type="checkbox" id="f_referral"><label for="f_referral">Referral completed</label></div>
       </div>
       <div class="full">
         <label>PhilHealth ID check</label>
@@ -1186,7 +1174,7 @@
         <h3>Recycle bin</h3>
         <div class="modal-sub">Patients permanently deleted on this device in the last 30 days. Restore puts them back on the roster.</div>
       </div>
-      <button class="dash-close" id="recycleCloseBtn" title="Close"></button>
+      <button class="dash-close" id="recycleCloseBtn" title="Close">✕</button>
     </div>
     <div id="recycleBody"></div>
   </div>
@@ -1200,7 +1188,7 @@
         <h3>Send daily report</h3>
         <div class="modal-sub">Email opens your mail app. Slack needs an Incoming Webhook URL (optional).</div>
       </div>
-      <button class="dash-close" id="reportCfgCloseBtn" title="Close"></button>
+      <button class="dash-close" id="reportCfgCloseBtn" title="Close">✕</button>
     </div>
     <div class="form-grid">
       <div class="full">
@@ -1225,13 +1213,13 @@
     <div class="dash-head">
       <div>
         <h3>Custom benefits</h3>
-        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines. Stored for this organization.</div>
+        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines, vitamins, referral. Stored for this organization.</div>
       </div>
-      <button class="dash-close" id="benefitsAdminCloseBtn" title="Close"></button>
+      <button class="dash-close" id="benefitsAdminCloseBtn" title="Close">✕</button>
     </div>
     <div id="benefitsAdminList"></div>
     <div class="benefit-admin-row" style="margin-top:12px;">
-      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Other">
+      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Vitamins B">
       <button class="btn btn-primary" type="button" id="addBenefitBtn">Add</button>
     </div>
     <div class="modal-foot">
@@ -1248,7 +1236,7 @@
         <h3>Metrics Dashboard</h3>
         <div class="modal-sub">KPIs, encoder productivity (who encoded what), and per-mobile totals for the selected month/scope.</div>
       </div>
-      <button class="dash-close" id="dashCloseBtn" title="Close"></button>
+      <button class="dash-close" id="dashCloseBtn" title="Close">✕</button>
     </div>
     <div class="dash-controls">
       <select id="dashMonthSelect"></select>
@@ -1267,7 +1255,7 @@
         <h3>Admin — Users &amp; roles</h3>
         <div class="modal-sub">Approve who can log in, and set roles. New signups stay blocked until you check Approved.</div>
       </div>
-      <button class="dash-close" id="adminCloseBtn" title="Close"></button>
+      <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
     <div style="margin:12px 0 16px;padding:12px 14px;background:var(--table-head);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5;">
       <b style="color:var(--ink);">How to add a new user:</b><br>
@@ -1287,7 +1275,7 @@
         <h3>Recent Activity</h3>
         <div class="modal-sub">Latest adds, edits, and archives across the roster (from this device + synced data).</div>
       </div>
-      <button class="dash-close" id="activityCloseBtn" title="Close"></button>
+      <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
     </div>
     <div id="activityBody" style="max-height:60vh;overflow-y:auto;"></div>
   </div>
@@ -1874,6 +1862,10 @@ function filteredPatients(){
     if(bf === 'lab-no' && p.lab) return false;
     if(bf === 'med-yes' && !p.medicine) return false;
     if(bf === 'med-no' && p.medicine) return false;
+    if(bf === 'vit-yes' && !p.vitamins) return false;
+    if(bf === 'vit-no' && p.vitamins) return false;
+    if(bf === 'ref-yes' && !p.referral) return false;
+    if(bf === 'ref-no' && p.referral) return false;
     if(dupFilter === 'dup-only' && !isDuplicate(p.phid, p.id)) return false;
     if(dupFilter === 'unique-only' && isDuplicate(p.phid, p.id)) return false;
     return true;
@@ -1956,8 +1948,8 @@ function autoFlagMissedClaims(){
 
 const statusLabel = { registered:"Registered", registered_other:"Registered to other DR facility" };
 const statusClass = { registered:"st-registered", registered_other:"st-registered-other" };
-const claimLabel = {pending:"Pending", t1:"T1 Submitted", t2:"T2 Submitted", missed24:"Missed 24h"};
-const claimClass = {pending:"cl-pending", t1:"cl-t1", t2:"cl-t2", missed24:"cl-missed24"};
+const claimLabel = {pending:"Pending", t1:"T1 Submitted", missed24:"Missed 24h"};
+const claimClass = {pending:"cl-pending", t1:"cl-t1", missed24:"cl-missed24"};
 
 function normalizeFacility(p){
   facilityOptionsAll = loadFacilityOptions();
@@ -1979,7 +1971,8 @@ function renderStats(){
     ["Rice", all.filter(p=>p.rice).length, ''],
     ["Lab", all.filter(p=>p.lab).length, ''],
     ["Meds", all.filter(p=>p.medicine).length, ''],
-
+    ["Vits", all.filter(p=>p.vitamins).length, ''],
+    ["Referral", all.filter(p=>p.referral).length, ''],
     ["Duplicates", countDuplicateExtras(all), ''],
     ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
   ];
@@ -1997,7 +1990,7 @@ function renderLegend(){
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
     <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
-    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/MCA, or set claim and status for many patients at once</span>
+    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/vits/referral/MCA, or set claim and status for many patients at once</span>
     <span><b>Daily report:</b> downloads a per-team summary CSV for the current month filter (totals, benefits, claims, duplicates)</span>
     <span><b>PhilHealth ID:</b> auto-formats to ####-####-####; save warns if the ID is not a full 12 digits</span>
     <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
@@ -2129,12 +2122,12 @@ function renderAll(){
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
               <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
-              <th>Within 24h</th><th>Status of claim</th><th>Encoded in</th><th>Duplicate tracker</th>
-              <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
+              <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
+              <th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="15" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="16" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2226,15 +2219,12 @@ function rowHtml(p){
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
-      <td style="text-align:center"><select class="badge-select" data-field="encodedIn" style="min-width:90px">
-        <option value="" ${!(p.encodedIn)?'selected':''}>—</option>
-        <option value="WAH" ${p.encodedIn==='WAH'?'selected':''}>WAH</option>
-        <option value="BIZBOX" ${p.encodedIn==='BIZBOX'?'selected':''}>BIZBOX</option>
-      </select></td>
       <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
+      <td style="text-align:center"><input type="checkbox" data-field="vitamins" ${p.vitamins?'checked':''}></td>
+      <td style="text-align:center"><input type="checkbox" data-field="referral" ${p.referral?'checked':''}></td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
@@ -2551,6 +2541,12 @@ document.getElementById('bulkLabYes').addEventListener('click', ()=>{
 document.getElementById('bulkMedYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.medicine = true; });
 });
+document.getElementById('bulkVitYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.vitamins = true; });
+});
+document.getElementById('bulkRefYes').addEventListener('click', ()=>{
+  applyBulkChange(p => { p.referral = true; });
+});
 document.getElementById('bulkMcaYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.mca = true; });
 });
@@ -2653,7 +2649,6 @@ function openModal(id, presetTeam){
   document.getElementById('f_status').value = p ? p.status : 'registered';
   updateFacilityField(p ? p.facility : HOME_FACILITY);
   document.getElementById('f_claim').value = p ? p.claim : 'pending';
-  document.getElementById('f_encodedIn').value = p ? (p.encodedIn || '') : '';
   document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
   document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
   document.getElementById('f_mca').checked = p ? p.mca : false;
@@ -2661,6 +2656,8 @@ function openModal(id, presetTeam){
   document.getElementById('f_rice').checked = p ? p.rice : false;
   document.getElementById('f_lab').checked = p ? p.lab : false;
   document.getElementById('f_medicine').checked = p ? !!p.medicine : false;
+  document.getElementById('f_vitamins').checked = p ? !!p.vitamins : false;
+  document.getElementById('f_referral').checked = p ? !!p.referral : false;
   document.getElementById('f_notes').value = p ? (p.notes||'') : '';
   document.getElementById('dupWarning').style.display = 'none';
 
@@ -2729,7 +2726,6 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     status: document.getElementById('f_status').value,
     facility: document.getElementById('f_facility').value,
     claim: document.getElementById('f_claim').value || 'pending',
-    encodedIn: document.getElementById('f_encodedIn').value || '',
     dateEncoded: document.getElementById('f_dateEncoded').value || defaultEncodedDate(),
     dateSubmitted: document.getElementById('f_dateSubmitted').value,
     mca: document.getElementById('f_mca').checked,
@@ -2737,6 +2733,8 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     rice: document.getElementById('f_rice').checked,
     lab: document.getElementById('f_lab').checked,
     medicine: document.getElementById('f_medicine').checked,
+    vitamins: document.getElementById('f_vitamins').checked,
+    referral: document.getElementById('f_referral').checked,
     notes: document.getElementById('f_notes').value.trim(),
     deleted: false
   };
@@ -2933,15 +2931,17 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const byTeam = {};
   rows.forEach(p => {
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, mca:0, t1:0, missed24:0, dups:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0, missed24:0, dups:0};
     const b = byTeam[t];
     b.total++;
     if(p.status==='registered') b.registered++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
+    if(p.vitamins) b.vitamins++;
+    if(p.referral) b.referral++;
     if(p.mca) b.mca++;
-    if(p.claim==='t1'||p.claim==='t2') b.t1++;
+    if(p.claim==='t1') b.t1++;
     if(p.claim==='missed24') b.missed24++;
   });
   // Approximate dups per team
@@ -2956,9 +2956,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const lines = [
     ['DR CARE Daily Summary', scope, new Date().toISOString()].map(csvSafe).join(','),
     '',
-    ['Team','Total','Registered','MCA','Rice','Lab','Meds','T1','Missed 24h','Dup flags'].join(','),
+    ['Team','Total','Registered','MCA','Rice','Lab','Meds','Vits','Referral','T1','Missed 24h','Dup flags'].join(','),
     ...Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([team,b]) =>
-      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
+      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.vitamins, b.referral, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
     ),
     '',
     ['TOTAL', total,
@@ -2969,7 +2969,7 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
       rows.filter(p=>p.medicine).length,
       rows.filter(p=>p.vitamins).length,
       rows.filter(p=>p.referral).length,
-      rows.filter(p=>p.claim==='t1'||p.claim==='t2').length,
+      rows.filter(p=>p.claim==='t1').length,
       rows.filter(p=>p.claim==='missed24').length,
       countDuplicateExtras(rows)
     ].map(csvSafe).join(',')
@@ -3005,7 +3005,7 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Encoded In","Rice Availed","Lab Availed","Medicines Availed","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Vitamins Availed","Referral","Notes"];
 
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
@@ -3013,8 +3013,8 @@ function patientToCsvRow(p){
   return [
     p.team||'', p.name||'', p.phid||'', statusLabel[p.status]||p.status||'', p.facility||'',
     p.mca?'YES':'NO', p.dateSubmitted||'', p.within24?'YES':'NO',
-    claimLabel[p.claim]||p.claim||'', p.encodedIn||'', p.rice?'YES':'NO', p.lab?'YES':'NO',
-    p.medicine?'YES':'NO', p.notes||''
+    claimLabel[p.claim]||p.claim||'', p.rice?'YES':'NO', p.lab?'YES':'NO',
+    p.medicine?'YES':'NO', p.vitamins?'YES':'NO', p.referral?'YES':'NO', p.notes||''
   ].map(csvSafe).join(',');
 }
 
@@ -3125,10 +3125,11 @@ const IMPORT_HEADER_MAP = {
   dateSub: ['date validated and submitted','date validated & submitted','date submitted','date validated','date_submitted'],
   within24: ['within 24h','within 24','within24'],
   claim: ['status of claim','claim','claim status'],
-  encodedIn: ['encoded in','encoded_in','encodedin','encoder system','encoded'],
   rice: ['rice availed','rice'],
   lab: ['lab availed','lab'],
   medicine: ['medicines availed','medicine availed','medicines','medicine','meds'],
+  vitamins: ['vitamins availed','vitamin availed','vitamins','vitamin','vits'],
+  referral: ['referral','referral completed','referral done'],
   notes: ['notes','remarks','comment']
 };
 
@@ -3176,7 +3177,6 @@ async function processImportRows(allRows, targetTeam){
   const claimRev = {};
   Object.entries(claimLabel).forEach(([k,v])=>{ claimRev[v.toLowerCase()] = k; claimRev[k] = k; });
   claimRev['t1 submitted'] = 't1';
-  claimRev['t2 submitted'] = 't2';
   claimRev['missed 24h'] = 'missed24';
 
   function cell(cols, field, positionalFallback){
@@ -3199,7 +3199,7 @@ async function processImportRows(allRows, targetTeam){
     // Positional fallback when there is no header:
     // 5 cols  -> Name, PhilHealth ID, Status, Facility, Digital MCA
     // 6+ cols -> Team, Name, PhilHealth ID, Status, Facility, Digital MCA, ...
-    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, encodedIn, rice, lab, medicine, notes;
+    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, rice, lab, medicine, vitamins, referral, notes;
     if(colIndex){
       team = cell(cols,'team');
       name = cell(cols,'name');
@@ -3211,24 +3211,25 @@ async function processImportRows(allRows, targetTeam){
       dateSub = cell(cols,'dateSub');
       within24 = cell(cols,'within24');
       claim = cell(cols,'claim');
-      encodedIn = cell(cols,'encodedIn');
       rice = cell(cols,'rice');
       lab = cell(cols,'lab');
       medicine = cell(cols,'medicine');
+      vitamins = cell(cols,'vitamins');
+      referral = cell(cols,'referral');
       notes = cell(cols,'notes');
     } else if(cols.length <= 5){
       [name, phid, status, facility, mca] = cols;
-      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; encodedIn = ''; rice = ''; lab = ''; medicine = ''; notes = '';
+      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; rice = ''; lab = ''; medicine = ''; vitamins = ''; referral = ''; notes = '';
     } else {
       team = cols[0]||''; name = cols[1]||''; phid = cols[2]||''; status = cols[3]||'';
       facility = cols[4]||''; mca = cols[5]||'';
       dateEnc = cols[6]||''; dateSub = cols[7]||''; within24 = cols[8]||'';
-      claim = cols[9]||''; encodedIn = ''; rice = cols[10]||''; lab = cols[11]||'';
+      claim = cols[9]||''; rice = cols[10]||''; lab = cols[11]||'';
       // Support both old 13-col and new 15-col layouts
-      if(cols.length >= 13){
-        medicine = cols[12]||''; notes = cols[13]||'';
+      if(cols.length >= 15){
+        medicine = cols[12]||''; vitamins = cols[13]||''; referral = cols[14]||''; notes = cols[15]||'';
       } else {
-        medicine = ''; notes = cols[12]||'';
+        medicine = ''; vitamins = ''; referral = ''; notes = cols[12]||'';
       }
     }
 
@@ -3253,10 +3254,11 @@ async function processImportRows(allRows, targetTeam){
       dateSubmitted: parsedSub,
       within24: isYesValue(within24),
       claim: claimRev[(claim||'').toLowerCase()] || 'pending',
-      encodedIn: (encodedIn||'').toUpperCase() === 'WAH' ? 'WAH' : ((encodedIn||'').toUpperCase() === 'BIZBOX' ? 'BIZBOX' : ''),
       rice: isYesValue(rice),
       lab: isYesValue(lab),
       medicine: isYesValue(medicine),
+      vitamins: isYesValue(vitamins),
+      referral: isYesValue(referral),
       notes: notes || '',
       deleted: false
     };
@@ -3458,13 +3460,13 @@ function renderDashboard(){
   const riceCount = scoped.filter(p=>p.rice).length;
   const labCount = scoped.filter(p=>p.lab).length;
   const medCount = scoped.filter(p=>p.medicine).length;
+  const vitCount = scoped.filter(p=>p.vitamins).length;
+  const refCount = scoped.filter(p=>p.referral).length;
   const mcaCount = scoped.filter(p=>p.mca).length;
   const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
-  const t1Count = scoped.filter(p=>p.claim==='t1' || p.claim==='t2').length;  // T2 implies T1
-  const t2Count = scoped.filter(p=>p.claim==='t2').length;
-  const wahCount = scoped.filter(p=>p.encodedIn==='WAH').length;
-  const bizboxCount = scoped.filter(p=>p.encodedIn==='BIZBOX').length;
+  const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const pendingClaim = scoped.filter(p=>p.claim==='pending' || !p.claim).length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
   const pctNum = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
@@ -3485,13 +3487,10 @@ function renderDashboard(){
     const uid = p.createdBy || p.updatedBy || '_unknown';
     const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
       || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 12));
-    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0, wah: 0, bizbox: 0 };
+    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0 };
     byUser[uid].total++;
     if(p.mca) byUser[uid].mca++;
-    if(p.claim==='t1' || p.claim==='t2') byUser[uid].t1++;  // T2 implies T1
-    if(p.claim==='t2') byUser[uid].t2++;
-    if(p.encodedIn==='WAH') byUser[uid].wah++;
-    if(p.encodedIn==='BIZBOX') byUser[uid].bizbox++;
+    if(p.claim==='t1') byUser[uid].t1++;
     const t = p.team || 'Unknown';
     byUser[uid].teams[t] = (byUser[uid].teams[t] || 0) + 1;
   });
@@ -3508,15 +3507,7 @@ function renderDashboard(){
         <td>${total ? Math.round(u.total/total*100) : 0}%</td>
         <td>${u.mca}</td>
         <td>${u.t1}</td>
-        <td>${u.t2}</td>
-        <td>${u.wah}</td>
-        <td>${u.bizbox}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
-        <td style="text-align:center">
-          <button type="button" class="btn btn-ghost enc-t1t2-btn" data-encoder-uid="${escapeAttr(uid)}" data-encoder-name="${escapeAttr(u.name)}" title="View T1 & T2 patients" style="padding:4px 10px;font-size:11px;white-space:nowrap">
-            T1/T2 list
-          </button>
-        </td>
       </tr>`;
     }).join('');
 
@@ -3524,18 +3515,17 @@ function renderDashboard(){
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, t1:0, t2:0, missed24:0, dups:0, wah:0, bizbox:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, missed24:0, dups:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.claim==='t1' || p.claim==='t2') b.t1++;  // T2 implies T1
-    if(p.claim==='t2') b.t2++;
+    if(p.vitamins) b.vitamins++;
+    if(p.referral) b.referral++;
+    if(p.claim==='t1') b.t1++;
     if(p.claim==='missed24') b.missed24++;
-    if(p.encodedIn==='WAH') b.wah++;
-    if(p.encodedIn==='BIZBOX') b.bizbox++;
   });
   // dups per team approx
   scoped.forEach(p=>{
@@ -3552,11 +3542,10 @@ function renderDashboard(){
       <td>${b.rice}</td>
       <td>${b.lab}</td>
       <td>${b.medicine}</td>
+      <td>${b.vitamins}</td>
+      <td>${b.referral}</td>
       <td>${b.t1}</td>
-      <td>${b.t2}</td>
       <td>${b.missed24}</td>
-      <td>${b.wah}</td>
-      <td>${b.bizbox}</td>
       <td>${b.dups}</td>
     </tr>`).join('');
 
@@ -3566,12 +3555,9 @@ function renderDashboard(){
       <div class="dash-cards kpi-cards">
         <div class="dash-card"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">MCA on file<br><span class="kpi-sub">${mcaCount}/${total}</span></div></div>
         <div class="dash-card accent-green"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">T1 submitted<br><span class="kpi-sub">${t1Count}/${total}</span></div></div>
-        <div class="dash-card accent-green"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24}/${total}</span></div></div>
         <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h flag<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
         <div class="dash-card accent-purple"><div class="dc-num">${pct(dupCount)}</div><div class="dc-lbl">Duplicates<br><span class="kpi-sub">${dupCount}/${total}</span></div></div>
-        <div class="dash-card"><div class="dc-num">${pct(wahCount)}</div><div class="dc-lbl">Encoded in WAH<br><span class="kpi-sub">${wahCount}/${total}</span></div></div>
-        <div class="dash-card"><div class="dc-num">${pct(bizboxCount)}</div><div class="dc-lbl">Encoded in BIZBOX<br><span class="kpi-sub">${bizboxCount}/${total}</span></div></div>
       </div>
     </div>`;
 
@@ -3583,8 +3569,9 @@ function renderDashboard(){
       <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice (${pct(riceCount)})</div></div>
       <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab (${pct(labCount)})</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds (${pct(medCount)})</div></div>
-      <div class="dash-card accent-green"><div class="dc-num">${wahCount}</div><div class="dc-lbl">WAH</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${bizboxCount}</div><div class="dc-lbl">BIZBOX</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${vitCount}</div><div class="dc-lbl">Vits (${pct(vitCount)})</div></div>
+      <div class="dash-card"><div class="dc-num">${refCount}</div><div class="dc-lbl">Referral (${pct(refCount)})</div></div>
+      <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending</div></div>
     </div>`;
 
   const encoderHtml = `
@@ -3600,14 +3587,10 @@ function renderDashboard(){
               <th>Share</th>
               <th>MCA</th>
               <th>T1</th>
-              <th>T2</th>
-              <th>WAH</th>
-              <th>BIZBOX</th>
               <th style="text-align:left">Mobiles</th>
-              <th></th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="10">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="6">No encoder data</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -3625,11 +3608,10 @@ function renderDashboard(){
               <th>Rice</th>
               <th>Lab</th>
               <th>Meds</th>
+              <th>Vits</th>
+              <th>Ref</th>
               <th>T1</th>
-              <th>T2</th>
               <th>Missed</th>
-              <th>WAH</th>
-              <th>BIZBOX</th>
               <th>Dups</th>
             </tr>
           </thead>
@@ -3690,102 +3672,12 @@ function openDashboard(){
   renderDashboard();
   dashBackdrop.classList.add('open');
 }
-
-/* ---- Encoder T1/T2 patient list ---- */
-function openEncoderT1T2List(uid, displayName){
-  const backdrop = document.getElementById('encT1T2Backdrop');
-  const title = document.getElementById('encT1T2Title');
-  const sub = document.getElementById('encT1T2Sub');
-  const body = document.getElementById('encT1T2Body');
-  if(!backdrop || !body) return;
-
-  title.textContent = (displayName || 'Encoder') + ' — T1 & T2 patients';
-  sub.textContent = 'Patients this encoder submitted as T1 or T2 (newest first). Labels show mobile / walk-in.';
-
-  // Use current dashboard scope if open, otherwise all non-deleted patients
-  let pool = [];
-  try {
-    if(typeof dashboardScopePatients === 'function') pool = dashboardScopePatients();
-  } catch(e){ pool = []; }
-  if(!pool || !pool.length){
-    pool = (state.patients || []).filter(p => !p.deleted);
-  }
-
-  const list = pool.filter(p => {
-    const creator = p.createdBy || p.updatedBy || '';
-    if(String(creator) !== String(uid) && !(uid === '_unknown' && !p.createdBy && !p.updatedBy)) return false;
-    return p.claim === 't1' || p.claim === 't2';
-  }).sort((a, b) => {
-    // Newest first: prefer dateSubmitted, then dateEncoded
-    const da = (a.dateSubmitted || a.dateEncoded || '');
-    const db = (b.dateSubmitted || b.dateEncoded || '');
-    if(da !== db) return db.localeCompare(da);
-    return (b.name || '').localeCompare(a.name || '');
-  });
-
-  if(!list.length){
-    body.innerHTML = '<div class="dash-empty">No T1 or T2 patients found for this encoder in the current scope.</div>';
-  } else {
-    const rows = list.map(p => {
-      const claimBadge = p.claim === 't2'
-        ? '<span class="badge-select cl-t2" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T2 Submitted</span>'
-        : '<span class="badge-select cl-t1" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T1 Submitted</span>';
-      const mobileLabel = p.team
-        ? `<span style="background:var(--table-head);border:1px solid var(--line);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">${escapeHtml(p.team)}</span>`
-        : '<span style="color:var(--muted)">—</span>';
-      const when = p.dateSubmitted || p.dateEncoded || '—';
-      return `<tr>
-        <td style="text-align:left;font-weight:600">${escapeHtml(p.name || '')}</td>
-        <td class="mono" style="font-size:12px">${escapeHtml(p.phid || '')}</td>
-        <td style="text-align:center">${claimBadge}</td>
-        <td style="text-align:left">${mobileLabel}</td>
-        <td style="text-align:center;font-size:12px;color:var(--muted)">${escapeHtml(when)}</td>
-      </tr>`;
-    }).join('');
-    body.innerHTML = `
-      <div class="table-wrap" style="box-shadow:none;margin:0">
-        <table class="dash-table">
-          <thead>
-            <tr>
-              <th style="text-align:left">Patient</th>
-              <th>PhilHealth ID</th>
-              <th>Claim</th>
-              <th style="text-align:left">Mobile / Walk-in</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">${list.length} patient${list.length===1?'':'s'}</div>
-    `;
-  }
-  backdrop.classList.add('open');
-}
-function closeEncoderT1T2List(){
-  const backdrop = document.getElementById('encT1T2Backdrop');
-  if(backdrop) backdrop.classList.remove('open');
-}
-
-
 function closeDashboard(){ dashBackdrop.classList.remove('open'); }
 document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
 document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
 dashMonthSelect.addEventListener('change', renderDashboard);
 dashTeamSelect.addEventListener('change', renderDashboard);
-
-/* Encoder T1/T2 list button (delegated — buttons are re-rendered) */
-document.getElementById('dashBody').addEventListener('click', e=>{
-  const btn = e.target.closest('.enc-t1t2-btn');
-  if(!btn) return;
-  e.preventDefault();
-  openEncoderT1T2List(btn.dataset.encoderUid, btn.dataset.encoderName);
-});
-document.getElementById('encT1T2CloseBtn').addEventListener('click', closeEncoderT1T2List);
-document.getElementById('encT1T2Backdrop').addEventListener('click', e=>{
-  if(e.target === document.getElementById('encT1T2Backdrop')) closeEncoderT1T2List();
-});
 
 /* ---------------- Recent Activity ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
@@ -4564,6 +4456,17 @@ function openRecycle(){
 }
 document.getElementById('recycleBtn')?.addEventListener('click', openRecycle);
 document.getElementById('recycleCloseBtn')?.addEventListener('click', ()=> document.getElementById('recycleBackdrop').classList.remove('open'));
+
+document.getElementById('recycleBackdrop')?.addEventListener('click', e=>{
+  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+document.getElementById('reportCfgBackdrop')?.addEventListener('click', e=>{
+  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+document.getElementById('benefitsAdminBackdrop')?.addEventListener('click', e=>{
+  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
 document.getElementById('recycleBody')?.addEventListener('click', e=>{
   const btn = e.target.closest('[data-restore-ri]');
   if(!btn) return;
@@ -4607,8 +4510,9 @@ function buildSummaryText(){
   lines.push('Generated: ' + new Date().toLocaleString());
   lines.push('Total patients: ' + rows.length);
   lines.push('Rice: ' + rows.filter(p=>p.rice).length + ' | Lab: ' + rows.filter(p=>p.lab).length +
-    ' | Meds: ' + rows.filter(p=>p.medicine).length);
-  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1'||p.claim==='t2').length +
+    ' | Meds: ' + rows.filter(p=>p.medicine).length + ' | Vits: ' + rows.filter(p=>p.vitamins).length +
+    ' | Referral: ' + rows.filter(p=>p.referral).length);
+  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1').length +
     ' | Missed 24h: ' + rows.filter(p=>p.claim==='missed24').length);
   const byTeam = {};
   rows.forEach(p=>{ const t=p.team||'Unknown'; byTeam[t]=(byTeam[t]||0)+1; });
@@ -4627,12 +4531,12 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
   const byTeam = {};
   rows.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, mca:0, t1:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0};
     const b = byTeam[t];
-    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1'||p.claim==='t2')b.t1++;
+    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1')b.t1++;
   });
   const teamRows = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>
-    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.t1}</td></tr>`
+    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.vitamins}</td><td>${b.referral}</td><td>${b.t1}</td></tr>`
   ).join('');
   w.document.write(`<!DOCTYPE html><html><head><title>DR CARE Report</title>
     <style>
@@ -4647,7 +4551,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
     <h1>${org}</h1>
     <div class="sub">Daily operations summary · ${scope} · ${new Date().toLocaleString()}</div>
     <p><b>Total patients:</b> ${rows.length}</p>
-    <table><thead><tr><th>Mobile</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>T1</th></tr></thead>
+    <table><thead><tr><th>Mobile</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th>T1</th></tr></thead>
     <tbody>${teamRows || '<tr><td colspan="9">No data</td></tr>'}</tbody></table>
     <p style="margin-top:24px;font-size:11px;color:#888">Generated by DR CARE · Boyz at the Back</p>
     </body></html>`);
@@ -5071,14 +4975,12 @@ document.getElementById('mergeBtn')?.addEventListener('click', ()=>{
   const others = pts.slice(1);
   // Merge flags OR-style
   others.forEach(o=>{
-    ['mca','rice','lab','medicine','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
+    ['mca','rice','lab','medicine','vitamins','referral','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
     if(o.mcaPhoto && !master.mcaPhoto) master.mcaPhoto = o.mcaPhoto;
     if(o.notes && master.notes) master.notes = master.notes + ' | ' + o.notes;
     else if(o.notes) master.notes = o.notes;
-    // Claim priority: t2 > t1 > missed24 > pending (T2 implies T1 was done)
-    if(o.claim === 't2') master.claim = 't2';
-    else if(o.claim === 't1' && master.claim !== 't2') master.claim = 't1';
-    else if(o.claim === 'missed24' && master.claim !== 't1' && master.claim !== 't2') master.claim = 'missed24';
+    if(o.claim === 't1') master.claim = 't1';
+    else if(o.claim === 'missed24' && master.claim !== 't1') master.claim = 'missed24';
     if(!master.dateSubmitted && o.dateSubmitted) master.dateSubmitted = o.dateSubmitted;
     // soft-delete other
     o.deleted = true;
@@ -5249,7 +5151,7 @@ function printMcaPackets(ids){
       <p><b>Mobile:</b> ${escapeHtml(p.team||'')} &nbsp; <b>Facility:</b> ${escapeHtml(p.facility||'')}</p>
       <p><b>Status:</b> ${escapeHtml(p.status||'')} &nbsp; <b>Claim:</b> ${escapeHtml(p.claim||'')}</p>
       <p><b>Encoded:</b> ${escapeHtml(p.dateEncoded||'')} &nbsp; <b>Submitted:</b> ${escapeHtml(p.dateSubmitted||'')}</p>
-      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds'].filter(Boolean).join(', ')||'—'}</p>
+      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds',p.vitamins&&'Vits',p.referral&&'Referral'].filter(Boolean).join(', ')||'—'}</p>
       <p><b>Notes:</b> ${escapeHtml(p.notes||'—')}</p>
       ${p.mcaPhoto ? `<img src="${p.mcaPhoto}" style="max-width:280px;margin-top:8px;">` : '<p><i>No MCA photo on file</i></p>'}
       <hr>
