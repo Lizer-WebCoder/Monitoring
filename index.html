@@ -867,6 +867,7 @@
 
 
 <div id="offlineBanner">You're offline — changes are saved on this device and will sync once you're back online.</div>
+<div id="scaleWarnBanner" style="display:none;position:sticky;top:0;z-index:39;background:#e4edf5;color:#2f5f8a;font-size:12px;font-weight:600;text-align:center;padding:6px 10px;">Large roster — use a month filter and keep page size at 20–50 for best speed. <button type="button" id="scaleWarnDismiss" style="margin-left:8px;font-size:11px;cursor:pointer;">Dismiss</button></div>
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
@@ -1397,48 +1398,43 @@ function idbGet(key){
 }
 
 async function saveLocalCache(){
-  let idbOk = false;
   try{
-    await idbSet('roster', state.patients);
-    idbOk = true;
+    // Strip bulky MCA data-URLs from roster cache — keep photos in a side store
+    const photoMap = {};
+    const slim = state.patients.map(p=>{
+      if(p.mcaPhoto && String(p.mcaPhoto).startsWith('data:')){
+        photoMap[p.id] = p.mcaPhoto;
+        const { mcaPhoto, ...rest } = p;
+        return { ...rest, mcaPhoto: p.mca ? '__local__' : null };
+      }
+      return p;
+    });
+    await idbSet('roster', slim);
+    await idbSet('roster_photos', photoMap);
+    return true;
   }catch(e){
-    console.error('IndexedDB save failed', e);
-  }
-  // Best-effort localStorage mirror (may fail on large rosters — that is OK)
-  try{
-    localStorage.setItem(CACHE_KEY, JSON.stringify(state.patients));
-  }catch(e){
-    try{ localStorage.removeItem(CACHE_KEY); }catch(_){}
-  }
-  if(!idbOk){
+    console.warn('saveLocalCache', e);
     try{ setSyncStatus('Save failed — storage error', 'err'); }catch(_){}
     return false;
   }
-  return true;
 }
 
 async function loadLocalCache(){
-  // Prefer IndexedDB (full roster)
   try{
-    const fromIdb = await idbGet('roster');
-    if(Array.isArray(fromIdb) && fromIdb.length) return fromIdb;
-  }catch(e){
-    console.error('IndexedDB load failed', e);
-  }
-  // Fallback: older localStorage cache
-  try{
-    const raw = localStorage.getItem(CACHE_KEY);
-    if(!raw) return [];
-    const parsed = JSON.parse(raw);
-    if(Array.isArray(parsed) && parsed.length){
-      // migrate into IndexedDB in background
-      idbSet('roster', parsed).catch(()=>{});
-      return parsed;
+    const data = await idbGet('roster');
+    if(Array.isArray(data)) state.patients = data;
+    const photos = await idbGet('roster_photos');
+    if(photos && typeof photos === 'object'){
+      state.patients.forEach(p=>{
+        if(photos[p.id]) p.mcaPhoto = photos[p.id];
+        else if(p.mcaPhoto === '__local__') p.mcaPhoto = null;
+      });
     }
+    return true;
   }catch(e){
-    console.error('localStorage load failed', e);
+    console.warn('loadLocalCache', e);
+    return false;
   }
-  return [];
 }
 
 function cryptoId(){
@@ -1736,7 +1732,22 @@ async function pullTeamStaff(){
 }
 
 /* Called after any local add/edit/delete */
-async function persistChange(p){
+async 
+/* Performance: coalesce rapid re-renders */
+let _renderAllTimer = null;
+let _renderAllPending = false;
+const _renderAllImmediate = typeof renderAll === 'function' ? null : null;
+function scheduleRenderAll(delay){
+  if(typeof renderAll !== 'function') return;
+  _renderAllPending = true;
+  if(_renderAllTimer) return;
+  _renderAllTimer = setTimeout(()=>{
+    _renderAllTimer = null;
+    if(_renderAllPending){ _renderAllPending = false; renderAll(); }
+  }, delay == null ? 50 : delay);
+}
+
+function persistChange(p){
   if(!canEdit()){
     setSyncStatus('View only — changes not saved', 'err');
     renderAll();
@@ -1778,15 +1789,18 @@ const expandedTeams = new Set();
 let pageSizePreference = (function(){
   try{
     const v = localStorage.getItem('roster_page_size');
-    if(v === 'all' || v === '10' || v === '20' || v === '50') return v;
+    // "all" retired — too heavy at scale; map to 100
+    if(v === 'all') return '100';
+    if(v === '10' || v === '20' || v === '50' || v === '100') return v;
   }catch(e){}
   return '20';
 })();
 const teamPageIndex = {}; // teamName -> 0-based page
+const MAX_PAGE_SIZE = 100;
 function getPageSize(){
-  if(pageSizePreference === 'all') return Infinity;
   const n = parseInt(pageSizePreference, 10);
-  return (n > 0) ? n : 20;
+  if(!(n > 0)) return 20;
+  return Math.min(n, MAX_PAGE_SIZE);
 }
 function setPageSizePreference(val){
   pageSizePreference = String(val);
@@ -1828,12 +1842,15 @@ let showArchived = false;
 
 function monthPatients(){
   const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
+  const wantDeleted = showArchived;
+  // Fast path: no month filter
+  if(!month){
+    return state.patients.filter(p => wantDeleted ? p.deleted : !p.deleted);
+  }
   return state.patients.filter(p=>{
-    if(showArchived ? !p.deleted : p.deleted) return false;
-    if(!month) return true;
+    if(wantDeleted ? !p.deleted : p.deleted) return false;
     const enc = (p.dateEncoded||'').trim();
-    // Undated rows stay visible in every month view so imports without dates are not "lost"
-    if(!enc) return true;
+    if(!enc) return true; // undated stay visible
     return enc.slice(0,7) === month;
   });
 }
@@ -2022,7 +2039,9 @@ function restoreScrollPositions(positions){
 function renderAll(){
   const savedScroll = captureScrollPositions();
   autoFlagMissedClaims();
-  rebuildPhidIndex(); // O(n) once — used by duplicate checks instead of O(n²) scans
+  rebuildPhidIndex();
+  try{ preferMonthIfLarge(); updateScaleWarn(); }catch(e){}
+  // rebuildPhidIndex is O(n) once — used by duplicate checks instead of O(n²) scans
   state.patients.forEach(normalizeFacility);
   renderStats();
   renderLegend();
@@ -2064,20 +2083,19 @@ function renderAll(){
 
     const size = getPageSize();
     const totalFiltered = allRows.length;
-    const totalPages = size === Infinity ? 1 : Math.max(1, Math.ceil(totalFiltered / size));
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / size));
     let page = getTeamPage(team);
     if(page > totalPages - 1) page = totalPages - 1;
     if(page < 0) page = 0;
     setTeamPage(team, page);
-    const start = size === Infinity ? 0 : page * size;
-    const end = size === Infinity ? totalFiltered : Math.min(start + size, totalFiltered);
+    const start = page * size;
+    const end = Math.min(start + size, totalFiltered);
     const rows = allRows.slice(start, end);
     const showingFrom = totalFiltered === 0 ? 0 : start + 1;
     const showingTo = end;
-    const sizeOpts = ['10','20','50','all'].map(v=>{
+    const sizeOpts = ['10','20','50','100'].map(v=>{
       const selected = String(pageSizePreference) === v ? 'selected' : '';
-      const label = v === 'all' ? 'All' : v;
-      return `<option value="${v}" ${selected}>${label}</option>`;
+      return `<option value="${v}" ${selected}>${v}</option>`;
     }).join('');
     const pagerHtml = totalFiltered === 0 ? '' : `
       <div class="team-pager" data-pager-team="${escapeAttr(team)}">
@@ -5198,6 +5216,35 @@ setTimeout(()=>{
 }, 800);
 
 /* DR CARE — boot: service worker toast, final init hooks */
+
+function updateScaleWarn(){
+  const el = document.getElementById('scaleWarnBanner');
+  if(!el) return;
+  const n = state.patients.filter(p=>!p.deleted).length;
+  const month = document.getElementById('monthFilter')?.value;
+  const dismissed = sessionStorage.getItem('scaleWarnDismissed') === '1';
+  el.style.display = (!dismissed && n >= 800 && !month) ? 'block' : 'none';
+}
+document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
+  sessionStorage.setItem('scaleWarnDismissed', '1');
+  updateScaleWarn();
+});
+
+
+let _didPreferMonth = false;
+function preferMonthIfLarge(){
+  if(_didPreferMonth) return;
+  try{
+    const n = (state.patients || []).filter(p=>!p.deleted).length;
+    const mf = document.getElementById('monthFilter');
+    if(mf && n >= 500 && !mf.value){
+      const now = new Date();
+      mf.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      _didPreferMonth = true;
+    }
+  }catch(e){}
+}
+
 function showSwUpdateToast(reg){
   if(document.getElementById('swUpdateToast')) return;
   const toast = document.createElement('div');
