@@ -4206,84 +4206,263 @@ async
 
 
 
-/* ---- Login glass: click to pop, mouse dodge (shards are in HTML) ---- */
+
+/* ---- Login glass physics: random motion, collision, dodge, pop ---- */
 (function initLoginGlass(){
   function boot(){
-    const overlay = document.getElementById('loginOverlay');
-    const bg = document.getElementById('loginGlassBg');
-    if(!overlay || !bg) return;
+    try {
+      const overlay = document.getElementById('loginOverlay');
+      const bg = document.getElementById('loginGlassBg');
+      if(!overlay || !bg) return;
 
-    const COLORS = [
-      'linear-gradient(135deg, #2dd4a8, #0f766e)',
-      'linear-gradient(200deg, #f0b429, #b45309)',
-      'linear-gradient(90deg, #4ade80, #15803d)',
-      'linear-gradient(45deg, #a78bfa, #3b82f6)',
-      'linear-gradient(160deg, #5eead4, #0f766e)',
-      'linear-gradient(210deg, #fb7185, #c2410c)',
-      'linear-gradient(120deg, #38bdf8, #0e7490)',
-      'linear-gradient(30deg, #34d399, #047857)'
-    ];
-    const CLIPS = [
-      'polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%)',
-      'polygon(40% 0%, 100% 20%, 90% 80%, 40% 100%, 0% 70%, 10% 20%)',
-      'polygon(0% 30%, 50% 0%, 100% 25%, 95% 100%, 20% 90%)',
-      'polygon(50% 0%, 100% 35%, 80% 100%, 10% 85%, 0% 30%)',
-      'polygon(25% 0%, 100% 25%, 75% 100%, 0% 70%)',
-      'polygon(0% 0%, 70% 10%, 100% 60%, 50% 100%, 0% 80%)',
-      'polygon(10% 0%, 90% 0%, 100% 100%, 0% 80%)',
-      'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)'
-    ];
+      const COLORS = [
+        'linear-gradient(135deg, #2dd4a8, #0f766e)',
+        'linear-gradient(200deg, #f0b429, #b45309)',
+        'linear-gradient(90deg, #4ade80, #15803d)',
+        'linear-gradient(45deg, #a78bfa, #3b82f6)',
+        'linear-gradient(160deg, #5eead4, #0f766e)',
+        'linear-gradient(210deg, #fb7185, #c2410c)',
+        'linear-gradient(120deg, #38bdf8, #0e7490)',
+        'linear-gradient(30deg, #34d399, #047857)',
+        'linear-gradient(70deg, #fbbf24, #047857)',
+        'linear-gradient(150deg, #818cf8, #0e7490)'
+      ];
+      const CLIPS = [
+        'polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%)',
+        'polygon(40% 0%, 100% 20%, 90% 80%, 40% 100%, 0% 70%, 10% 20%)',
+        'polygon(0% 30%, 50% 0%, 100% 25%, 95% 100%, 20% 90%)',
+        'polygon(50% 0%, 100% 35%, 80% 100%, 10% 85%, 0% 30%)',
+        'polygon(25% 0%, 100% 25%, 75% 100%, 0% 70%)',
+        'polygon(0% 0%, 70% 10%, 100% 60%, 50% 100%, 0% 80%)',
+        'polygon(10% 0%, 90% 0%, 100% 100%, 0% 80%)',
+        'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)'
+      ];
 
-    function respawn(el){
-      const size = 100 + Math.random() * 80;
-      el.style.width = size + 'px';
-      el.style.height = (size * (0.7 + Math.random() * 0.4)) + 'px';
-      el.style.left = (Math.random() * 80) + '%';
-      el.style.top = (Math.random() * 75) + '%';
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
-      el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-      el.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
-      el.classList.remove('popping');
-      el.style.animation = '';
-      // re-enable a drift animation
-      const n = 1 + Math.floor(Math.random() * 8);
-      el.style.animation = 'shardMove' + n + ' ' + (7 + Math.random() * 5) + 's ease-in-out infinite alternate';
-    }
+      let W = 0, H = 0;
+      const pieces = [];
+      const mouse = { x: -9999, y: -9999 };
 
-    bg.addEventListener('click', function(e){
-      const shard = e.target.closest('[data-shard]');
-      if(!shard || shard.classList.contains('popping')) return;
-      e.preventDefault();
-      e.stopPropagation();
-      shard.classList.add('popping');
-      setTimeout(function(){ respawn(shard); }, 420);
-    });
+      function measure(){
+        const r = overlay.getBoundingClientRect();
+        W = r.width || window.innerWidth;
+        H = r.height || window.innerHeight;
+      }
 
-    // light mouse dodge via CSS custom property
-    overlay.addEventListener('mousemove', function(e){
-      if(overlay.classList.contains('hidden')) return;
-      const r = overlay.getBoundingClientRect();
-      const mx = e.clientX - r.left, my = e.clientY - r.top;
-      bg.querySelectorAll('[data-shard]').forEach(function(shard){
-        if(shard.classList.contains('popping')) return;
-        const pr = shard.getBoundingClientRect();
-        const cx = pr.left - r.left + pr.width / 2;
-        const cy = pr.top - r.top + pr.height / 2;
-        const dx = cx - mx, dy = cy - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if(dist < 130 && dist > 1){
-          const f = (1 - dist / 130) * 28;
-          shard.style.translate = ((dx / dist) * f).toFixed(1) + 'px ' + ((dy / dist) * f).toFixed(1) + 'px';
+      function rand(a,b){ return a + Math.random() * (b - a); }
+
+      function applyTransform(p){
+        const bump = p.bumpT > 0 ? 1.12 : 1;
+        p.el.style.setProperty('transform',
+          'translate3d(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px,0) scale(' + bump + ') rotate(' + p.rot.toFixed(1) + 'deg)',
+          'important');
+      }
+
+      function stylePiece(el){
+        // Kill CSS keyframe animations so JS owns transform
+        el.style.setProperty('animation', 'none', 'important');
+        el.style.setProperty('left', '0', 'important');
+        el.style.setProperty('top', '0', 'important');
+        el.style.setProperty('right', 'auto', 'important');
+        el.style.setProperty('bottom', 'auto', 'important');
+        el.style.setProperty('position', 'absolute', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+        el.style.setProperty('cursor', 'pointer', 'important');
+        el.style.setProperty('z-index', '5', 'important');
+        el.style.setProperty('opacity', '0.92', 'important');
+        el.style.setProperty('will-change', 'transform', 'important');
+        el.style.setProperty('transition', 'filter 0.15s ease', 'important');
+      }
+
+      function makePiece(el, isNew){
+        stylePiece(el);
+        const size = isNew ? rand(100, 170) : (el.offsetWidth || rand(120, 160));
+        const h = isNew ? size * rand(0.75, 1.15) : (el.offsetHeight || size);
+        if(isNew){
+          el.style.width = size + 'px';
+          el.style.height = h + 'px';
+          el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+          el.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
+          el.style.border = '2px solid rgba(255,255,255,0.28)';
+          el.style.boxShadow = '0 4px 18px rgba(0,0,0,0.3), inset 0 0 14px rgba(255,255,255,0.1)';
         } else {
-          shard.style.translate = '';
+          el.style.width = (el.offsetWidth || size) + 'px';
+          el.style.height = (el.offsetHeight || h) + 'px';
         }
-      });
-    }, { passive: true });
-    overlay.addEventListener('mouseleave', function(){
-      bg.querySelectorAll('[data-shard]').forEach(function(s){ s.style.translate = ''; });
-    });
+        const pw = parseFloat(el.style.width) || size;
+        const ph = parseFloat(el.style.height) || h;
+        const angle = rand(0, Math.PI * 2);
+        const speed = rand(0.8, 2.0);
+        const p = {
+          el: el,
+          w: pw,
+          h: ph,
+          x: rand(10, Math.max(20, W - pw - 10)),
+          y: rand(10, Math.max(20, H - ph - 10)),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          rot: rand(-20, 20),
+          vr: rand(-0.4, 0.4),
+          bumpT: 0,
+          dead: false
+        };
+        applyTransform(p);
+        pieces.push(p);
+        return p;
+      }
+
+      measure();
+
+      // Take over existing HTML shards
+      const existing = bg.querySelectorAll('[data-shard]');
+      existing.forEach(function(el){ makePiece(el, false); });
+
+      // If none found, create some
+      if(pieces.length === 0){
+        for(let i = 0; i < 8; i++){
+          const el = document.createElement('div');
+          el.className = 'shard';
+          el.setAttribute('data-shard', '');
+          bg.appendChild(el);
+          makePiece(el, true);
+        }
+      }
+
+      function spawnOne(){
+        const el = document.createElement('div');
+        el.className = 'shard';
+        el.setAttribute('data-shard', '');
+        bg.appendChild(el);
+        makePiece(el, true);
+      }
+
+      function onMove(e){
+        const r = overlay.getBoundingClientRect();
+        mouse.x = e.clientX - r.left;
+        mouse.y = e.clientY - r.top;
+      }
+      function onLeave(){ mouse.x = -9999; mouse.y = -9999; }
+
+      function onPointerDown(e){
+        // Find shard under pointer
+        const stack = document.elementsFromPoint(e.clientX, e.clientY);
+        let shardEl = null;
+        for(let i = 0; i < stack.length; i++){
+          if(stack[i].hasAttribute && stack[i].hasAttribute('data-shard')){
+            shardEl = stack[i]; break;
+          }
+          if(stack[i].closest){
+            const c = stack[i].closest('[data-shard]');
+            if(c){ shardEl = c; break; }
+          }
+        }
+        if(!shardEl) return;
+        const p = pieces.find(function(x){ return x.el === shardEl && !x.dead; });
+        if(!p) return;
+        e.preventDefault();
+        e.stopPropagation();
+        // Pop
+        p.dead = true;
+        p.el.style.setProperty('transition', 'transform 0.35s cubic-bezier(0.34,1.4,0.64,1), opacity 0.35s ease', 'important');
+        p.el.style.setProperty('transform', 'translate3d(' + p.x + 'px,' + p.y + 'px,0) scale(0) rotate(25deg)', 'important');
+        p.el.style.setProperty('opacity', '0', 'important');
+        setTimeout(function(){
+          if(p.el.parentNode) p.el.parentNode.removeChild(p.el);
+          const idx = pieces.indexOf(p);
+          if(idx >= 0) pieces.splice(idx, 1);
+          spawnOne();
+        }, 380);
+      }
+
+      function frame(){
+        if(overlay.classList.contains('hidden')){
+          requestAnimationFrame(frame);
+          return;
+        }
+        measure();
+        const live = pieces.filter(function(p){ return !p.dead; });
+
+        for(let i = 0; i < live.length; i++){
+          const p = live[i];
+          // cursor dodge — strong push
+          const cx = p.x + p.w / 2;
+          const cy = p.y + p.h / 2;
+          const mdx = cx - mouse.x;
+          const mdy = cy - mouse.y;
+          const md = Math.sqrt(mdx * mdx + mdy * mdy);
+          if(md < 160 && md > 0.5){
+            const force = (1 - md / 160) * 3.5;
+            p.vx += (mdx / md) * force;
+            p.vy += (mdy / md) * force;
+          }
+          // keep moving — if almost stopped, nudge
+          const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if(sp < 0.5){
+            const a = Math.random() * Math.PI * 2;
+            p.vx += Math.cos(a) * 0.6;
+            p.vy += Math.sin(a) * 0.6;
+          }
+          if(sp > 4){ p.vx *= 4 / sp; p.vy *= 4 / sp; }
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vr;
+          if(p.bumpT > 0) p.bumpT -= 1;
+
+          // walls
+          if(p.x < 0){ p.x = 0; p.vx = Math.abs(p.vx) + 0.2; }
+          if(p.y < 0){ p.y = 0; p.vy = Math.abs(p.vy) + 0.2; }
+          if(p.x + p.w > W){ p.x = W - p.w; p.vx = -Math.abs(p.vx) - 0.2; }
+          if(p.y + p.h > H){ p.y = H - p.h; p.vy = -Math.abs(p.vy) - 0.2; }
+
+          applyTransform(p);
+          if(p.bumpT > 0) p.el.style.filter = 'brightness(1.45)';
+          else p.el.style.filter = '';
+        }
+
+        // collisions
+        for(let i = 0; i < live.length; i++){
+          for(let j = i + 1; j < live.length; j++){
+            const a = live[i], b = live[j];
+            const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+            const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+            const dx = bx - ax, dy = by - ay;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minD = (a.w + b.w) * 0.26;
+            if(dist < minD && dist > 0.01){
+              const nx = dx / dist, ny = dy / dist;
+              const overlap = minD - dist;
+              a.x -= nx * overlap * 0.5;
+              a.y -= ny * overlap * 0.5;
+              b.x += nx * overlap * 0.5;
+              b.y += ny * overlap * 0.5;
+              const av = a.vx * nx + a.vy * ny;
+              const bv = b.vx * nx + b.vy * ny;
+              a.vx += (bv - av) * nx;
+              a.vy += (bv - av) * ny;
+              b.vx += (av - bv) * nx;
+              b.vy += (av - bv) * ny;
+              a.bumpT = 12;
+              b.bumpT = 12;
+              a.vr = rand(-1.2, 1.2);
+              b.vr = rand(-1.2, 1.2);
+            }
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      // Use pointerdown so it works before click is swallowed
+      overlay.addEventListener('pointerdown', onPointerDown, true);
+      overlay.addEventListener('mousemove', onMove, { passive: true });
+      overlay.addEventListener('mouseleave', onLeave);
+      window.addEventListener('resize', measure);
+      requestAnimationFrame(frame);
+    } catch(err){
+      console.error('Login glass error:', err);
+    }
   }
+
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
