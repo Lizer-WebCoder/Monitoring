@@ -920,11 +920,11 @@
   <!-- Row 1: navigation + primary actions -->
   <div class="toolbar-row toolbar-nav">
     <div class="tb-group">
-      <input type="month" id="monthFilter" title="Choose which month's mobile records to view">
+      <input type="month" id="monthFilter" title="Choose which month's records to view">
       <button class="btn btn-ghost btn-sm" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
     </div>
     <div class="tb-group">
-      <button class="btn btn-primary" id="addTeamBtn">+ Add Mobile</button>
+      <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -1040,7 +1040,7 @@
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <h3 id="modalTitle">Add Patient</h3>
-    <div class="modal-sub">Fields marked with the team dropdown determine which group this row appears under.</div>
+    <div class="modal-sub">The site/group dropdown controls which list this patient appears under (mobile or walk-in day).</div>
     <div class="form-grid">
       <div class="full">
         <label>Patient name (Last, First, Middle, Suffix)</label>
@@ -1052,7 +1052,7 @@
         <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
-        <label>Team / Site</label>
+        <label>Site / group</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -1127,12 +1127,12 @@
 <!-- Team / Site Modal -->
 <div class="modal-backdrop" id="teamModalBackdrop">
   <div class="modal">
-    <h3 id="teamModalTitle">Add Mobile</h3>
-    <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
+    <h3 id="teamModalTitle">Add site / group</h3>
+    <div class="modal-sub">Use one group per mobile team, clinic site, or walk-in day (example: “Oct 7, 2026 Walk-in”). List staff if needed.</div>
     <div class="form-grid">
       <div class="full">
-        <label>Mobile name</label>
-        <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
+        <label>Name</label>
+        <input type="text" id="tm_name" placeholder="e.g. Tacloban Mobile · or Oct 7 2026 Walk-in">
       </div>
       <div class="full">
         <label>Site location (GPS)</label>
@@ -2067,10 +2067,10 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No mobile records for ${monthLabel(monthVal)}. Switch months, or add a mobile and encode patients for this month.`
-      : `No mobiles yet. Click “+ Add Mobile” to start one, then use its “+ Add Patient” button.`;
+      ? `No records for ${monthLabel(monthVal)}. Switch months, or add a site/group (mobile or walk-in) and encode patients.`
+      : `No sites yet. Click “+ Add site / group” (mobile team or walk-in day), then “+ Add Patient”.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}
-      <div class="empty-state-cta"><button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add Mobile</button></div>
+      <div class="empty-state-cta"><button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add site / group</button></div>
     </div>`;
     const ebtn = document.getElementById('emptyAddBtn');
     if(ebtn) ebtn.addEventListener('click', ()=>{ document.getElementById('addTeamBtn')?.click(); });
@@ -2345,7 +2345,7 @@ groupsContainer.addEventListener('click', e=>{
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(count === 0){
-      if(confirm(`Remove empty mobile "${team}"?`)){
+      if(confirm(`Remove empty group "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -2371,7 +2371,7 @@ groupsContainer.addEventListener('click', e=>{
     const count = state.patients.filter(p=>p.team===team && p.deleted).length;
     if(count === 0){
       // Empty shell left in archived view — just remove it
-      if(confirm(`Remove empty mobile "${team}"?`)){
+      if(confirm(`Remove empty group "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -2419,7 +2419,7 @@ groupsContainer.addEventListener('click', e=>{
     const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
     const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
     if(ids.length === 0){
-      if(confirm(`Remove empty mobile "${team}"?`)){
+      if(confirm(`Remove empty group "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -2803,7 +2803,7 @@ document.getElementById('tm_staffList').addEventListener('click', e=>{
 
 function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
-  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile' : 'Add Mobile';
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit site / group' : 'Add site / group';
   document.getElementById('tm_name').value = existingName || '';
   renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
   teamModalBackdrop.classList.add('open');
@@ -2815,7 +2815,7 @@ teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop
 
 document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
-  if(!name){ alert("Mobile name is required."); return; }
+  if(!name){ alert("Name is required (e.g. mobile site or walk-in day)."); return; }
   const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
     name: row.querySelector('.tm-staff-input').value.trim(),
     position: row.querySelector('.tm-staff-position').value
@@ -2826,7 +2826,7 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
 
   if(!editingTeamOriginalName && collidesWith){
-    alert(`A mobile named "${collidesWith}" already exists. Choose a different name, or edit that mobile instead of adding a new one.`);
+    alert(`A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
     return;
   }
   if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
@@ -4150,14 +4150,14 @@ const TEAM_GEO_KEY = 'drcare_team_geo';
 
 const I18N = {
   en: {
-    addMobile: '+ Add Mobile', dashboard: 'Dashboard', activity: 'Activity', archived: 'Archived',
+    addMobile: '+ Add site / group', dashboard: 'Dashboard', activity: 'Activity', archived: 'Archived',
     admin: 'Admin', dark: 'Dark mode', light: 'Light mode', syncNow: 'Sync now',
     exportCsv: 'Export CSV', dailyReport: 'Daily report', importCsv: 'Import CSV',
     pdfReport: 'PDF report', sendReport: 'Send report', recycle: 'Recycle bin',
     searchPh: 'Search name, PhilHealth ID, notes, or team…'
   },
   tl: {
-    addMobile: '+ Magdagdag ng Mobile', dashboard: 'Dashboard', activity: 'Aktibidad', archived: 'Naka-archive',
+    addMobile: '+ Magdagdag ng site / grupo', dashboard: 'Dashboard', activity: 'Aktibidad', archived: 'Naka-archive',
     admin: 'Admin', dark: 'Madilim', light: 'Maliwanag', syncNow: 'I-sync ngayon',
     exportCsv: 'I-export ang CSV', dailyReport: 'Arawang ulat', importCsv: 'Mag-import ng CSV',
     pdfReport: 'Ulat PDF', sendReport: 'Ipadala ang ulat', recycle: 'Basurahan',
