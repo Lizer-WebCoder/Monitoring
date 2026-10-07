@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DR CARE — Divine Rays Patient Care Tracker</title>
+<title>DR CARE — Divine Rays Patient Operations Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,189 +98,144 @@
   #offlineBanner.show{ display:block; }
 
   /* ---------- Login overlay ---------- */
-    #loginOverlay{
-    position:fixed; inset:0; z-index:200;
-    display:flex; align-items:center; justify-content:center; padding:24px;
-    background:#0b2f2a;
+  #loginOverlay{
+    position:fixed; inset:0;
+    background:linear-gradient(145deg, #062820 0%, #0b3630 35%, #14524a 70%, #1a6b5c 100%);
+    display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
     overflow:hidden;
   }
   #loginOverlay.hidden{ display:none; }
+  /* Animated background layer */
   .login-bg{
-    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
   }
-
-  .login-orb{
-    position:absolute; border-radius:50%; filter:blur(36px); opacity:.65;
-    will-change: transform;
+  .login-bg .orb{
+    position:absolute; border-radius:50%; filter:blur(40px); opacity:0.45;
+    animation: loginOrbFloat 18s ease-in-out infinite;
   }
-  .login-orb-a{
-    width:min(560px, 75vw); height:min(560px, 75vw);
-    background:radial-gradient(circle, #2a9d8f 0%, transparent 70%);
-    top:-18%; left:-14%;
-    animation: loginDriftA 12s ease-in-out infinite alternate;
+  .login-bg .orb-1{
+    width:420px; height:420px; top:-12%; left:-8%;
+    background:radial-gradient(circle, #2f8a79 0%, transparent 70%);
+    animation-duration:22s;
   }
-  .login-orb-b{
-    width:min(480px, 60vw); height:min(480px, 60vw);
-    background:radial-gradient(circle, #4ecdc4 0%, transparent 68%);
-    bottom:-22%; right:-14%;
-    opacity:.5;
-    animation: loginDriftB 10s ease-in-out infinite alternate;
+  .login-bg .orb-2{
+    width:360px; height:360px; bottom:-15%; right:-10%;
+    background:radial-gradient(circle, #3d9b7a 0%, transparent 70%);
+    animation-duration:26s; animation-delay:-6s;
   }
-  .login-orb-c{
-    width:min(320px, 45vw); height:min(320px, 45vw);
-    background:radial-gradient(circle, #f4a261 0%, transparent 70%);
-    top:38%; left:42%;
-    opacity:.28;
-    animation: loginDriftC 14s ease-in-out infinite alternate;
+  .login-bg .orb-3{
+    width:280px; height:280px; top:40%; left:55%;
+    background:radial-gradient(circle, rgba(191,232,218,0.5) 0%, transparent 70%);
+    animation-duration:20s; animation-delay:-3s; opacity:0.3;
   }
-  .login-ring{
-    position:absolute; border-radius:50%;
-    border: 1.5px solid rgba(255,255,255,.12);
-    animation: loginSpin 28s linear infinite;
+  .login-bg .orb-4{
+    width:200px; height:200px; top:15%; right:20%;
+    background:radial-gradient(circle, #c8862b 0%, transparent 70%);
+    animation-duration:24s; animation-delay:-10s; opacity:0.2;
   }
-  .login-ring-1{
-    width:min(420px, 55vw); height:min(420px, 55vw);
-    top:12%; right:8%;
-    border-color: rgba(78,205,196,.22);
+  @keyframes loginOrbFloat{
+    0%, 100%{ transform:translate(0,0) scale(1); }
+    33%{ transform:translate(30px,-40px) scale(1.08); }
+    66%{ transform:translate(-25px,20px) scale(0.95); }
   }
-  .login-ring-2{
-    width:min(280px, 40vw); height:min(280px, 40vw);
-    bottom:18%; left:10%;
-    border-style: dashed;
-    border-color: rgba(255,255,255,.1);
-    animation-duration: 40s;
-    animation-direction: reverse;
+  /* Floating geometric shapes */
+  .login-bg .shape{
+    position:absolute; border:1.5px solid rgba(255,255,255,0.12);
+    animation: loginShapeDrift 14s ease-in-out infinite;
   }
-  .login-cross{
-    position:absolute;
-    width:28px; height:28px;
-    opacity:.35;
-    animation: loginBob 7s ease-in-out infinite;
+  .login-bg .shape-ring{
+    width:90px; height:90px; border-radius:50%;
+    top:18%; left:12%; animation-duration:16s;
   }
-  .login-cross::before, .login-cross::after{
-    content:""; position:absolute; background:rgba(255,255,255,.55); border-radius:3px;
+  .login-bg .shape-ring-2{
+    width:60px; height:60px; border-radius:50%;
+    bottom:22%; left:18%; animation-duration:12s; animation-delay:-4s;
+    border-color:rgba(191,232,218,0.2);
   }
-  .login-cross::before{ width:100%; height:6px; top:11px; left:0; }
-  .login-cross::after{ width:6px; height:100%; left:11px; top:0; }
-  .login-cross-1{ top:18%; left:14%; animation-delay: -1s; }
-  .login-cross-2{ bottom:22%; right:16%; width:22px; height:22px; opacity:.25; animation-delay: -3.5s; }
-  .login-particle{
-    position:absolute; width:6px; height:6px; border-radius:50%;
-    background: rgba(255,255,255,.55);
-    box-shadow: 0 0 12px rgba(78,205,196,.6);
-    animation: loginRise 9s linear infinite;
+  .login-bg .shape-sq{
+    width:50px; height:50px; border-radius:12px; transform:rotate(25deg);
+    top:25%; right:14%; animation-duration:18s; animation-delay:-2s;
   }
-  .login-particle.p1{ left:12%; bottom:-5%; animation-duration: 11s; animation-delay: 0s; }
-  .login-particle.p2{ left:22%; bottom:-5%; width:4px; height:4px; animation-duration: 13s; animation-delay: -2s; }
-  .login-particle.p3{ left:38%; bottom:-5%; animation-duration: 10s; animation-delay: -4s; }
-  .login-particle.p4{ left:52%; bottom:-5%; width:5px; height:5px; animation-duration: 14s; animation-delay: -1s; }
-  .login-particle.p5{ left:64%; bottom:-5%; animation-duration: 12s; animation-delay: -6s; }
-  .login-particle.p6{ left:74%; bottom:-5%; width:3px; height:3px; animation-duration: 9s; animation-delay: -3s; }
-  .login-particle.p7{ left:84%; bottom:-5%; animation-duration: 15s; animation-delay: -5s; }
-  .login-particle.p8{ left:45%; bottom:-5%; width:4px; height:4px; animation-duration: 11s; animation-delay: -7s; }
-  .login-wave{
-    position:absolute; left:-10%; right:-10%; bottom:-10%;
-    height:45%;
+  .login-bg .shape-sq-2{
+    width:36px; height:36px; border-radius:8px; transform:rotate(-15deg);
+    bottom:18%; right:22%; animation-duration:15s; animation-delay:-7s;
+    border-color:rgba(232,171,92,0.25);
+  }
+  .login-bg .shape-cross{
+    width:28px; height:28px; top:55%; left:8%;
     background:
-      radial-gradient(ellipse 80% 60% at 20% 100%, rgba(42,157,143,.4), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(15,61,54,.55), transparent 55%);
-    animation: loginWave 8s ease-in-out infinite alternate;
+      linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)) center/40% 100% no-repeat,
+      linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)) center/100% 40% no-repeat;
+    border:none; border-radius:3px;
+    animation-duration:20s; animation-delay:-5s;
   }
-  @keyframes loginDriftA{
-    from{ transform: translate(0,0) scale(1); }
-    to{ transform: translate(12%, 10%) scale(1.12); }
+  .login-bg .shape-cross-2{
+    width:20px; height:20px; top:12%; right:30%;
+    background:
+      linear-gradient(rgba(191,232,218,0.25), rgba(191,232,218,0.25)) center/40% 100% no-repeat,
+      linear-gradient(rgba(191,232,218,0.25), rgba(191,232,218,0.25)) center/100% 40% no-repeat;
+    border:none; border-radius:2px;
+    animation-duration:17s; animation-delay:-9s;
   }
-  @keyframes loginDriftB{
-    from{ transform: translate(0,0) scale(1); }
-    to{ transform: translate(-14%, -8%) scale(1.15); }
+  @keyframes loginShapeDrift{
+    0%, 100%{ transform:translate(0,0) rotate(0deg); opacity:0.7; }
+    50%{ transform:translate(12px,-18px) rotate(12deg); opacity:1; }
   }
-  @keyframes loginDriftC{
-    from{ transform: translate(0,0) scale(1); }
-    to{ transform: translate(-10%, 12%) scale(1.08); }
+  /* Soft particles */
+  .login-bg .dot{
+    position:absolute; width:4px; height:4px; border-radius:50%;
+    background:rgba(255,255,255,0.35); animation: loginDotPulse 5s ease-in-out infinite;
   }
-  @keyframes loginSpin{
-    from{ transform: rotate(0deg); }
-    to{ transform: rotate(360deg); }
+  .login-bg .dot:nth-child(11){ top:20%; left:30%; animation-delay:0s; }
+  .login-bg .dot:nth-child(12){ top:35%; left:70%; animation-delay:0.8s; width:3px; height:3px; }
+  .login-bg .dot:nth-child(13){ top:60%; left:25%; animation-delay:1.5s; width:5px; height:5px; }
+  .login-bg .dot:nth-child(14){ top:75%; left:65%; animation-delay:2.2s; }
+  .login-bg .dot:nth-child(15){ top:45%; left:85%; animation-delay:3s; width:3px; height:3px; }
+  .login-bg .dot:nth-child(16){ top:10%; left:50%; animation-delay:1.2s; }
+  .login-bg .dot:nth-child(17){ top:80%; left:40%; animation-delay:2.8s; width:3px; height:3px; }
+  .login-bg .dot:nth-child(18){ top:28%; left:45%; animation-delay:0.4s; }
+  @keyframes loginDotPulse{
+    0%, 100%{ opacity:0.2; transform:scale(1); }
+    50%{ opacity:0.85; transform:scale(1.6); }
   }
-  @keyframes loginBob{
-    0%,100%{ transform: translateY(0) rotate(0deg); }
-    50%{ transform: translateY(-18px) rotate(8deg); }
+  /* Gentle grid / mesh lines */
+  .login-bg .mesh{
+    position:absolute; inset:0; opacity:0.06;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+    background-size:48px 48px;
+    animation: loginMeshShift 40s linear infinite;
   }
-  @keyframes loginRise{
-    0%{ transform: translateY(0) scale(1); opacity:0; }
-    10%{ opacity:.7; }
-    90%{ opacity:.5; }
-    100%{ transform: translateY(-110vh) scale(.4); opacity:0; }
-  }
-  @keyframes loginWave{
-    from{ transform: translateY(0) scaleX(1); }
-    to{ transform: translateY(-20px) scaleX(1.04); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .login-orb, .login-ring, .login-cross, .login-particle, .login-wave{ animation: none !important; }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-    33%{ transform: translate(3%, 4%) scale(1.05); }
-    66%{ transform: translate(-2%, 2%) scale(.97); }
-  }
-  
-    100%{ background-position: 48px 48px, 48px 48px; }
-  }
-  
-    to{ transform: translateY(-12px); opacity:1; }
+  @keyframes loginMeshShift{
+    0%{ background-position:0 0; }
+    100%{ background-position:48px 48px; }
   }
   .login-card{
     position:relative; z-index:1;
-    background:rgba(255,255,255,.94);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius:18px;
-    padding:30px 28px 26px;
-    width:100%; max-width:400px;
-    box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,0.97); border-radius:16px; padding:34px 32px; width:100%; max-width:380px;
+    box-shadow:
+      0 4px 6px rgba(6,40,32,0.08),
+      0 24px 64px rgba(6,40,32,0.35),
+      0 0 0 1px rgba(255,255,255,0.1);
+    backdrop-filter:blur(12px);
+    animation: loginCardIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
   }
-  .login-brand-mark{
-    width:44px; height:44px; border-radius:12px;
-    background:linear-gradient(145deg, #1a7a6d, #0f4c44);
-    color:#fff; font-weight:800; font-size:15px;
-    display:flex; align-items:center; justify-content:center;
-    letter-spacing:.04em; margin-bottom:14px;
-    box-shadow: 0 8px 20px rgba(15,76,68,.35);
+  @keyframes loginCardIn{
+    from{ opacity:0; transform:translateY(18px) scale(0.97); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
   }
-  .login-card h1{ font-size:19px; margin:0 0 4px; color:var(--ink); font-weight:800; letter-spacing:-0.02em; }
-  .login-card p{ font-size:12.5px; color:var(--muted); margin:0 0 18px; line-height:1.45; }
+  body.dark .login-card{
+    background:rgba(24,36,33,0.95);
+  }
+  .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
+  .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
   .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
-  .login-card input{
-    width:100%; font-family:inherit; font-size:14px; padding:11px 12px;
-    border-radius:10px; border:1px solid var(--line); background:#fff;
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .login-card input:focus{
-    outline:none; border-color:var(--teal);
-    box-shadow: 0 0 0 3px rgba(26,122,109,.15);
-  }
-  .login-card button#loginBtn, .login-card > button{
-    width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none;
-    padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;
-    box-shadow: 0 4px 14px rgba(26,122,109,.3);
-  }
-  .login-card button#loginBtn:hover, .login-card > button:hover{ background:var(--teal-deep); }
-  .login-card button:disabled{ opacity:0.6; cursor:default; box-shadow:none; }
-  .login-note{ font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.45; }
-  #toggleAuthMode{
-    display:block; text-align:center; margin-top:12px;
-    color:var(--teal-deep); font-weight:600; font-size:13px;
-  }
-
-  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; font-weight:600; min-height:1.2em; }
+  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
+  .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
+  .login-card button:hover{ background:var(--teal-deep); }
+  .login-card button:disabled{ opacity:0.6; cursor:default; }
+  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; }
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
   /* ---------- Header ---------- */
@@ -490,19 +445,12 @@
   /* ---------- Dashboard ---------- */
   .dash-backdrop{ position:fixed; inset:0; background:rgba(18,49,43,0.45); display:none; align-items:flex-start; justify-content:center; z-index:120; padding:30px 16px; overflow-y:auto; }
   .dash-backdrop.open{ display:flex; }
-  .dash-backdrop.nested{ z-index: 200; background: rgba(18,49,43,0.55); }
   .dash-modal{ background:var(--card); border-radius:14px; max-width:1180px; width:100%; padding:24px 26px 26px; box-shadow:0 20px 60px rgba(11,54,48,0.3); }
   .dash-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
   .dash-head h3{ margin:0 0 4px; font-size:18px; }
   .dash-head .modal-sub{ margin-bottom:0; }
-  .dash-head{ position:relative; padding-right:40px; }
-  .dash-close{
-    position:absolute; top:0; right:0;
-    border:none; background:transparent; color:var(--muted);
-    border-radius:8px; padding:4px 8px; cursor:pointer; flex:none;
-    font-size:18px; line-height:1; font-weight:500; min-width:0; min-height:0;
-  }
-  .dash-close:hover{ color:var(--ink); background:var(--table-head); }
+  .dash-close{ border:none; background:var(--table-head); color:var(--muted); border-radius:8px; padding:6px 8px; cursor:pointer; flex:none; }
+  .dash-close:hover{ color:var(--ink); background:var(--line); }
   .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
   .dash-controls select{ min-width:190px; }
   .dash-scope-note{ font-size:11px; color:var(--muted); }
@@ -1031,653 +979,35 @@
     background:var(--table-head); font-family:inherit; color:var(--muted);
   }
 
-
-  .type-switch{
-    display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden;
-    margin:4px 0 10px;
-  }
-  .type-switch label{
-    flex:1; text-align:center; padding:9px 10px; font-size:12.5px; font-weight:700;
-    cursor:pointer; background:var(--card); color:var(--muted); border:none; margin:0;
-    user-select:none;
-  }
-  .type-switch input{ position:absolute; opacity:0; pointer-events:none; }
-  .type-switch label.active{ background:var(--teal); color:#fff; }
-  .type-badge{
-    display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.06em;
-    text-transform:uppercase; padding:2px 7px; border-radius:20px; vertical-align:middle;
-    margin-left:6px;
-  }
-  .type-badge.mobile{ background:var(--blue-bg); color:var(--blue); }
-  .type-badge.walkin{ background:var(--amber-bg); color:var(--amber); }
-  .type-badge.profiling{ background:var(--purple-bg); color:var(--purple); }
-
-
-  .admin-stats{
-    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;
-  }
-  .admin-stat{
-    flex:1 1 100px; background:var(--table-head); border:1px solid var(--line);
-    border-radius:10px; padding:10px 12px; text-align:center;
-  }
-  .admin-stat .n{ font-size:20px; font-weight:800; font-family:'IBM Plex Mono',monospace; }
-  .admin-stat .l{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
-  .admin-user-card{
-    display:flex; align-items:center; gap:12px; padding:12px 14px;
-    border:1px solid var(--line); border-radius:12px; background:var(--card);
-    margin-bottom:8px; flex-wrap:wrap;
-  }
-  .admin-user-card.pending{ border-color:var(--amber); background:var(--amber-bg); }
-  .admin-avatar{
-    width:40px; height:40px; border-radius:50%; background:var(--teal);
-    color:#fff; font-weight:800; font-size:14px; display:flex; align-items:center;
-    justify-content:center; flex:none;
-  }
-  .admin-user-info{ flex:1 1 140px; min-width:0; }
-  .admin-user-info .nm{ font-weight:700; font-size:14px; }
-  .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
-  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .presence-dot{
-    width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
-    background:#94a3b8;
-  }
-  .presence-dot.on{ background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.25); }
-  .presence-lbl{ font-size:11px; color:var(--muted); font-weight:600; }
-  .role-pill{
-    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
-    padding:3px 8px; border-radius:20px; background:var(--table-head); color:var(--muted);
-  }
-  .role-pill.admin{ background:var(--purple-bg); color:var(--purple); }
-  .role-pill.encoder{ background:var(--blue-bg); color:var(--blue); }
-  .role-pill.viewer{ background:var(--table-head); color:var(--muted); }
-
-
-  /* ========== System-wide UI polish ========== */
-  :root{
-    --radius: 12px;
-    --radius-sm: 8px;
-    --shadow-soft: 0 1px 2px rgba(18,49,43,.04), 0 8px 24px rgba(18,49,43,.06);
-  }
-  body{ letter-spacing: -0.01em; }
-  .btn{
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-weight: 600;
-    letter-spacing: 0;
-    transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
-  }
-  .btn-primary{ box-shadow: 0 1px 2px rgba(18,49,43,.12); }
-  .toolbar{ gap: 12px; margin-top: 14px; margin-bottom: 14px; }
-  .toolbar-row{ gap: 8px; }
-  .team-group{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-    padding: 12px 14px 10px;
-    margin-bottom: 14px;
-  }
-  .team-head{
-    border-bottom: 1px solid var(--line);
-    padding: 6px 2px 12px;
-    margin-bottom: 8px;
-  }
-  .team-head h2{ font-size: 15px; font-weight: 700; }
-  .table-wrap{
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line);
-    overflow: auto;
-  }
-  table th{
-    position: sticky; top: 0; z-index: 2;
-    background: var(--table-head);
-  }
-  .modal, .dash-modal{
-    border-radius: 16px;
-    box-shadow: 0 16px 48px rgba(18,49,43,.18);
-    border: 1px solid var(--line);
-  }
-  .dash-modal{
-    max-width: 960px;
-    width: 100%;
-    padding: 22px 22px 20px;
-  }
-  .dash-head{ margin-bottom: 12px; }
-  .dash-head h3{ font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
-  .dash-head .modal-sub{ font-size: 12.5px; line-height: 1.45; color: var(--muted); max-width: 52ch; }
-
-  /* Dashboard controls */
-  .dash-controls{
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px 14px !important;
-    align-items: end;
-    margin: 8px 0 20px !important;
-    padding: 14px;
-    background: var(--table-head);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-  .dash-controls > div{ min-width: 0; }
-  .dash-controls label{
-    font-size: 10px !important;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--muted) !important;
-    margin-bottom: 5px !important;
-  }
-  .dash-controls select,
-  .dash-controls input[type=date]{
-    width: 100%;
-    min-width: 0 !important;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line);
-    background: var(--card);
-    font-size: 13px;
-  }
-  .dash-controls #dashEncoderSelect{
-    min-height: 38px !important;
-    height: auto;
-  }
-  .dash-scope-note{
-    grid-column: 1 / -1;
-    font-size: 12px;
-    color: var(--muted);
-    padding: 2px 2px 0;
-    font-weight: 600;
-  }
-  .dash-controls .field-hint{ display: none; }
-
-  /* KPI + metric cards */
-  .dash-cards{
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px !important;
-    margin-bottom: 18px;
-  }
-  .kpi-cards{
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
-    margin-bottom: 16px;
-  }
-  .dash-card{
-    border-radius: var(--radius) !important;
-    padding: 14px 12px !important;
-    border: 1px solid var(--line);
-    background: var(--card);
-    box-shadow: none;
-    min-height: 88px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .dash-card .dc-num{
-    font-size: 22px !important;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin-bottom: 6px;
-  }
-  .dash-card .dc-lbl{
-    font-size: 10.5px !important;
-    line-height: 1.35;
-    letter-spacing: .03em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-weight: 650;
-  }
-  .dash-card .kpi-sub{
-    display: block;
-    margin-top: 3px;
-    font-size: 11px;
-    text-transform: none;
-    letter-spacing: 0;
-    font-family: 'IBM Plex Mono', monospace;
-    opacity: .85;
-  }
-  .dash-section{
-    margin-bottom: 28px !important;
-  }
-  .dash-section h4{
-    font-size: 11px !important;
-    letter-spacing: .08em !important;
-    margin: 0 0 10px !important;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
-  }
-  .dash-table-wrap, .dash-section .table-wrap{
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line);
-    overflow-x: auto;
-  }
-  .dash-table th, .dash-table td{
-    padding: 10px 12px !important;
-  }
-  .dash-trend-wrap{
-    padding: 12px 8px 4px;
-    background: var(--table-head);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  /* Admin user cards spacing */
-  .admin-stats{ gap: 10px; margin-bottom: 16px; }
-  .admin-stat{ border-radius: var(--radius); padding: 12px; }
-  .admin-user-card{ border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
-
-  /* Stat strip denser */
-  .stat-strip{ gap: 8px; margin: 8px auto 4px; }
-  .stat-chip{
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
-  /* Login */
-  #loginOverlay .login-card, .login-card{
-    border-radius: 16px;
-    box-shadow: var(--shadow-soft);
-  }
-
-  /* Footer breathing room */
-  .app-footer{ padding: 28px 16px 36px; opacity: .7; }
-
-  @media (max-width: 720px){
-    .dash-modal{ padding: 16px 14px; }
-    .dash-controls{ grid-template-columns: 1fr 1fr; }
-    .team-group{ padding: 10px; }
-  }
-
-
-  /* Login card — solid & readable (overrides glass) */
-  #loginOverlay .login-card{
-    background: #ffffff !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    opacity: 1 !important;
-    color: #12312b;
-    border: 1px solid rgba(255,255,255,.9);
-    box-shadow:
-      0 4px 6px rgba(0,0,0,.08),
-      0 24px 48px rgba(0,0,0,.35) !important;
-  }
-  #loginOverlay .login-card h1{
-    color: #0f2924 !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-card p,
-  #loginOverlay .login-card .login-note,
-  #loginOverlay #loginNote{
-    color: #5a6f6a !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-card label{
-    color: #1a5c52 !important;
-  }
-  #loginOverlay .login-card input{
-    background: #fff !important;
-    color: #12312b !important;
-    border: 1.5px solid #d5e0dc !important;
-  }
-  #loginOverlay .login-card input::placeholder{
-    color: #9aada7;
-  }
-  #loginOverlay #loginBtn{
-    background: #1a7a6d !important;
-    color: #fff !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay #toggleAuthMode{
-    color: #1a5c52 !important;
-    background: #f3f7f6 !important;
-    border: 1px solid #d5e0dc;
-    border-radius: 10px;
-    padding: 10px 12px;
-    text-decoration: none !important;
-    display: block;
-    text-align: center;
-    margin-top: 12px;
-    font-weight: 600;
-  }
-  /* Stronger background motion */
-  #loginOverlay .login-orb-a{
-    opacity: .75 !important;
-    animation: loginDriftA 9s ease-in-out infinite alternate !important;
-  }
-  #loginOverlay .login-orb-b{
-    opacity: .55 !important;
-    animation: loginDriftB 7s ease-in-out infinite alternate !important;
-  }
-  #loginOverlay .login-orb-c{
-    opacity: .35 !important;
-    animation: loginDriftC 11s ease-in-out infinite alternate !important;
-  }
-  #loginOverlay .login-ring{
-    border-width: 2px !important;
-  }
-  #loginOverlay .login-ring-1{
-    border-color: rgba(78,205,196,.35) !important;
-    animation: loginSpin 18s linear infinite !important;
-  }
-  #loginOverlay .login-ring-2{
-    border-color: rgba(255,255,255,.18) !important;
-    animation: loginSpin 24s linear infinite reverse !important;
-  }
-  #loginOverlay .login-cross{
-    opacity: .45 !important;
-  }
-  #loginOverlay .login-particle{
-    width: 7px; height: 7px;
-    background: rgba(255,255,255,.75) !important;
-    box-shadow: 0 0 14px rgba(78,205,196,.85) !important;
-  }
-  #loginOverlay .login-line{
-    position: absolute;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(78,205,196,.35), transparent);
-    animation: loginLine 6s ease-in-out infinite;
-  }
-  #loginOverlay .login-line.l1{ top: 22%; left: 0; width: 40%; animation-delay: 0s; }
-  #loginOverlay .login-line.l2{ top: 58%; right: 0; width: 35%; animation-delay: -2s; }
-  #loginOverlay .login-line.l3{ top: 78%; left: 20%; width: 45%; animation-delay: -4s; }
-  @keyframes loginLine{
-    0%,100%{ opacity: .2; transform: translateX(-8%); }
-    50%{ opacity: .7; transform: translateX(8%); }
-  }
-
-
-  /* ===== Light medical login (liquid gradient) ===== */
-  #loginOverlay{
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 200 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 24px !important;
-    background: #f0fdf4 !important;
-    overflow: hidden !important;
-  }
-  #loginOverlay.hidden{ display: none !important; }
-  #loginOverlay .login-bg{
-    position: absolute !important;
-    inset: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-    background: #f0fdf4 !important;
-  }
-  #loginOverlay .login-liquid{
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    will-change: transform, opacity;
-    opacity: 0.85;
-  }
-  #loginOverlay .login-liquid-1{
-    width: 55vmax; height: 55vmax;
-    top: -20%; left: -15%;
-    background: #f0fdf4;
-    box-shadow: 0 0 120px 80px #bbf7d0;
-    animation: liquidA 22s ease-in-out infinite alternate;
-  }
-  #loginOverlay .login-liquid-2{
-    width: 50vmax; height: 50vmax;
-    bottom: -25%; right: -18%;
-    background: #f0f9ff;
-    box-shadow: 0 0 100px 70px #bae6fd;
-    animation: liquidB 26s ease-in-out infinite alternate;
-  }
-  #loginOverlay .login-liquid-3{
-    width: 40vmax; height: 40vmax;
-    top: 30%; left: 40%;
-    background: #e6f4ea;
-    box-shadow: 0 0 90px 60px #a7f3d0;
-    opacity: 0.7;
-    animation: liquidC 20s ease-in-out infinite alternate;
-  }
-  #loginOverlay .login-liquid-4{
-    width: 35vmax; height: 35vmax;
-    top: 10%; right: 20%;
-    background: #ecfdf5;
-    box-shadow: 0 0 80px 50px #99f6e4;
-    opacity: 0.55;
-    animation: liquidD 24s ease-in-out infinite alternate;
-  }
-  @keyframes liquidA{
-    from{ transform: translate(0, 0) scale(1); }
-    to{ transform: translate(12%, 14%) scale(1.15); }
-  }
-  @keyframes liquidB{
-    from{ transform: translate(0, 0) scale(1); }
-    to{ transform: translate(-14%, -10%) scale(1.18); }
-  }
-  @keyframes liquidC{
-    from{ transform: translate(0, 0) scale(1); }
-    to{ transform: translate(-10%, 8%) scale(1.12); }
-  }
-  @keyframes liquidD{
-    from{ transform: translate(0, 0) scale(1); }
-    to{ transform: translate(8%, -12%) scale(1.1); }
-  }
-  /* Hide old dark-theme decorations */
-  #loginOverlay .login-orb,
-  #loginOverlay .login-ring,
-  #loginOverlay .login-cross,
-  #loginOverlay .login-particle,
-  #loginOverlay .login-line,
-  #loginOverlay .login-wave,
-  #loginOverlay .login-grid{
-    display: none !important;
-  }
-  /* Crisp glass card */
-  #loginOverlay .login-card{
-    position: relative !important;
-    z-index: 2 !important;
-    width: 100% !important;
-    max-width: 400px !important;
-    padding: 32px 28px 28px !important;
-    background: rgba(255, 255, 255, 0.82) !important;
-    backdrop-filter: blur(20px) saturate(1.2) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.95) !important;
-    outline: 1px solid rgba(15, 118, 110, 0.12) !important;
-    border-radius: 16px !important;
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 12px 40px rgba(15, 23, 42, 0.08) !important;
-    color: #0f172a !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-brand-mark{
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    background: #059669 !important;
-    color: #fff !important;
-    font-weight: 800;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 16px;
-    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.28);
-  }
-  #loginOverlay .login-card h1{
-    font-size: 20px !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    margin: 0 0 6px !important;
-    letter-spacing: -0.02em;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-card p,
-  #loginOverlay #loginSub{
-    font-size: 13px !important;
-    color: #64748b !important;
-    margin: 0 0 20px !important;
-    line-height: 1.45 !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-card label{
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    color: #334155 !important;
-    margin: 14px 0 6px !important;
-  }
-  #loginOverlay .login-card input{
-    width: 100% !important;
-    padding: 12px 14px !important;
-    font-size: 14px !important;
-    color: #0f172a !important;
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
-    box-shadow: none !important;
-  }
-  #loginOverlay .login-card input:focus{
-    outline: none !important;
-    border-color: #059669 !important;
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15) !important;
-  }
-  #loginOverlay #loginBtn{
-    width: 100% !important;
-    margin-top: 20px !important;
-    padding: 12px 16px !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    background: #059669 !important;
-    border: none !important;
-    border-radius: 10px !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
-  }
-  #loginOverlay #loginBtn:hover{
-    background: #047857 !important;
-  }
-  #loginOverlay #loginBtn:disabled{
-    opacity: 0.6 !important;
-    cursor: default !important;
-  }
-  #loginOverlay .login-note,
-  #loginOverlay #loginNote{
-    font-size: 12px !important;
-    color: #64748b !important;
-    margin-top: 14px !important;
-    line-height: 1.45 !important;
-  }
-  #loginOverlay #toggleAuthMode{
-    display: block !important;
-    text-align: center !important;
-    margin-top: 14px !important;
-    padding: 10px 12px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: #047857 !important;
-    background: rgba(255,255,255,0.7) !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
-    text-decoration: none !important;
-  }
-  #loginOverlay #toggleAuthMode:hover{
-    background: #fff !important;
-    border-color: #059669 !important;
-  }
-  @media (prefers-reduced-motion: reduce){
-    #loginOverlay .login-liquid{ animation: none !important; }
-  }
-
-
-  #loginOverlay .login-canvas{
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 0 !important;
-    pointer-events: none !important;
-    display: block !important;
-    opacity: 1 !important;
-  }
-  #loginOverlay .login-card{ z-index: 2 !important; }
-  #loginOverlay .login-liquid{ display: none !important; }
-
-
-  /* High-energy login: neon fluid + stark white card */
-  #loginOverlay{
-    background: #0b3c26 !important;
-  }
-  #loginOverlay .login-card{
-    background: #ffffff !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: 1px solid #ffffff !important;
-    outline: none !important;
-    border-radius: 18px !important;
-    box-shadow:
-      0 4px 6px rgba(0,0,0,.12),
-      0 28px 64px rgba(0,0,0,.45) !important;
-    padding: 34px 30px 30px !important;
-  }
-  #loginOverlay .login-brand-mark{
-    background: #0b3c26 !important;
-    box-shadow: 0 8px 20px rgba(11,60,38,.4) !important;
-  }
-  #loginOverlay .login-card h1{
-    color: #0a0f0d !important;
-  }
-  #loginOverlay .login-card p,
-  #loginOverlay #loginSub,
-  #loginOverlay #loginNote,
-  #loginOverlay .login-note{
-    color: #4b5563 !important;
-  }
-  #loginOverlay .login-card label{
-    color: #1f2937 !important;
-  }
-  #loginOverlay .login-card input{
-    background: #ffffff !important;
-    color: #0a0f0d !important;
-    border: 1.5px solid #e5e7eb !important;
-  }
-  #loginOverlay .login-card input:focus{
-    border-color: #0b3c26 !important;
-    box-shadow: 0 0 0 3px rgba(11,60,38,.18) !important;
-  }
-  #loginOverlay #loginBtn{
-    background: #0b3c26 !important;
-    color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(11,60,38,.35) !important;
-    transition: background .2s ease, transform .15s ease, box-shadow .2s ease !important;
-  }
-  #loginOverlay #loginBtn:hover{
-    background: #072a1b !important;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 22px rgba(11,60,38,.45) !important;
-  }
-  #loginOverlay #toggleAuthMode{
-    background: #f9fafb !important;
-    color: #0b3c26 !important;
-    border: 1px solid #e5e7eb !important;
-  }
-
 </style>
 </head>
 <body>
 
 
 <div id="offlineBanner">You're offline — changes are saved on this device and will sync once you're back online.</div>
-<div id="scaleWarnBanner" style="display:none;position:sticky;top:0;z-index:39;background:#e4edf5;color:#2f5f8a;font-size:12px;font-weight:600;text-align:center;padding:6px 10px;">Large roster — use a month filter and keep page size at 20–50 for best speed. <button type="button" id="scaleWarnDismiss" style="margin-left:8px;font-size:11px;cursor:pointer;">Dismiss</button></div>
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
-  <canvas id="loginCanvas" class="login-canvas" aria-hidden="true"></canvas>
+  <div class="login-bg" aria-hidden="true">
+    <div class="mesh"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="shape shape-ring"></div>
+    <div class="shape shape-ring-2"></div>
+    <div class="shape shape-sq"></div>
+    <div class="shape shape-sq-2"></div>
+    <div class="shape shape-cross"></div>
+    <div class="shape shape-cross-2"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
   <div class="login-card">
-    <div class="login-brand-mark">DR</div>
     <h1 id="loginTitle">DR CARE — Sign in</h1>
-    <p id="loginSub">Divine Rays · Patient Care Tracker · staff accounts</p>
-    <label for="loginEmail">Medical ID / Email</label>
-    <input type="email" id="loginEmail" placeholder="name@clinic.com" autocomplete="username">
+    <p id="loginSub">Divine Rays Patient Operations · individual accounts</p>
+    <label for="loginEmail">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username">
     <label for="loginPassword">Password</label>
     <input type="password" id="loginPassword" autocomplete="current-password">
     <div id="signupNameWrap" style="display:none;">
@@ -1699,7 +1029,7 @@
 <header>
   <div class="header-row">
     <div>
-      <div class="brand-eyebrow">Divine Rays · Patient Care Tracker</div>
+      <div class="brand-eyebrow">Divine Rays Patient Operations</div>
       <h1 class="brand-title">
         <span class="pulse-badge" aria-hidden="true">
           <svg viewBox="0 0 60 24" width="34" height="18" fill="none">
@@ -1711,7 +1041,7 @@
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <div class="who-row"><span id="whoAmI"></span><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -1722,11 +1052,11 @@
   <!-- Row 1: navigation + primary actions -->
   <div class="toolbar-row toolbar-nav">
     <div class="tb-group">
-      <input type="month" id="monthFilter" title="Choose which month's records to view">
+      <input type="month" id="monthFilter" title="Choose which month's patient records to view (mobile & walk-in)">
       <button class="btn btn-ghost btn-sm" id="clearMonthBtn" type="button" title="Show patients from every month">All months</button>
     </div>
     <div class="tb-group">
-      <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
+      <button class="btn btn-primary" id="addTeamBtn">+ Add Mobile / Walk-in</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -1754,16 +1084,7 @@
       <option value="lab-no">Lab not yet availed</option>
       <option value="med-yes">Medicines availed</option>
       <option value="med-no">Medicines not yet</option>
-      <option value="vit-yes">Vitamins availed</option>
-      <option value="vit-no">Vitamins not yet</option>
-      <option value="ref-yes">Referral done</option>
-      <option value="ref-no">Referral not yet</option>
-    </select>
-    <select id="filterType" title="Mobile / walk-in / profiling">
-      <option value="">All types</option>
-      <option value="mobile">Mobile only</option>
-      <option value="walkin">Walk-in only</option>
-      <option value="profiling">Profiling only</option>
+
     </select>
     <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
       <option value="">All records</option>
@@ -1826,14 +1147,11 @@
     <button class="btn" type="button" id="bulkRiceYes">Rice ✓</button>
     <button class="btn" type="button" id="bulkLabYes">Lab ✓</button>
     <button class="btn" type="button" id="bulkMedYes">Meds ✓</button>
-    <button class="btn" type="button" id="bulkVitYes">Vits ✓</button>
-    <button class="btn" type="button" id="bulkRefYes">Referral ✓</button>
     <button class="btn" type="button" id="bulkMcaYes">MCA ✓</button>
     <select id="bulkClaim">
       <option value="">Set claim…</option>
       <option value="pending">Pending</option>
       <option value="t1">T1 Submitted</option>
-      <option value="t2">T2 Submitted</option>
       <option value="missed24">Missed 24h</option>
     </select>
     <select id="bulkStatus">
@@ -1845,11 +1163,24 @@
   </div>
 </div>
 
+
+<!-- Encoder T1/T2 patients modal -->
+<div class="modal-backdrop" id="encT1T2Backdrop">
+  <div class="modal" style="max-width:760px;width:95%">
+    <h3 id="encT1T2Title">T1 & T2 patients</h3>
+    <div class="modal-sub" id="encT1T2Sub">Patients this encoder marked as T1 or T2 Submitted (newest first).</div>
+    <div id="encT1T2Body" style="max-height:60vh;overflow:auto;margin-top:12px"></div>
+    <div style="margin-top:16px;text-align:right">
+      <button type="button" class="btn" id="encT1T2CloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Patient Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <h3 id="modalTitle">Add Patient</h3>
-    <div class="modal-sub">The site/group dropdown controls which list this patient appears under (mobile or walk-in day).</div>
+    <div class="modal-sub">Fields marked with the team dropdown determine which group this row appears under.</div>
     <div class="form-grid">
       <div class="full">
         <label>Patient name (Last, First, Middle, Suffix)</label>
@@ -1861,7 +1192,7 @@
         <div class="dup-warning" id="dupWarning">⚠ This PhilHealth ID already exists in the roster — will be flagged as a duplicate.</div>
       </div>
       <div>
-        <label>Site / group</label>
+        <label>Team / Site</label>
         <select id="f_team"></select>
       </div>
       <div>
@@ -1877,6 +1208,14 @@
         <div class="field-hint" id="facilityHint"></div>
       </div>
       <div>
+        <label>Encoded in</label>
+        <select id="f_encodedIn">
+          <option value="">—</option>
+          <option value="WAH">WAH</option>
+          <option value="BIZBOX">BIZBOX</option>
+        </select>
+      </div>
+      <div>
         <label>Status of claim</label>
         <select id="f_claim">
           <option value="pending">Pending</option>
@@ -1890,12 +1229,8 @@
         <input type="date" id="f_dateEncoded">
       </div>
       <div>
-        <label>T1 submitted date</label>
-        <input type="date" id="f_dateT1">
-      </div>
-      <div>
-        <label>T2 submitted date</label>
-        <input type="date" id="f_dateT2">
+        <label>Date validated &amp; submitted</label>
+        <input type="date" id="f_dateSubmitted">
       </div>
       <div class="full check-grid">
         <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA attachment on file</label></div>
@@ -1903,8 +1238,6 @@
         <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Already availed rice</label></div>
         <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Already availed laboratory</label></div>
         <div class="check-row"><input type="checkbox" id="f_medicine"><label for="f_medicine">Already availed medicines</label></div>
-        <div class="check-row"><input type="checkbox" id="f_vitamins"><label for="f_vitamins">Already availed vitamins</label></div>
-        <div class="check-row"><input type="checkbox" id="f_referral"><label for="f_referral">Referral completed</label></div>
       </div>
       <div class="full">
         <label>PhilHealth ID check</label>
@@ -1941,18 +1274,12 @@
 <!-- Team / Site Modal -->
 <div class="modal-backdrop" id="teamModalBackdrop">
   <div class="modal">
-    <h3 id="teamModalTitle">Add site / group</h3>
-    <div class="modal-sub">Use one group per mobile team, clinic site, or walk-in day (example: “Oct 7, 2026 Walk-in”). List staff if needed.</div>
+    <h3 id="teamModalTitle">Add Mobile / Walk-in</h3>
+    <div class="modal-sub">Name the mobile team/site and list who's managing this field medical mission.</div>
     <div class="form-grid">
       <div class="full">
-        <label>Type</label>
-        <div class="type-switch" id="tm_typeSwitch" role="radiogroup" aria-label="Group type">
-          <label class="active" data-type-lbl="mobile"><input type="radio" name="tm_type" id="tm_type_mobile" value="mobile" checked> Mobile</label>
-          <label data-type-lbl="walkin"><input type="radio" name="tm_type" id="tm_type_walkin" value="walkin"> Walk-in</label>
-          <label data-type-lbl="profiling"><input type="radio" name="tm_type" id="tm_type_profiling" value="profiling"> Profiling</label>
-        </div>
-        <label>Name</label>
-        <input type="text" id="tm_name" placeholder="e.g. Tacloban Mobile">
+        <label>Site name (Mobile / Walk-in)</label>
+        <input type="text" id="tm_name" placeholder="Mobile Staff — Site B">
       </div>
       <div class="full">
         <label>Site location (GPS)</label>
@@ -1995,7 +1322,7 @@
         <h3>Recycle bin</h3>
         <div class="modal-sub">Patients permanently deleted on this device in the last 30 days. Restore puts them back on the roster.</div>
       </div>
-      <button class="dash-close" id="recycleCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="recycleCloseBtn" title="Close"></button>
     </div>
     <div id="recycleBody"></div>
   </div>
@@ -2009,7 +1336,7 @@
         <h3>Send daily report</h3>
         <div class="modal-sub">Email opens your mail app. Slack needs an Incoming Webhook URL (optional).</div>
       </div>
-      <button class="dash-close" id="reportCfgCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="reportCfgCloseBtn" title="Close"></button>
     </div>
     <div class="form-grid">
       <div class="full">
@@ -2028,41 +1355,19 @@
   </div>
 </div>
 
-
-<!-- Facilities admin (opened from Admin) -->
-<div class="dash-backdrop nested" id="facilitiesAdminBackdrop">
-  <div class="dash-modal" style="max-width:520px;">
-    <div class="dash-head">
-      <div>
-        <h3>Facilities / branches</h3>
-        <div class="modal-sub">These names appear in the Facility dropdown on patient forms.</div>
-      </div>
-      <button class="dash-close" id="facilitiesAdminCloseBtn" type="button" title="Close">✕</button>
-    </div>
-    <div id="facilitiesAdminList"></div>
-    <div class="benefit-admin-row" style="margin-top:12px;">
-      <input type="text" id="newFacilityLabel" placeholder="e.g. Catbalogan, Calbayog">
-      <button class="btn btn-primary" type="button" id="addFacilityBtn">Add</button>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-primary" type="button" id="facilitiesAdminDone">Save &amp; close</button>
-    </div>
-  </div>
-</div>
-
 <!-- Custom benefits admin (opened from Admin) -->
-<div class="dash-backdrop nested" id="benefitsAdminBackdrop">
+<div class="dash-backdrop" id="benefitsAdminBackdrop">
   <div class="dash-modal" style="max-width:520px;">
     <div class="dash-head">
       <div>
         <h3>Custom benefits</h3>
-        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines, vitamins, referral. Stored for this organization.</div>
+        <div class="modal-sub">Add extra benefit types beyond rice, lab, medicines. Stored for this organization.</div>
       </div>
-      <button class="dash-close" id="benefitsAdminCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="benefitsAdminCloseBtn" title="Close"></button>
     </div>
     <div id="benefitsAdminList"></div>
     <div class="benefit-admin-row" style="margin-top:12px;">
-      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Vitamins B">
+      <input type="text" id="newBenefitLabel" placeholder="e.g. PPE, Transport, Other">
       <button class="btn btn-primary" type="button" id="addBenefitBtn">Add</button>
     </div>
     <div class="modal-foot">
@@ -2073,110 +1378,39 @@
 
 <!-- Dashboard -->
 <div class="dash-backdrop" id="dashBackdrop">
-  <div class="dash-modal" style="max-width:980px;">
+  <div class="dash-modal">
     <div class="dash-head">
       <div>
         <h3>Metrics Dashboard</h3>
-        <div class="modal-sub">Your accomplishments (encoders) or team-wide KPIs (admins). Filter by day, week, month, site, and encoder.</div>
+        <div class="modal-sub">KPIs, encoder productivity (who encoded what), and per-site totals for the selected month/scope (mobile & walk-in).</div>
       </div>
-      <button class="dash-close" id="dashCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="dashCloseBtn" title="Close"></button>
     </div>
-    <div class="dash-controls" style="flex-wrap:wrap;gap:8px;align-items:flex-end;">
-      <div>
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Period</label>
-        <select id="dashRangeMode">
-          <option value="day">Day</option>
-          <option value="week">Week</option>
-          <option value="month" selected>Month</option>
-          <option value="all">All time</option>
-        </select>
-      </div>
-      <div id="dashDayWrap" style="display:none;">
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Date</label>
-        <input type="date" id="dashDayInput">
-      </div>
-      <div id="dashWeekWrap" style="display:none;">
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Week of</label>
-        <input type="date" id="dashWeekInput">
-      </div>
-      <div id="dashMonthWrap">
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Month</label>
-        <select id="dashMonthSelect"></select>
-      </div>
-      <div>
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Site / group</label>
-        <select id="dashTeamSelect"></select>
-      </div>
-      <div id="dashEncoderWrap" style="min-width:160px;">
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
-        <select id="dashEncoderSelect" multiple size="1" style="min-width:160px;min-height:34px;"></select>
-        <div class="field-hint" id="dashEncoderHint" style="margin:2px 0 0;">Admin: multi-select encoders. Leave empty = all.</div>
-      </div>
-      <span class="dash-scope-note" id="dashScopeNote" style="align-self:center;"></span>
+    <div class="dash-controls">
+      <select id="dashMonthSelect"></select>
+      <select id="dashTeamSelect"></select>
+      <span class="dash-scope-note" id="dashScopeNote"></span>
     </div>
     <div id="dashBody"></div>
   </div>
 </div>
 
-
-<!-- Account settings -->
-<div class="dash-backdrop" id="accountBackdrop">
-  <div class="dash-modal" style="max-width:420px;">
-    <div class="dash-head">
-      <div>
-        <h3>My account</h3>
-        <div class="modal-sub">Update your display name or password. Email is your login ID.</div>
-      </div>
-      <button class="dash-close" id="accountCloseBtn" type="button" title="Close">✕</button>
-    </div>
-    <div class="form-grid" style="margin-top:8px;">
-      <div class="full">
-        <label>Email (login)</label>
-        <input type="email" id="acc_email" disabled style="opacity:.7;">
-      </div>
-      <div class="full">
-        <label>Display name</label>
-        <input type="text" id="acc_name" placeholder="Your name">
-      </div>
-      <div class="full">
-        <label>New password</label>
-        <input type="password" id="acc_pass" placeholder="Leave blank to keep current" autocomplete="new-password">
-        <div class="field-hint">At least 6 characters if changing.</div>
-      </div>
-      <div class="full">
-        <label>Confirm new password</label>
-        <input type="password" id="acc_pass2" placeholder="Repeat new password" autocomplete="new-password">
-      </div>
-      <div class="full" id="acc_msg" style="display:none;font-size:12.5px;font-weight:600;"></div>
-    </div>
-    <div class="modal-foot">
-      <button type="button" class="btn btn-ghost" id="accountCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-primary" id="accountSaveBtn">Save changes</button>
-    </div>
-  </div>
-</div>
-
 <!-- Admin panel -->
 <div class="dash-backdrop" id="adminBackdrop">
-  <div class="dash-modal" style="max-width:780px;">
+  <div class="dash-modal" style="max-width:720px;">
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
+        <div class="modal-sub">Approve who can log in, and set roles. New signups stay blocked until you check Approved.</div>
       </div>
-      <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="adminCloseBtn" title="Close"></button>
     </div>
     <div style="margin:12px 0 16px;padding:12px 14px;background:var(--table-head);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5;">
       <b style="color:var(--ink);">How to add a new user:</b><br>
       1. Staff opens the app → “Need an account? Sign up” → creates email + password.<br>
       2. They appear here as <b>Pending</b> (highlighted) and cannot log in yet.<br>
-      3. Check <b>Approve login</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
+      3. Check <b>Approved</b> and set role to <b>encoder</b>, <b>viewer</b>, or <b>admin</b>.
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;">
-      <button type="button" class="btn" id="openBenefitsAdminBtn">Custom benefits…</button>
-      <button type="button" class="btn" id="openFacilitiesAdminBtn">Manage facilities / branches…</button>
-    </div>
-    <div class="field-hint" style="margin:-8px 0 14px;">Benefits and facilities open <b>on top</b> of this panel. Add, rename, or remove items, then Done.</div>
     <div id="adminUsersBody"></div>
   </div>
 </div>
@@ -2189,7 +1423,7 @@
         <h3>Recent Activity</h3>
         <div class="modal-sub">Latest adds, edits, and archives across the roster (from this device + synced data).</div>
       </div>
-      <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
+      <button class="dash-close" id="activityCloseBtn" title="Close"></button>
     </div>
     <div id="activityBody" style="max-height:60vh;overflow-y:auto;"></div>
   </div>
@@ -2311,48 +1545,48 @@ function idbGet(key){
 }
 
 async function saveLocalCache(){
+  let idbOk = false;
   try{
-    // Strip bulky MCA data-URLs from roster cache — keep photos in a side store
-    const photoMap = {};
-    const slim = state.patients.map(p=>{
-      if(p.mcaPhoto && String(p.mcaPhoto).startsWith('data:')){
-        photoMap[p.id] = p.mcaPhoto;
-        const { mcaPhoto, ...rest } = p;
-        return { ...rest, mcaPhoto: p.mca ? '__local__' : null };
-      }
-      return p;
-    });
-    await idbSet('roster', slim);
-    await idbSet('roster_photos', photoMap);
-    return true;
+    await idbSet('roster', state.patients);
+    idbOk = true;
   }catch(e){
-    console.warn('saveLocalCache', e);
+    console.error('IndexedDB save failed', e);
+  }
+  // Best-effort localStorage mirror (may fail on large rosters — that is OK)
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify(state.patients));
+  }catch(e){
+    try{ localStorage.removeItem(CACHE_KEY); }catch(_){}
+  }
+  if(!idbOk){
     try{ setSyncStatus('Save failed — storage error', 'err'); }catch(_){}
     return false;
   }
+  return true;
 }
 
 async function loadLocalCache(){
+  // Prefer IndexedDB (full roster)
   try{
-    const data = await idbGet('roster');
-    if(Array.isArray(data)){
-      state.patients = data;
-    } else if(!Array.isArray(state.patients)){
-      state.patients = [];
-    }
-    const photos = await idbGet('roster_photos');
-    if(photos && typeof photos === 'object' && Array.isArray(state.patients)){
-      state.patients.forEach(p=>{
-        if(photos[p.id]) p.mcaPhoto = photos[p.id];
-        else if(p.mcaPhoto === '__local__') p.mcaPhoto = null;
-      });
-    }
-    return state.patients;
+    const fromIdb = await idbGet('roster');
+    if(Array.isArray(fromIdb) && fromIdb.length) return fromIdb;
   }catch(e){
-    console.warn('loadLocalCache', e);
-    if(!Array.isArray(state.patients)) state.patients = [];
-    return state.patients;
+    console.error('IndexedDB load failed', e);
   }
+  // Fallback: older localStorage cache
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    if(Array.isArray(parsed) && parsed.length){
+      // migrate into IndexedDB in background
+      idbSet('roster', parsed).catch(()=>{});
+      return parsed;
+    }
+  }catch(e){
+    console.error('localStorage load failed', e);
+  }
+  return [];
 }
 
 function cryptoId(){
@@ -2360,58 +1594,26 @@ function cryptoId(){
   return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
 }
 
-function emptyToNull(v){
-  if(v == null) return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
-function toRemote(p, mode){
-  // mode: 'full' | 'core' (strip extended cols unknown to older schemas)
+function toRemote(p){
   const uid = (currentUser && currentUser.id) || null;
-  let claim = p.claim || 'pending';
-  // Older DBs may only allow pending/t1/missed24 — map t2 for core mode
-  const core = {
-    id: p.id,
-    team: p.team || null,
-    name: p.name || '',
-    phid: p.phid || '',
-    status: p.status || 'registered',
-    facility: p.facility || null,
-    mca: !!p.mca,
-    date_encoded: emptyToNull(p.dateEncoded),
-    date_submitted: emptyToNull(p.dateT1 || p.dateSubmitted),
-    within24: !!p.within24,
-    claim: claim,
-    rice: !!p.rice,
-    lab: !!p.lab,
+  return {
+    id: p.id, team: p.team, name: p.name || '', phid: p.phid || '', status: p.status, facility: p.facility,
+    mca: !!p.mca, date_encoded: p.dateEncoded || null, date_submitted: p.dateSubmitted || null,
+    within24: !!p.within24, claim: p.claim, rice: !!p.rice, lab: !!p.lab,
+    medicine: !!p.medicine, vitamins: !!p.vitamins, referral: !!p.referral,
     notes: p.notes || '',
-    deleted: !!p.deleted,
-    updated_at: new Date().toISOString()
-  };
-  if(uid && /^[0-9a-f-]{36}$/i.test(uid)){
-    core.created_by = p.createdBy && /^[0-9a-f-]{36}$/i.test(p.createdBy) ? p.createdBy : uid;
-    core.updated_by = uid;
-  }
-  if(mode === 'core'){
-    // Prefer safe claim values if t2 unsupported
-    if(claim === 't2') core.claim = 't1';
-    return core;
-  }
-  return Object.assign({}, core, {
-    date_t1: emptyToNull(p.dateT1 || p.dateSubmitted),
-    date_t2: emptyToNull(p.dateT2),
-    medicine: !!p.medicine,
-    vitamins: !!p.vitamins,
-    referral: !!p.referral,
     mca_photo: p.mcaPhoto ? String(p.mcaPhoto).slice(0, 350000) : null,
     custom_benefits: p.customBenefits || {},
-    history: Array.isArray(p.history) ? p.history.slice(-40) : []
-  });
+    history: Array.isArray(p.history) ? p.history.slice(-40) : [],
+    deleted: !!p.deleted, updated_at: new Date().toISOString(),
+    created_by: p.createdBy || uid,
+    updated_by: uid
+  };
 }
 function fromRemote(r){
   return {
     id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
-    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '', dateT1: r.date_t1 || r.date_submitted || '', dateT2: r.date_t2 || '',
+    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
     within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab,
     medicine: !!r.medicine, vitamins: !!r.vitamins, referral: !!r.referral,
     notes: r.notes || '',
@@ -2480,7 +1682,7 @@ async function loadCurrentProfile(session){
 
 async function loadAllProfiles(){
   try{
-    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at, last_seen');
+    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at');
     if(error) throw error;
     (data || []).forEach(p => { profileCache[p.id] = p; });
     return data || [];
@@ -2511,25 +1713,23 @@ function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigato
 
 async function pushOne(p){
   try{
-    // Attempt 1: full payload (new columns)
-    let payload = toRemote(p, 'full');
+    let payload = toRemote(p);
     let { error } = await sb.from('patients').upsert(payload);
+    // If Supabase schema lacks extended columns, strip them and retry once
     if(error){
-      const msg = (error.message || error.details || error.hint || JSON.stringify(error) || '');
-      console.warn('pushOne full failed', p && p.id, msg, error);
-      // Attempt 2: core columns only (always retry on any 400/schema/check error)
-      payload = toRemote(p, 'core');
-      let retry = await sb.from('patients').upsert(payload);
-      error = retry.error;
-      if(error){
-        // Attempt 3: drop created_by/updated_by (UUID / RLS edge cases)
-        delete payload.created_by;
-        delete payload.updated_by;
-        retry = await sb.from('patients').upsert(payload);
+      const msg = (error.message || error.details || JSON.stringify(error) || '').toLowerCase();
+      if(/column|schema|mca_photo|custom_benefits|history|medicine|vitamins|referral|does not exist|could not find/i.test(msg)){
+        delete payload.mca_photo;
+        delete payload.custom_benefits;
+        delete payload.history;
+        delete payload.medicine;
+        delete payload.vitamins;
+        delete payload.referral;
+        const retry = await sb.from('patients').upsert(payload);
         error = retry.error;
-      }
-      if(!error){
-        console.warn('Synced core fields only for', p.id, '— add missing columns in Supabase if needed');
+        if(!error){
+          console.warn('Synced core fields only — run Supabase migration for extended columns');
+        }
       }
     }
     if(error) throw error;
@@ -2658,46 +1858,6 @@ function loadTeamStaffCache(){
 }
 function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
 
-const TEAM_META_KEY = 'drcare_team_meta';
-let teamMeta = {};
-function loadTeamMeta(){
-  try{ teamMeta = JSON.parse(localStorage.getItem(TEAM_META_KEY) || '{}'); }catch(e){ teamMeta = {}; }
-  if(!teamMeta || typeof teamMeta !== 'object') teamMeta = {};
-}
-function saveTeamMeta(){
-  try{ localStorage.setItem(TEAM_META_KEY, JSON.stringify(teamMeta)); }catch(e){}
-}
-function getTeamType(name){
-  const t = teamMeta[name] && teamMeta[name].type;
-  if(t === 'walkin' || t === 'profiling') return t;
-  return 'mobile';
-}
-function setTeamType(name, type){
-  if(!name) return;
-  const allowed = { mobile:1, walkin:1, profiling:1 };
-  teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { type: allowed[type] ? type : 'mobile' });
-  saveTeamMeta();
-}
-function teamTypeLabel(t){
-  if(t === 'walkin') return 'Walk-in';
-  if(t === 'profiling') return 'Profiling';
-  return 'Mobile';
-}
-async function pushTeamMeta(){
-  try{ await sb.from('settings').upsert({ key: 'teamMeta', value: JSON.stringify(teamMeta) }); }catch(e){}
-}
-async function pullTeamMeta(){
-  try{
-    const { data } = await sb.from('settings').select('value').eq('key','teamMeta').maybeSingle();
-    if(data && data.value){
-      const parsed = JSON.parse(data.value);
-      if(parsed && typeof parsed === 'object'){ teamMeta = parsed; saveTeamMeta(); }
-    }
-  }catch(e){}
-}
-loadTeamMeta();
-
-
 function staffEntryToText(s){
   if(typeof s === 'string') return s;
   if(s && typeof s === 'object'){
@@ -2721,19 +1881,6 @@ async function pullTeamStaff(){
       saveTeamStaffCache();
     }
   }catch(e){ /* ignore, offline or not set up yet */ }
-}
-
-/* Performance: coalesce rapid re-renders */
-let _renderAllTimer = null;
-let _renderAllPending = false;
-function scheduleRenderAll(delay){
-  if(typeof renderAll !== 'function') return;
-  _renderAllPending = true;
-  if(_renderAllTimer) return;
-  _renderAllTimer = setTimeout(()=>{
-    _renderAllTimer = null;
-    if(_renderAllPending){ _renderAllPending = false; renderAll(); }
-  }, delay == null ? 50 : delay);
 }
 
 /* Called after any local add/edit/delete */
@@ -2775,22 +1922,19 @@ const statStrip = document.getElementById('statStrip');
 const legend = document.getElementById('legend');
 /* Teams start collapsed; only teams the user expands are in this set */
 const expandedTeams = new Set();
-/* Per-mobile pagination: page size is shared; each team keeps its own page index. */
+/* Per-site pagination: page size is shared; each team keeps its own page index. */
 let pageSizePreference = (function(){
   try{
     const v = localStorage.getItem('roster_page_size');
-    // "all" retired — too heavy at scale; map to 100
-    if(v === 'all') return '100';
-    if(v === '10' || v === '20' || v === '50' || v === '100') return v;
+    if(v === 'all' || v === '10' || v === '20' || v === '50') return v;
   }catch(e){}
   return '20';
 })();
 const teamPageIndex = {}; // teamName -> 0-based page
-const MAX_PAGE_SIZE = 100;
 function getPageSize(){
+  if(pageSizePreference === 'all') return Infinity;
   const n = parseInt(pageSizePreference, 10);
-  if(!(n > 0)) return 20;
-  return Math.min(n, MAX_PAGE_SIZE);
+  return (n > 0) ? n : 20;
 }
 function setPageSizePreference(val){
   pageSizePreference = String(val);
@@ -2806,100 +1950,17 @@ function setTeamPage(team, page){
 }
 
 
-const KNOWN_TEAMS_KEY = 'drcare_known_teams';
-let knownTeams = []; // persisted list of site/group names (survives refresh)
-function loadKnownTeams(){
-  try{
-    const raw = localStorage.getItem(KNOWN_TEAMS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    knownTeams = Array.isArray(arr) ? arr.map(String).filter(Boolean) : [];
-  }catch(e){ knownTeams = []; }
-}
-function saveKnownTeams(){
-  try{ localStorage.setItem(KNOWN_TEAMS_KEY, JSON.stringify(knownTeams)); }catch(e){}
-}
-function registerKnownTeam(name){
-  if(!name) return;
-  // User explicitly re-created this group — allow it again
-  removedTeams = new Set([...removedTeams].filter(t => t.toLowerCase() !== name.toLowerCase()));
-  saveRemovedTeams();
-  if(!knownTeams.some(t => t.toLowerCase() === name.toLowerCase())){
-    knownTeams.push(name);
-    saveKnownTeams();
-  } else {
-    const i = knownTeams.findIndex(t => t.toLowerCase() === name.toLowerCase());
-    if(i >= 0) knownTeams[i] = name;
-    saveKnownTeams();
-  }
-}
-const REMOVED_TEAMS_KEY = 'drcare_removed_teams';
-let removedTeams = new Set();
-function loadRemovedTeams(){
-  try{
-    const arr = JSON.parse(localStorage.getItem(REMOVED_TEAMS_KEY) || '[]');
-    removedTeams = new Set(Array.isArray(arr) ? arr.map(String) : []);
-  }catch(e){ removedTeams = new Set(); }
-}
-function saveRemovedTeams(){
-  try{ localStorage.setItem(REMOVED_TEAMS_KEY, JSON.stringify([...removedTeams])); }catch(e){}
-}
-loadRemovedTeams();
-
-function unregisterKnownTeam(name){
-  if(!name) return;
-  knownTeams = knownTeams.filter(t => t !== name && t.toLowerCase() !== String(name).toLowerCase());
-  saveKnownTeams();
-  removedTeams.add(name);
-  // also match case variants already in set
-  [...removedTeams].forEach(x=>{ if(x.toLowerCase()===name.toLowerCase()) removedTeams.add(x); });
-  removedTeams.add(name);
-  saveRemovedTeams();
-}
-function renameKnownTeam(oldName, newName){
-  knownTeams = knownTeams.map(t => t === oldName ? newName : t);
-  if(!knownTeams.includes(newName)) knownTeams.push(newName);
-  saveKnownTeams();
-}
-async function pushKnownTeams(){
-  try{ await sb.from('settings').upsert({ key: 'knownTeams', value: JSON.stringify(knownTeams) }); }catch(e){}
-}
-async function pullKnownTeams(){
-  try{
-    loadRemovedTeams();
-    const { data } = await sb.from('settings').select('value').eq('key','knownTeams').maybeSingle();
-    if(data && data.value){
-      const arr = JSON.parse(data.value);
-      if(Array.isArray(arr)){
-        const set = new Set([...knownTeams, ...arr.map(String)].filter(Boolean));
-        // Drop anything the user removed on this device
-        knownTeams = [...set].filter(t => ![...removedTeams].some(r => r.toLowerCase() === String(t).toLowerCase()));
-        saveKnownTeams();
-      }
-    }
-  }catch(e){}
-}
-loadKnownTeams();
-
 function getTeams(){
   const t = new Set(
     state.patients
       .filter(p => showArchived ? p.deleted : !p.deleted)
       .map(p => p.team)
-      .filter(Boolean)
   );
-  // Session-only empty groups (legacy)
+  // Only surface brand-new empty mobiles created this session.
+  // Do NOT pull every teamStaff key — that caused empty mobiles to appear in every month.
   if(!showArchived){
     pendingEmptyTeams.forEach(x=>t.add(x));
   }
-  // Persisted empty/known groups (survives refresh). Staff/meta alone do NOT recreate a removed group.
-  if(!showArchived){
-    knownTeams.forEach(x=>{ if(x) t.add(x); });
-  }
-  // Never show groups the user explicitly removed
-  try{
-    loadRemovedTeams();
-    removedTeams.forEach(x => t.delete(x));
-  }catch(e){}
   return [...t];
 }
 const pendingEmptyTeams = new Set();
@@ -2915,15 +1976,12 @@ let showArchived = false;
 
 function monthPatients(){
   const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
-  const wantDeleted = showArchived;
-  // Fast path: no month filter
-  if(!month){
-    return state.patients.filter(p => wantDeleted ? p.deleted : !p.deleted);
-  }
   return state.patients.filter(p=>{
-    if(wantDeleted ? !p.deleted : p.deleted) return false;
+    if(showArchived ? !p.deleted : p.deleted) return false;
+    if(!month) return true;
     const enc = (p.dateEncoded||'').trim();
-    if(!enc) return true; // undated stay visible
+    // Undated rows stay visible in every month view so imports without dates are not "lost"
+    if(!enc) return true;
     return enc.slice(0,7) === month;
   });
 }
@@ -2952,10 +2010,6 @@ function filteredPatients(){
     if(bf === 'lab-no' && p.lab) return false;
     if(bf === 'med-yes' && !p.medicine) return false;
     if(bf === 'med-no' && p.medicine) return false;
-    if(bf === 'vit-yes' && !p.vitamins) return false;
-    if(bf === 'vit-no' && p.vitamins) return false;
-    if(bf === 'ref-yes' && !p.referral) return false;
-    if(bf === 'ref-no' && p.referral) return false;
     if(dupFilter === 'dup-only' && !isDuplicate(p.phid, p.id)) return false;
     if(dupFilter === 'unique-only' && isDuplicate(p.phid, p.id)) return false;
     return true;
@@ -3023,7 +2077,7 @@ function autoFlagMissedClaims(){
     // Already marked within 24h — do not force Missed 24h
     if(p.within24) return;
     // Prefer date submitted; fall back to date encoded. No date → leave Pending.
-    const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
+    const base = (p.dateSubmitted || p.dateEncoded || '').trim();
     if(!base) return;
     const deadline = claimDeadline(base);
     if(deadline && now >= deadline){
@@ -3061,8 +2115,7 @@ function renderStats(){
     ["Rice", all.filter(p=>p.rice).length, ''],
     ["Lab", all.filter(p=>p.lab).length, ''],
     ["Meds", all.filter(p=>p.medicine).length, ''],
-    ["Vits", all.filter(p=>p.vitamins).length, ''],
-    ["Referral", all.filter(p=>p.referral).length, ''],
+
     ["Duplicates", countDuplicateExtras(all), ''],
     ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
   ];
@@ -3080,7 +2133,7 @@ function renderLegend(){
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
     <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
-    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/vits/referral/MCA, or set claim and status for many patients at once</span>
+    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/MCA, or set claim and status for many patients at once</span>
     <span><b>Daily report:</b> downloads a per-team summary CSV for the current month filter (totals, benefits, claims, duplicates)</span>
     <span><b>PhilHealth ID:</b> auto-formats to ####-####-####; save warns if the ID is not a full 12 digits</span>
     <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
@@ -3112,9 +2165,7 @@ function restoreScrollPositions(positions){
 function renderAll(){
   const savedScroll = captureScrollPositions();
   autoFlagMissedClaims();
-  rebuildPhidIndex();
-  try{ preferMonthIfLarge(); updateScaleWarn(); }catch(e){}
-  // rebuildPhidIndex is O(n) once — used by duplicate checks instead of O(n²) scans
+  rebuildPhidIndex(); // O(n) once — used by duplicate checks instead of O(n²) scans
   state.patients.forEach(normalizeFacility);
   renderStats();
   renderLegend();
@@ -3131,29 +2182,16 @@ function renderAll(){
   let teamsToShow = teams;
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team));
-    teamsToShow = teams.filter(t => {
-      if([...removedTeams].some(r => r.toLowerCase() === String(t).toLowerCase())) return false;
-      return teamsWithPatients.has(t) || pendingEmptyTeams.has(t) || knownTeams.includes(t);
-    });
+    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
   }
-  const typeFilter = (document.getElementById('filterType') || {}).value || '';
-  if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
-    teamsToShow = teamsToShow.filter(t => getTeamType(t) === typeFilter);
-  }
-  teamsToShow = teamsToShow.slice().sort(function(a,b){
-    const order = { mobile:0, walkin:1, profiling:2 };
-    const ta = getTeamType(a), tb = getTeamType(b);
-    if(ta !== tb) return (order[ta]||0) - (order[tb]||0);
-    return a.localeCompare(b);
-  });
 
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No records for ${monthLabel(monthVal)}. Switch months, or add a site/group (mobile or walk-in) and encode patients.`
-      : `No sites yet. Click “+ Add site / group” (mobile team or walk-in day), then “+ Add Patient”.`;
+      ? `No patient records for ${monthLabel(monthVal)}. Switch months, or add a mobile and encode patients for this month.`
+      : `No sites yet. Click “+ Add Mobile / Walk-in” to start one, then use its “+ Add Patient” button.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}
-      <div class="empty-state-cta"><button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add site / group</button></div>
+      <div class="empty-state-cta"><button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add Mobile / Walk-in</button></div>
     </div>`;
     const ebtn = document.getElementById('emptyAddBtn');
     if(ebtn) ebtn.addEventListener('click', ()=>{ document.getElementById('addTeamBtn')?.click(); });
@@ -3169,19 +2207,20 @@ function renderAll(){
 
     const size = getPageSize();
     const totalFiltered = allRows.length;
-    const totalPages = Math.max(1, Math.ceil(totalFiltered / size));
+    const totalPages = size === Infinity ? 1 : Math.max(1, Math.ceil(totalFiltered / size));
     let page = getTeamPage(team);
     if(page > totalPages - 1) page = totalPages - 1;
     if(page < 0) page = 0;
     setTeamPage(team, page);
-    const start = page * size;
-    const end = Math.min(start + size, totalFiltered);
+    const start = size === Infinity ? 0 : page * size;
+    const end = size === Infinity ? totalFiltered : Math.min(start + size, totalFiltered);
     const rows = allRows.slice(start, end);
     const showingFrom = totalFiltered === 0 ? 0 : start + 1;
     const showingTo = end;
-    const sizeOpts = ['10','20','50','100'].map(v=>{
+    const sizeOpts = ['10','20','50','all'].map(v=>{
       const selected = String(pageSizePreference) === v ? 'selected' : '';
-      return `<option value="${v}" ${selected}>${v}</option>`;
+      const label = v === 'all' ? 'All' : v;
+      return `<option value="${v}" ${selected}>${label}</option>`;
     }).join('');
     const pagerHtml = totalFiltered === 0 ? '' : `
       <div class="team-pager" data-pager-team="${escapeAttr(team)}">
@@ -3201,15 +2240,15 @@ function renderAll(){
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
-          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
-          <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
-          ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
+          <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this site's patients to CSV">${icon('download',13)} Export</button>
+          ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this site">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
           <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${totalInTeam === 0 ? `${icon('trash',13)} Remove` : `${icon('archive',13)} Archive`}</button>` : ''}
           ${canEdit() && showArchived ? (totalInTeam === 0
@@ -3225,13 +2264,13 @@ function renderAll(){
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th>
-              <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
-              <th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th></th>
+              <th>Digital MCA</th><th>Date validated<br>&amp; submitted</th>
+              <th>Within 24h</th><th>Status of claim</th><th>Encoded in</th><th>Duplicate tracker</th>
+              <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="16" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="15" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -3318,17 +2357,20 @@ function rowHtml(p){
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
-      <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
+      <td class="datecell"><input type="date" data-field="dateSubmitted" value="${p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td style="text-align:center"><select class="badge-select" data-field="encodedIn" style="min-width:90px">
+        <option value="" ${!(p.encodedIn)?'selected':''}>—</option>
+        <option value="WAH" ${p.encodedIn==='WAH'?'selected':''}>WAH</option>
+        <option value="BIZBOX" ${p.encodedIn==='BIZBOX'?'selected':''}>BIZBOX</option>
       </select></td>
       <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="vitamins" ${p.vitamins?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="referral" ${p.referral?'checked':''}></td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
@@ -3367,25 +2409,8 @@ function icon(name, size=15, extraStyle=''){
 
 function populateTeamSelect(teams){
   const sel = document.getElementById('f_team');
-  if(!sel) return;
   const current = sel.value;
-  const mobiles = teams.filter(t => getTeamType(t) === 'mobile');
-  const walkins = teams.filter(t => getTeamType(t) === 'walkin');
-  const profiling = teams.filter(t => getTeamType(t) === 'profiling');
-  let htmlOpts = '';
-  if(mobiles.length){
-    htmlOpts += `<optgroup label="Mobile">${mobiles.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
-  }
-  if(walkins.length){
-    htmlOpts += `<optgroup label="Walk-in">${walkins.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
-  }
-  if(profiling.length){
-    htmlOpts += `<optgroup label="Profiling">${profiling.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
-  }
-  if(!htmlOpts){
-    htmlOpts = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
-  }
-  sel.innerHTML = htmlOpts;
+  sel.innerHTML = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
   if(teams.includes(current)) sel.value = current;
 }
 
@@ -3445,7 +2470,7 @@ groupsContainer.addEventListener('click', e=>{
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(count === 0){
-      if(confirm(`Remove empty group "${team}"?`)){
+      if(confirm(`Remove empty mobile "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -3471,7 +2496,7 @@ groupsContainer.addEventListener('click', e=>{
     const count = state.patients.filter(p=>p.team===team && p.deleted).length;
     if(count === 0){
       // Empty shell left in archived view — just remove it
-      if(confirm(`Remove empty group "${team}"?`)){
+      if(confirm(`Remove empty mobile "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -3519,7 +2544,7 @@ groupsContainer.addEventListener('click', e=>{
     const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
     const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
     if(ids.length === 0){
-      if(confirm(`Remove empty group "${team}"?`)){
+      if(confirm(`Remove empty mobile "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
@@ -3532,14 +2557,18 @@ groupsContainer.addEventListener('click', e=>{
 });
 
 function removeEmptyTeam(team){
-  if(!team) return;
   pendingEmptyTeams.delete(team);
-  unregisterKnownTeam(team);
-  try{ delete teamStaff[team]; saveTeamStaffCache(); pushTeamStaff(); }catch(e){}
-  try{ delete teamMeta[team]; saveTeamMeta(); pushTeamMeta(); }catch(e){}
-  try{ pushKnownTeams(); }catch(e){}
+  delete teamStaff[team];
   expandedTeams.delete(team);
-  renderAll();
+  saveTeamStaffCache();
+  pushTeamStaff();
+  // Only remove the team shell — don't touch patients that still exist under other filters
+  const stillHasPatients = state.patients.some(p => p.team === team);
+  if(!stillHasPatients){
+    renderAll();
+  } else {
+    renderAll();
+  }
 }
 
 async function permanentlyDeletePatients(ids){
@@ -3658,12 +2687,6 @@ document.getElementById('bulkLabYes').addEventListener('click', ()=>{
 document.getElementById('bulkMedYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.medicine = true; });
 });
-document.getElementById('bulkVitYes').addEventListener('click', ()=>{
-  applyBulkChange(p => { p.vitamins = true; });
-});
-document.getElementById('bulkRefYes').addEventListener('click', ()=>{
-  applyBulkChange(p => { p.referral = true; });
-});
 document.getElementById('bulkMcaYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.mca = true; });
 });
@@ -3766,16 +2789,14 @@ function openModal(id, presetTeam){
   document.getElementById('f_status').value = p ? p.status : 'registered';
   updateFacilityField(p ? p.facility : HOME_FACILITY);
   document.getElementById('f_claim').value = p ? p.claim : 'pending';
+  document.getElementById('f_encodedIn').value = p ? (p.encodedIn || '') : '';
   document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
-  document.getElementById('f_dateT1').value = p ? (p.dateT1 || p.dateSubmitted || '') : '';
-  document.getElementById('f_dateT2').value = p ? (p.dateT2 || '') : '';
+  document.getElementById('f_dateSubmitted').value = p ? p.dateSubmitted : '';
   document.getElementById('f_mca').checked = p ? p.mca : false;
   document.getElementById('f_within24').checked = p ? p.within24 : false;
   document.getElementById('f_rice').checked = p ? p.rice : false;
   document.getElementById('f_lab').checked = p ? p.lab : false;
   document.getElementById('f_medicine').checked = p ? !!p.medicine : false;
-  document.getElementById('f_vitamins').checked = p ? !!p.vitamins : false;
-  document.getElementById('f_referral').checked = p ? !!p.referral : false;
   document.getElementById('f_notes').value = p ? (p.notes||'') : '';
   document.getElementById('dupWarning').style.display = 'none';
 
@@ -3844,15 +2865,14 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     status: document.getElementById('f_status').value,
     facility: document.getElementById('f_facility').value,
     claim: document.getElementById('f_claim').value || 'pending',
+    encodedIn: document.getElementById('f_encodedIn').value || '',
     dateEncoded: document.getElementById('f_dateEncoded').value || defaultEncodedDate(),
-    dateT1: document.getElementById('f_dateT1').value, dateT2: document.getElementById('f_dateT2').value, dateSubmitted: document.getElementById('f_dateT1').value,
+    dateSubmitted: document.getElementById('f_dateSubmitted').value,
     mca: document.getElementById('f_mca').checked,
     within24: document.getElementById('f_within24').checked,
     rice: document.getElementById('f_rice').checked,
     lab: document.getElementById('f_lab').checked,
     medicine: document.getElementById('f_medicine').checked,
-    vitamins: document.getElementById('f_vitamins').checked,
-    referral: document.getElementById('f_referral').checked,
     notes: document.getElementById('f_notes').value.trim(),
     deleted: false
   };
@@ -3900,18 +2920,8 @@ document.getElementById('tm_staffList').addEventListener('click', e=>{
 
 function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
-  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit site / group' : 'Add site / group';
+  document.getElementById('teamModalTitle').textContent = existingName ? 'Edit Mobile / Walk-in' : 'Add Mobile / Walk-in';
   document.getElementById('tm_name').value = existingName || '';
-  const _tt = existingName ? getTeamType(existingName) : 'mobile';
-  const _rm = document.getElementById('tm_type_mobile');
-  const _rw = document.getElementById('tm_type_walkin');
-  const _rp = document.getElementById('tm_type_profiling');
-  if(_rm) _rm.checked = _tt === 'mobile';
-  if(_rw) _rw.checked = _tt === 'walkin';
-  if(_rp) _rp.checked = _tt === 'profiling';
-  document.querySelectorAll('#tm_typeSwitch label').forEach(function(l){
-    l.classList.toggle('active', l.getAttribute('data-type-lbl') === _tt);
-  });
   renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
   teamModalBackdrop.classList.add('open');
   document.getElementById('tm_name').focus();
@@ -3922,7 +2932,7 @@ teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop
 
 document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
-  if(!name){ alert("Name is required (e.g. mobile site or walk-in day)."); return; }
+  if(!name){ alert("Mobile name is required."); return; }
   const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
     name: row.querySelector('.tm-staff-input').value.trim(),
     position: row.querySelector('.tm-staff-position').value
@@ -3933,11 +2943,11 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
 
   if(!editingTeamOriginalName && collidesWith){
-    alert(`A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
+    alert(`A site named "${collidesWith}" already exists. Choose a different name, or edit that site instead of adding a new one.`);
     return;
   }
   if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
-    const proceed = confirm(`A mobile named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
+    const proceed = confirm(`A site named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
     if(!proceed) return;
   }
 
@@ -3950,45 +2960,11 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   } else if(!editingTeamOriginalName && !existingTeams.includes(name)){
     pendingEmptyTeams.add(name);
   }
-  if(editingTeamOriginalName && editingTeamOriginalName !== name){
-    renameKnownTeam(editingTeamOriginalName, name);
-  } else {
-    registerKnownTeam(name);
-  }
   teamStaff[name] = staffNames;
-  var typ = 'mobile';
-  if(document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked) typ = 'walkin';
-  else if(document.getElementById('tm_type_profiling') && document.getElementById('tm_type_profiling').checked) typ = 'profiling';
-  if(editingTeamOriginalName && editingTeamOriginalName !== name && teamMeta[editingTeamOriginalName]){
-    delete teamMeta[editingTeamOriginalName];
-  }
-  setTeamType(name, typ);
   pushTeamStaff();
-  pushTeamMeta();
-  pushKnownTeams();
   renderAll();
   closeTeamModal();
 });
-
-
-(function(){
-  var sw = document.getElementById('tm_typeSwitch');
-  if(!sw) return;
-  sw.addEventListener('click', function(e){
-    var lbl = e.target.closest('label');
-    if(!lbl) return;
-    var inp = lbl.querySelector('input');
-    if(inp) inp.checked = true;
-    sw.querySelectorAll('label').forEach(function(l){ l.classList.toggle('active', l === lbl); });
-    var t = 'mobile';
-    if(document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked) t = 'walkin';
-    else if(document.getElementById('tm_type_profiling') && document.getElementById('tm_type_profiling').checked) t = 'profiling';
-    var ph = document.getElementById('tm_name');
-    if(ph && !ph.value){
-      ph.placeholder = t === 'walkin' ? 'e.g. Oct 7, 2026 Walk-in' : (t === 'profiling' ? 'e.g. Oct 7 Profiling' : 'e.g. Tacloban Mobile');
-    }
-  });
-})();
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
@@ -4000,7 +2976,6 @@ document.getElementById('search').addEventListener('input', ()=>{
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
 document.getElementById('filterDup').addEventListener('change', renderAll);
-if(document.getElementById('filterType')) document.getElementById('filterType').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', ()=>{
@@ -4014,7 +2989,7 @@ document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
   renderAll();
 });
 
-/* Per-mobile pagination controls (Show 10/20/50/All + Prev/Next) */
+/* Per-site pagination controls (Show 10/20/50/All + Prev/Next) */
 groupsContainer.addEventListener('change', e=>{
   const sizeSel = e.target.closest('[data-page-size]');
   if(sizeSel){
@@ -4094,17 +3069,15 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const byTeam = {};
   rows.forEach(p => {
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0, missed24:0, dups:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, mca:0, t1:0, missed24:0, dups:0};
     const b = byTeam[t];
     b.total++;
     if(p.status==='registered') b.registered++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
     if(p.mca) b.mca++;
-    if(p.claim==='t1') b.t1++;
+    if(p.claim==='t1'||p.claim==='t2') b.t1++;
     if(p.claim==='missed24') b.missed24++;
   });
   // Approximate dups per team
@@ -4119,9 +3092,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const lines = [
     ['DR CARE Daily Summary', scope, new Date().toISOString()].map(csvSafe).join(','),
     '',
-    ['Team','Total','Registered','MCA','Rice','Lab','Meds','Vits','Referral','T1','Missed 24h','Dup flags'].join(','),
+    ['Team','Total','Registered','MCA','Rice','Lab','Meds','T1','Missed 24h','Dup flags'].join(','),
     ...Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([team,b]) =>
-      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.vitamins, b.referral, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
+      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
     ),
     '',
     ['TOTAL', total,
@@ -4132,7 +3105,7 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
       rows.filter(p=>p.medicine).length,
       rows.filter(p=>p.vitamins).length,
       rows.filter(p=>p.referral).length,
-      rows.filter(p=>p.claim==='t1').length,
+      rows.filter(p=>p.claim==='t1'||p.claim==='t2').length,
       rows.filter(p=>p.claim==='missed24').length,
       countDuplicateExtras(rows)
     ].map(csvSafe).join(',')
@@ -4168,7 +3141,7 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Vitamins Availed","Referral","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Encoded In","Rice Availed","Lab Availed","Medicines Availed","Notes"];
 
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
@@ -4176,8 +3149,8 @@ function patientToCsvRow(p){
   return [
     p.team||'', p.name||'', p.phid||'', statusLabel[p.status]||p.status||'', p.facility||'',
     p.mca?'YES':'NO', p.dateSubmitted||'', p.within24?'YES':'NO',
-    claimLabel[p.claim]||p.claim||'', p.rice?'YES':'NO', p.lab?'YES':'NO',
-    p.medicine?'YES':'NO', p.vitamins?'YES':'NO', p.referral?'YES':'NO', p.notes||''
+    claimLabel[p.claim]||p.claim||'', p.encodedIn||'', p.rice?'YES':'NO', p.lab?'YES':'NO',
+    p.medicine?'YES':'NO', p.notes||''
   ].map(csvSafe).join(',');
 }
 
@@ -4288,11 +3261,10 @@ const IMPORT_HEADER_MAP = {
   dateSub: ['date validated and submitted','date validated & submitted','date submitted','date validated','date_submitted'],
   within24: ['within 24h','within 24','within24'],
   claim: ['status of claim','claim','claim status'],
+  encodedIn: ['encoded in','encoded_in','encodedin','encoder system','encoded'],
   rice: ['rice availed','rice'],
   lab: ['lab availed','lab'],
   medicine: ['medicines availed','medicine availed','medicines','medicine','meds'],
-  vitamins: ['vitamins availed','vitamin availed','vitamins','vitamin','vits'],
-  referral: ['referral','referral completed','referral done'],
   notes: ['notes','remarks','comment']
 };
 
@@ -4340,6 +3312,7 @@ async function processImportRows(allRows, targetTeam){
   const claimRev = {};
   Object.entries(claimLabel).forEach(([k,v])=>{ claimRev[v.toLowerCase()] = k; claimRev[k] = k; });
   claimRev['t1 submitted'] = 't1';
+  claimRev['t2 submitted'] = 't2';
   claimRev['missed 24h'] = 'missed24';
 
   function cell(cols, field, positionalFallback){
@@ -4362,7 +3335,7 @@ async function processImportRows(allRows, targetTeam){
     // Positional fallback when there is no header:
     // 5 cols  -> Name, PhilHealth ID, Status, Facility, Digital MCA
     // 6+ cols -> Team, Name, PhilHealth ID, Status, Facility, Digital MCA, ...
-    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, rice, lab, medicine, vitamins, referral, notes;
+    let team, name, phid, status, facility, mca, dateEnc, dateSub, within24, claim, encodedIn, rice, lab, medicine, notes;
     if(colIndex){
       team = cell(cols,'team');
       name = cell(cols,'name');
@@ -4374,25 +3347,24 @@ async function processImportRows(allRows, targetTeam){
       dateSub = cell(cols,'dateSub');
       within24 = cell(cols,'within24');
       claim = cell(cols,'claim');
+      encodedIn = cell(cols,'encodedIn');
       rice = cell(cols,'rice');
       lab = cell(cols,'lab');
       medicine = cell(cols,'medicine');
-      vitamins = cell(cols,'vitamins');
-      referral = cell(cols,'referral');
       notes = cell(cols,'notes');
     } else if(cols.length <= 5){
       [name, phid, status, facility, mca] = cols;
-      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; rice = ''; lab = ''; medicine = ''; vitamins = ''; referral = ''; notes = '';
+      team = ''; dateEnc = ''; dateSub = ''; within24 = ''; claim = ''; encodedIn = ''; rice = ''; lab = ''; medicine = ''; notes = '';
     } else {
       team = cols[0]||''; name = cols[1]||''; phid = cols[2]||''; status = cols[3]||'';
       facility = cols[4]||''; mca = cols[5]||'';
       dateEnc = cols[6]||''; dateSub = cols[7]||''; within24 = cols[8]||'';
-      claim = cols[9]||''; rice = cols[10]||''; lab = cols[11]||'';
+      claim = cols[9]||''; encodedIn = ''; rice = cols[10]||''; lab = cols[11]||'';
       // Support both old 13-col and new 15-col layouts
-      if(cols.length >= 15){
-        medicine = cols[12]||''; vitamins = cols[13]||''; referral = cols[14]||''; notes = cols[15]||'';
+      if(cols.length >= 13){
+        medicine = cols[12]||''; notes = cols[13]||'';
       } else {
-        medicine = ''; vitamins = ''; referral = ''; notes = cols[12]||'';
+        medicine = ''; notes = cols[12]||'';
       }
     }
 
@@ -4417,11 +3389,10 @@ async function processImportRows(allRows, targetTeam){
       dateSubmitted: parsedSub,
       within24: isYesValue(within24),
       claim: claimRev[(claim||'').toLowerCase()] || 'pending',
+      encodedIn: (encodedIn||'').toUpperCase() === 'WAH' ? 'WAH' : ((encodedIn||'').toUpperCase() === 'BIZBOX' ? 'BIZBOX' : ''),
       rice: isYesValue(rice),
       lab: isYesValue(lab),
       medicine: isYesValue(medicine),
-      vitamins: isYesValue(vitamins),
-      referral: isYesValue(referral),
       notes: notes || '',
       deleted: false
     };
@@ -4572,124 +3543,35 @@ function getAllEncodedMonths(){
 }
 
 function populateDashboardControls(){
-  const months = getAllEncodedMonths().slice().sort().reverse();
-  const preferredMonth = (document.getElementById('monthFilter') && document.getElementById('monthFilter').value) || (months[0] || '');
-  if(dashMonthSelect){
-    const prevMonthVal = dashMonthSelect.value || preferredMonth || 'all';
-    dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
-      months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
-    dashMonthSelect.value = (months.includes(prevMonthVal) || prevMonthVal === 'all') ? prevMonthVal : (preferredMonth || 'all');
-  }
-  const teams = [...new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team).filter(Boolean))].sort();
-  if(dashTeamSelect){
-    const prevTeamVal = dashTeamSelect.value || 'all';
-    dashTeamSelect.innerHTML = `<option value="all">All sites / groups</option>` +
-      teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
-    dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
-  }
-  // Encoder multi-select (admin only useful)
-  const encSel = document.getElementById('dashEncoderSelect');
-  const encWrap = document.getElementById('dashEncoderWrap');
-  const encHint = document.getElementById('dashEncoderHint');
-  if(encSel){
-    const encoders = {};
-    state.patients.forEach(p=>{
-      if(p.deleted) return;
-      const uid = p.createdBy || p.updatedBy;
-      if(!uid) return;
-      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
-      encoders[uid] = name;
-    });
-    if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
-    const prev = new Set([...encSel.selectedOptions].map(o=>o.value));
-    encSel.innerHTML = Object.entries(encoders).sort((a,b)=>String(a[1]).localeCompare(String(b[1]))).map(([id,name])=>{
-      const sel = prev.has(id) ? 'selected' : '';
-      return `<option value="${escapeAttr(id)}" ${sel}>${escapeHtml(name)}</option>`;
-    }).join('');
-    encSel.size = 1; // single-line dropdown; multi-select still works with Ctrl/Cmd
-  }
-  if(encWrap){
-    if(typeof isAdmin === 'function' && isAdmin()){
-      encWrap.style.display = '';
-      if(encHint) encHint.textContent = 'Admin: select one or more encoders (Ctrl/Cmd+click). Empty = all.';
-    } else {
-      encWrap.style.display = 'none';
-    }
-  }
-  // Default date inputs
-  const today = new Date().toISOString().slice(0,10);
-  const dayIn = document.getElementById('dashDayInput');
-  const weekIn = document.getElementById('dashWeekInput');
-  if(dayIn && !dayIn.value) dayIn.value = today;
-  if(weekIn && !weekIn.value) weekIn.value = today;
-  updateDashRangeVisibility();
-}
+  const mainMonth = document.getElementById('monthFilter').value; // '' or 'YYYY-MM'
+  
+  const months = getAllEncodedMonths();
+  if(mainMonth && /^\d{4}-\d{2}$/.test(mainMonth) && !months.includes(mainMonth)) months.unshift(mainMonth);
+  months.sort().reverse();
 
-function updateDashRangeVisibility(){
-  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
-  const dayW = document.getElementById('dashDayWrap');
-  const weekW = document.getElementById('dashWeekWrap');
-  const monthW = document.getElementById('dashMonthWrap');
-  if(dayW) dayW.style.display = mode === 'day' ? '' : 'none';
-  if(weekW) weekW.style.display = mode === 'week' ? '' : 'none';
-  if(monthW) monthW.style.display = (mode === 'month') ? '' : 'none';
-}
+  const preferredMonth = mainMonth || 'all';
+  const prevMonthVal = dashMonthSelect.value || preferredMonth;
+  dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
+    months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  dashMonthSelect.value = months.includes(prevMonthVal) || prevMonthVal === 'all' ? prevMonthVal : preferredMonth;
 
-function dashWeekBounds(dateStr){
-  const d = new Date(dateStr + 'T12:00:00');
-  if(isNaN(d.getTime())) return null;
-  const day = d.getDay(); // 0 Sun
-  const start = new Date(d);
-  start.setDate(d.getDate() - day); // week starts Sunday
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const fmt = x => x.toISOString().slice(0,10);
-  return { start: fmt(start), end: fmt(end) };
+  const teams = getTeams();
+  const prevTeamVal = dashTeamSelect.value || 'all';
+  dashTeamSelect.innerHTML = `<option value="all">All mobiles / walk-ins</option>` +
+    teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
 }
 
 function dashboardScopePatients(){
-  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
-  const team = dashTeamSelect ? dashTeamSelect.value : 'all';
-  const encSel = document.getElementById('dashEncoderSelect');
-  const selectedEnc = encSel ? [...encSel.selectedOptions].map(o=>o.value) : [];
-
-  // Role scope: non-admin encoders only see their own encodes
-  const forceSelf = !(typeof isAdmin === 'function' && isAdmin());
-  const selfId = currentUser && currentUser.id;
-
+  const month = dashMonthSelect.value;
+  const team = dashTeamSelect.value;
   return state.patients.filter(p=>{
     if(p.deleted) return false;
+    if(month !== 'all'){
+      const enc = (p.dateEncoded||'').trim();
+      if(enc && enc.slice(0,7) !== month) return false;
+    }
     if(team !== 'all' && p.team !== team) return false;
-
-    // Encoder filter
-    const owner = p.createdBy || p.updatedBy || '';
-    if(forceSelf){
-      if(selfId && owner && owner !== selfId) return false;
-      if(selfId && !owner) return false; // imported unknown — hide from encoder personal view
-    } else if(selectedEnc.length){
-      if(!selectedEnc.includes(owner)) return false;
-    }
-
-    const enc = (p.dateEncoded || '').trim();
-    if(mode === 'all') return true;
-    if(mode === 'month'){
-      const month = dashMonthSelect ? dashMonthSelect.value : 'all';
-      if(month === 'all') return true;
-      if(!enc) return true;
-      return enc.slice(0,7) === month;
-    }
-    if(mode === 'day'){
-      const day = (document.getElementById('dashDayInput') || {}).value;
-      if(!day) return true;
-      return enc === day || (!enc && false);
-    }
-    if(mode === 'week'){
-      const weekOf = (document.getElementById('dashWeekInput') || {}).value;
-      if(!weekOf) return true;
-      const b = dashWeekBounds(weekOf);
-      if(!b || !enc) return false;
-      return enc >= b.start && enc <= b.end;
-    }
     return true;
   });
 }
@@ -4712,58 +3594,50 @@ function renderDashboard(){
   const riceCount = scoped.filter(p=>p.rice).length;
   const labCount = scoped.filter(p=>p.lab).length;
   const medCount = scoped.filter(p=>p.medicine).length;
-  const vitCount = scoped.filter(p=>p.vitamins).length;
-  const refCount = scoped.filter(p=>p.referral).length;
   const mcaCount = scoped.filter(p=>p.mca).length;
-  const dupCount = typeof countDuplicateExtras === 'function' ? countDuplicateExtras(scoped) : 0;
+  const dupCount = countDuplicateExtras(scoped);
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
-  const t1Count = scoped.filter(p=>p.claim==='t1').length;
+  const t1Count = scoped.filter(p=>p.claim==='t1' || p.claim==='t2').length;  // T2 implies T1
   const t2Count = scoped.filter(p=>p.claim==='t2').length;
-  const pendingClaim = scoped.filter(p=>!p.claim || p.claim==='pending').length;
+  const wahCount = scoped.filter(p=>p.encodedIn==='WAH').length;
+  const bizboxCount = scoped.filter(p=>p.encodedIn==='BIZBOX').length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
+  const pctNum = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
 
-  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
-  const teamVal = dashTeamSelect ? dashTeamSelect.value : 'all';
-  let rangeLabel = 'All time';
-  if(mode === 'day') rangeLabel = (document.getElementById('dashDayInput') || {}).value || 'Day';
-  else if(mode === 'week'){
-    const w = (document.getElementById('dashWeekInput') || {}).value;
-    const b = w ? dashWeekBounds(w) : null;
-    rangeLabel = b ? `Week ${b.start} → ${b.end}` : 'Week';
-  } else if(mode === 'month'){
-    const m = dashMonthSelect ? dashMonthSelect.value : 'all';
-    rangeLabel = m === 'all' ? 'All months' : monthLabel(m);
-  }
-  const isAdm = typeof isAdmin === 'function' && isAdmin();
-  const scopeWho = isAdm ? 'All selected encoders' : 'My encodes only';
-  const note = document.getElementById('dashScopeNote');
-  if(note) note.textContent = `${rangeLabel} · ${teamVal==='all'?'all sites':teamVal} · ${scopeWho}`;
+  const monthVal = dashMonthSelect.value;
+  const teamVal = dashTeamSelect.value;
+  document.getElementById('dashScopeNote').textContent =
+    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles / walk-ins' : teamVal}`;
 
   if(total === 0){
-    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope. Try another day/week/month or encoder filter.</div>`;
+    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope yet. Try "All months" / "All mobiles / walk-ins".</div>`;
     return;
   }
 
-  /* Encoder productivity */
+  /* ---- Encoder productivity (who created the record) ---- */
   const byUser = {};
   scoped.forEach(p=>{
     const uid = p.createdBy || p.updatedBy || '_unknown';
     const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
       || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 12));
-    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0 };
+    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0, wah: 0, bizbox: 0 };
     byUser[uid].total++;
     if(p.mca) byUser[uid].mca++;
-    if(p.claim==='t1') byUser[uid].t1++;
+    if(p.claim==='t1' || p.claim==='t2') byUser[uid].t1++;  // T2 implies T1
     if(p.claim==='t2') byUser[uid].t2++;
+    if(p.encodedIn==='WAH') byUser[uid].wah++;
+    if(p.encodedIn==='BIZBOX') byUser[uid].bizbox++;
     const t = p.team || 'Unknown';
     byUser[uid].teams[t] = (byUser[uid].teams[t] || 0) + 1;
   });
   const userRows = Object.entries(byUser)
     .sort((a,b)=> b[1].total - a[1].total)
     .map(([uid, u])=>{
-      const teamBreakdown = Object.entries(u.teams).sort((a,b)=>b[1]-a[1])
-        .map(([t,c])=> `${escapeHtml(t)} (${c})`).join(', ');
+      const teamBreakdown = Object.entries(u.teams)
+        .sort((a,b)=> b[1]-a[1])
+        .map(([t,c])=> `${escapeHtml(t)} (${c})`)
+        .join(', ');
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
         <td>${u.total}</td>
@@ -4771,25 +3645,40 @@ function renderDashboard(){
         <td>${u.mca}</td>
         <td>${u.t1}</td>
         <td>${u.t2}</td>
+        <td>${u.wah}</td>
+        <td>${u.bizbox}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
+        <td style="text-align:center">
+          <button type="button" class="btn btn-ghost enc-t1t2-btn" data-encoder-uid="${escapeAttr(uid)}" data-encoder-name="${escapeAttr(u.name)}" title="View T1 & T2 patients" style="padding:4px 10px;font-size:11px;white-space:nowrap">
+            T1/T2 list
+          </button>
+        </td>
       </tr>`;
     }).join('');
 
+  /* ---- Per mobile ---- */
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, t1:0, t2:0, missed24:0, dups:0, wah:0, bizbox:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
-    if(p.claim==='t1') b.t1++;
+    if(p.claim==='t1' || p.claim==='t2') b.t1++;  // T2 implies T1
     if(p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
+    if(p.encodedIn==='WAH') b.wah++;
+    if(p.encodedIn==='BIZBOX') b.bizbox++;
+  });
+  // dups per team approx
+  scoped.forEach(p=>{
+    if(typeof isDuplicate === 'function' && isDuplicate(p.phid, p.id)){
+      const t = p.team || 'Unknown';
+      if(byTeam[t]) byTeam[t].dups++;
+    }
   });
   const teamRowsHtml = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>`
     <tr>
@@ -4799,41 +3688,45 @@ function renderDashboard(){
       <td>${b.rice}</td>
       <td>${b.lab}</td>
       <td>${b.medicine}</td>
-      <td>${b.vitamins}</td>
-      <td>${b.referral}</td>
       <td>${b.t1}</td>
       <td>${b.t2}</td>
       <td>${b.missed24}</td>
+      <td>${b.wah}</td>
+      <td>${b.bizbox}</td>
+      <td>${b.dups}</td>
     </tr>`).join('');
 
   const kpiHtml = `
     <div class="dash-section" style="margin-bottom:14px">
-      <h4>${isAdm ? 'Team quality KPIs' : 'My quality KPIs'}</h4>
+      <h4>Quality KPIs</h4>
       <div class="dash-cards kpi-cards">
         <div class="dash-card"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">MCA on file<br><span class="kpi-sub">${mcaCount}/${total}</span></div></div>
         <div class="dash-card accent-green"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">T1 submitted<br><span class="kpi-sub">${t1Count}/${total}</span></div></div>
-        <div class="dash-card accent-purple"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24}/${total}</span></div></div>
-        <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
+        <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h flag<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
+        <div class="dash-card accent-purple"><div class="dc-num">${pct(dupCount)}</div><div class="dc-lbl">Duplicates<br><span class="kpi-sub">${dupCount}/${total}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pct(wahCount)}</div><div class="dc-lbl">Encoded in WAH<br><span class="kpi-sub">${wahCount}/${total}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pct(bizboxCount)}</div><div class="dc-lbl">Encoded in BIZBOX<br><span class="kpi-sub">${bizboxCount}/${total}</span></div></div>
       </div>
     </div>`;
 
   const cardsHtml = `
     <div class="dash-cards">
-      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients encoded</div></div>
+      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Total patients</div></div>
       <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
       <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Other facility</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice (${pct(riceCount)})</div></div>
       <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab (${pct(labCount)})</div></div>
       <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds (${pct(medCount)})</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${vitCount}</div><div class="dc-lbl">Vits (${pct(vitCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${refCount}</div><div class="dc-lbl">Referral (${pct(refCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending</div></div>
+      <div class="dash-card accent-green"><div class="dc-num">${wahCount}</div><div class="dc-lbl">WAH</div></div>
+      <div class="dash-card accent-blue"><div class="dc-num">${bizboxCount}</div><div class="dc-lbl">BIZBOX</div></div>
     </div>`;
 
   const encoderHtml = `
     <div class="dash-section">
-      <h4>${isAdm ? 'Encoded by user' : 'My encoding summary'}</h4>
+      <h4>Encoded by user (this scope)</h4>
+      <div class="field-hint" style="margin-bottom:8px">Counts patients each person <b>added</b> (created by). Site column shows where they encoded (mobile or walk-in).</div>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
@@ -4844,32 +3737,36 @@ function renderDashboard(){
               <th>MCA</th>
               <th>T1</th>
               <th>T2</th>
-              <th style="text-align:left">Sites / groups</th>
+              <th>WAH</th>
+              <th>BIZBOX</th>
+              <th style="text-align:left">Sites</th>
+              <th></th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="7">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="10">No encoder data</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
 
   const teamTableHtml = `
     <div class="dash-section">
-      <h4>By site / group</h4>
+      <h4>By mobile / walk-in</h4>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
-              <th style="text-align:left">Site / group</th>
+              <th style="text-align:left">Mobile / Walk-in</th>
               <th>Total</th>
               <th>MCA</th>
               <th>Rice</th>
               <th>Lab</th>
               <th>Meds</th>
-              <th>Vits</th>
-              <th>Ref</th>
               <th>T1</th>
               <th>T2</th>
               <th>Missed</th>
+              <th>WAH</th>
+              <th>BIZBOX</th>
+              <th>Dups</th>
             </tr>
           </thead>
           <tbody>${teamRowsHtml}</tbody>
@@ -4883,66 +3780,41 @@ function renderDashboard(){
     ${encoderHtml}
     ${teamTableHtml}
     <div class="dash-section">
-      <h4>${mode === 'day' ? 'Daily total' : mode === 'week' ? 'Trend · days this week' : mode === 'month' ? 'Trend · months' : 'Trend · all months'}</h4>
+      <h4>Patients encoded per month (all sites)</h4>
       <div class="dash-trend-wrap" id="dashTrendWrap"></div>
     </div>
   `;
-  renderTrendChart(mode);
+  renderTrendChart(monthVal);
 }
 
-function renderTrendChart(mode){
+function renderTrendChart(selectedMonth){
+  const months = getAllEncodedMonths().slice().sort(); // ascending
   const wrap = document.getElementById('dashTrendWrap');
   if(!wrap) return;
-  const scoped = dashboardScopePatients();
-  let buckets = {};
-  if(mode === 'week'){
-    const weekOf = (document.getElementById('dashWeekInput') || {}).value;
-    const b = weekOf ? dashWeekBounds(weekOf) : null;
-    if(b){
-      for(let i=0;i<7;i++){
-        const d = new Date(b.start + 'T12:00:00');
-        d.setDate(d.getDate()+i);
-        const key = d.toISOString().slice(0,10);
-        buckets[key] = 0;
-      }
-    }
-    scoped.forEach(p=>{
-      const enc = (p.dateEncoded||'').slice(0,10);
-      if(enc && buckets[enc] != null) buckets[enc]++;
-      else if(enc) buckets[enc] = (buckets[enc]||0)+1;
-    });
-  } else if(mode === 'day'){
-    const day = (document.getElementById('dashDayInput') || {}).value || '';
-    buckets[day || 'selected day'] = scoped.length;
-  } else {
-    // month / all → by month
-    scoped.forEach(p=>{
-      const m = (p.dateEncoded||'').slice(0,7) || 'undated';
-      buckets[m] = (buckets[m]||0)+1;
-    });
-  }
-  const keys = Object.keys(buckets).sort();
-  if(!keys.length){ wrap.innerHTML = `<div class="dash-empty">No dated records in scope.</div>`; return; }
-  const counts = keys.map(k => buckets[k]);
+  if(months.length === 0){ wrap.innerHTML = `<div class="dash-empty">No dated records yet.</div>`; return; }
+
+  const counts = months.map(m => state.patients.filter(p=>!p.deleted && (p.dateEncoded||'').slice(0,7)===m).length);
   const maxCount = Math.max(...counts, 1);
+  
   const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
   const barAreaH = chartH - topPad - bottomPad;
-  const svgW = Math.max(keys.length * (barW + gap) + leftPad, 120);
+  const svgW = months.length * (barW + gap) + leftPad;
+
   let bars = '';
-  keys.forEach((k, i)=>{
+  months.forEach((m, i)=>{
     const c = counts[i];
     const h = Math.round((c / maxCount) * barAreaH);
     const x = leftPad + i * (barW + gap);
     const y = chartH - bottomPad - h;
-    let shortLabel = k;
-    if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + ' ' + k.slice(2,4);
-    else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
+    const isCurrent = m === selectedMonth;
+    const shortLabel = monthLabel(m).replace(' ', '\u00A0').slice(0, 3) + ' ' + m.slice(2,4);
     bars += `
       <text class="dash-trend-num" x="${x + barW/2}" y="${y - 7}" text-anchor="middle">${c}</text>
-      <rect class="dash-trend-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h,2)}" rx="4"></rect>
+      <rect class="dash-trend-bar ${isCurrent?'dtb-current':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4"></rect>
       <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 6}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
     `;
   });
+
   wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
@@ -4954,16 +3826,102 @@ function openDashboard(){
   renderDashboard();
   dashBackdrop.classList.add('open');
 }
+
+/* ---- Encoder T1/T2 patient list ---- */
+function openEncoderT1T2List(uid, displayName){
+  const backdrop = document.getElementById('encT1T2Backdrop');
+  const title = document.getElementById('encT1T2Title');
+  const sub = document.getElementById('encT1T2Sub');
+  const body = document.getElementById('encT1T2Body');
+  if(!backdrop || !body) return;
+
+  title.textContent = (displayName || 'Encoder') + ' — T1 & T2 patients';
+  sub.textContent = 'Patients this encoder submitted as T1 or T2 (newest first). Labels show mobile or walk-in site.';
+
+  // Use current dashboard scope if open, otherwise all non-deleted patients
+  let pool = [];
+  try {
+    if(typeof dashboardScopePatients === 'function') pool = dashboardScopePatients();
+  } catch(e){ pool = []; }
+  if(!pool || !pool.length){
+    pool = (state.patients || []).filter(p => !p.deleted);
+  }
+
+  const list = pool.filter(p => {
+    const creator = p.createdBy || p.updatedBy || '';
+    if(String(creator) !== String(uid) && !(uid === '_unknown' && !p.createdBy && !p.updatedBy)) return false;
+    return p.claim === 't1' || p.claim === 't2';
+  }).sort((a, b) => {
+    // Newest first: prefer dateSubmitted, then dateEncoded
+    const da = (a.dateSubmitted || a.dateEncoded || '');
+    const db = (b.dateSubmitted || b.dateEncoded || '');
+    if(da !== db) return db.localeCompare(da);
+    return (b.name || '').localeCompare(a.name || '');
+  });
+
+  if(!list.length){
+    body.innerHTML = '<div class="dash-empty">No T1 or T2 patients found for this encoder in the current scope.</div>';
+  } else {
+    const rows = list.map(p => {
+      const claimBadge = p.claim === 't2'
+        ? '<span class="badge-select cl-t2" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T2 Submitted</span>'
+        : '<span class="badge-select cl-t1" style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">T1 Submitted</span>';
+      const mobileLabel = p.team
+        ? `<span style="background:var(--table-head);border:1px solid var(--line);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">${escapeHtml(p.team)}</span>`
+        : '<span style="color:var(--muted)">—</span>';
+      const when = p.dateSubmitted || p.dateEncoded || '—';
+      return `<tr>
+        <td style="text-align:left;font-weight:600">${escapeHtml(p.name || '')}</td>
+        <td class="mono" style="font-size:12px">${escapeHtml(p.phid || '')}</td>
+        <td style="text-align:center">${claimBadge}</td>
+        <td style="text-align:left">${mobileLabel}</td>
+        <td style="text-align:center;font-size:12px;color:var(--muted)">${escapeHtml(when)}</td>
+      </tr>`;
+    }).join('');
+    body.innerHTML = `
+      <div class="table-wrap" style="box-shadow:none;margin:0">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">Patient</th>
+              <th>PhilHealth ID</th>
+              <th>Claim</th>
+              <th style="text-align:left">Mobile / Walk-in</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">${list.length} patient${list.length===1?'':'s'}</div>
+    `;
+  }
+  backdrop.classList.add('open');
+}
+function closeEncoderT1T2List(){
+  const backdrop = document.getElementById('encT1T2Backdrop');
+  if(backdrop) backdrop.classList.remove('open');
+}
+
+
 function closeDashboard(){ dashBackdrop.classList.remove('open'); }
 document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
 document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard);
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
-if(dashMonthSelect) dashMonthSelect.addEventListener('change', renderDashboard);
-if(dashTeamSelect) dashTeamSelect.addEventListener('change', renderDashboard);
-document.getElementById('dashRangeMode')?.addEventListener('change', ()=>{ updateDashRangeVisibility(); renderDashboard(); });
-document.getElementById('dashDayInput')?.addEventListener('change', renderDashboard);
-document.getElementById('dashWeekInput')?.addEventListener('change', renderDashboard);
-document.getElementById('dashEncoderSelect')?.addEventListener('change', renderDashboard);
+dashMonthSelect.addEventListener('change', renderDashboard);
+dashTeamSelect.addEventListener('change', renderDashboard);
+
+/* Encoder T1/T2 list button (delegated — buttons are re-rendered) */
+document.getElementById('dashBody').addEventListener('click', e=>{
+  const btn = e.target.closest('.enc-t1t2-btn');
+  if(!btn) return;
+  e.preventDefault();
+  openEncoderT1T2List(btn.dataset.encoderUid, btn.dataset.encoderName);
+});
+document.getElementById('encT1T2CloseBtn').addEventListener('click', closeEncoderT1T2List);
+document.getElementById('encT1T2Backdrop').addEventListener('click', e=>{
+  if(e.target === document.getElementById('encT1T2Backdrop')) closeEncoderT1T2List();
+});
 
 /* ---------------- Recent Activity ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
@@ -5077,6 +4035,7 @@ async function renderAdminUsers(){
     `<option value="${r}" ${r===current?'selected':''}>${r}</option>`
   ).join('');
 
+  // Sort: unapproved first, then by name
   users.sort((a,b)=>{
     const aa = (a.role === 'admin' || a.approved) ? 1 : 0;
     const bb = (b.role === 'admin' || b.approved) ? 1 : 0;
@@ -5084,74 +4043,49 @@ async function renderAdminUsers(){
     return String(a.full_name||a.email||'').localeCompare(String(b.full_name||b.email||''));
   });
 
-  const now = Date.now();
-  const ONLINE_MS = 3 * 60 * 1000;
-  function isOnline(u){
-    if(!u.last_seen) return false;
-    const t = new Date(u.last_seen).getTime();
-    return !isNaN(t) && (now - t) < ONLINE_MS;
-  }
-  const onlineCount = users.filter(isOnline).length;
-  const pendingCount = users.filter(u => u.role !== 'admin' && !u.approved).length;
-  const approvedCount = users.filter(u => u.role === 'admin' || u.approved).length;
-
-  function initials(u){
-    const n = (u.full_name || u.email || '?').trim();
-    const parts = n.split(/\s+/);
-    if(parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
-    return n.slice(0,2).toUpperCase();
-  }
-  function seenLabel(u){
-    if(isOnline(u)) return 'Online now';
-    if(!u.last_seen) return 'Never seen';
-    try{
-      const d = new Date(u.last_seen);
-      return 'Last seen ' + d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-    }catch(e){ return 'Offline'; }
-  }
-
   body.innerHTML = `
-    <div class="admin-stats">
-      <div class="admin-stat"><div class="n">${users.length}</div><div class="l">Total users</div></div>
-      <div class="admin-stat"><div class="n" style="color:var(--green)">${onlineCount}</div><div class="l">Online</div></div>
-      <div class="admin-stat"><div class="n">${approvedCount}</div><div class="l">Approved</div></div>
-      <div class="admin-stat"><div class="n" style="color:var(--amber)">${pendingCount}</div><div class="l">Pending</div></div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Approved</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => {
+            const isSelf = u.id === currentUser.id;
+            const isUserAdmin = u.role === 'admin';
+            const approved = isUserAdmin ? true : !!u.approved;
+            return `
+            <tr data-uid="${u.id}" style="${!approved ? 'background:var(--amber-bg);' : ''}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
+                  ${approved ? 'checked' : ''}
+                  ${isSelf || isUserAdmin ? 'disabled title="Admins are always approved"' : ''}
+                  title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
+              </td>
+              <td>${escapeHtml(u.full_name || '—')}</td>
+              <td>${escapeHtml(u.email || '—')}</td>
+              <td>
+                <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled title="You cannot change your own role here"' : ''}>
+                  ${roleOptions(u.role || 'encoder')}
+                </select>
+              </td>
+              <td style="font-size:11px;color:var(--muted);">
+                ${isSelf ? 'You' : (!approved ? '<span style="color:var(--amber);font-weight:700;">Pending</span>' : 'OK')}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
     </div>
-    ${users.map(u => {
-      const isSelf = currentUser && u.id === currentUser.id;
-      const isUserAdmin = u.role === 'admin';
-      const approved = isUserAdmin ? true : !!u.approved;
-      const online = isOnline(u);
-      return `
-      <div class="admin-user-card ${approved ? '' : 'pending'}" data-uid="${u.id}">
-        <div class="admin-avatar">${escapeHtml(initials(u))}</div>
-        <div class="admin-user-info">
-          <div class="nm">${escapeHtml(u.full_name || '—')}${isSelf ? ' <span style="font-size:11px;color:var(--muted)">(you)</span>' : ''}</div>
-          <div class="em">${escapeHtml(u.email || '—')}</div>
-          <div style="margin-top:4px;">
-            <span class="presence-dot ${online ? 'on' : ''}"></span>
-            <span class="presence-lbl">${escapeHtml(seenLabel(u))}</span>
-            <span class="role-pill ${escapeAttr(u.role||'encoder')}">${escapeHtml(u.role||'encoder')}</span>
-            ${approved ? '' : '<span class="role-pill" style="background:var(--amber-bg);color:var(--amber);">Pending approval</span>'}
-          </div>
-        </div>
-        <div class="admin-user-meta">
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-            <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
-              ${approved ? 'checked' : ''}
-              ${isSelf || isUserAdmin ? 'disabled' : ''}
-              title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
-            Approve login
-          </label>
-          <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
-            ${roleOptions(u.role || 'encoder')}
-          </select>
-        </div>
-      </div>`;
-    }).join('')}
-    <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5;">
-      <b>Approve login</b> = user can sign in. Uncheck to revoke access.<br>
-      <b>Online</b> = active in the last 3 minutes. Roles: <b>admin</b> full access · <b>encoder</b> add/edit · <b>viewer</b> read-only.
+    <p style="font-size:12px;color:var(--muted);margin-top:14px;">
+      <b>Approved</b> = can log in. Uncheck to revoke access.<br>
+      Roles: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
     </p>
   `;
 
@@ -5162,6 +4096,7 @@ async function renderAdminUsers(){
       sel.disabled = true;
       try{
         const patch = { role, updated_at: new Date().toISOString() };
+        // Promoting to admin also approves
         if(role === 'admin') patch.approved = true;
         const { error } = await sb.from('profiles').update(patch).eq('id', uid);
         if(error) throw error;
@@ -5187,7 +4122,7 @@ async function renderAdminUsers(){
         const { error } = await sb.from('profiles').update({ approved, updated_at: new Date().toISOString() }).eq('id', uid);
         if(error) throw error;
         if(profileCache[uid]) profileCache[uid].approved = approved;
-        setSyncStatus(approved ? 'User approved — can log in' : 'Access revoked', '');
+        setSyncStatus(approved ? 'User approved' : 'Access revoked', '');
         await renderAdminUsers();
       }catch(e){
         console.error(e);
@@ -5200,7 +4135,6 @@ async function renderAdminUsers(){
   });
 }
 
-
 /* ---------------- Auth ---------------- */
 const loginOverlay = document.getElementById('loginOverlay');
 const loginErr = document.getElementById('loginErr');
@@ -5212,8 +4146,8 @@ function setAuthMode(mode){
   const isUp = mode === 'signup';
   document.getElementById('loginTitle').textContent = isUp ? 'DR CARE — Create account' : 'DR CARE — Sign in';
   document.getElementById('loginSub').textContent = isUp
-    ? 'Create your staff account · an admin approves access and sets your role'
-    : 'Divine Rays · Patient Care Tracker · staff accounts';
+    ? 'New staff account · an admin will set your role after signup'
+    : 'Divine Rays Patient Operations · individual accounts';
   document.getElementById('signupNameWrap').style.display = isUp ? 'block' : 'none';
   document.getElementById('loginBtn').textContent = isUp ? 'Create account' : 'Sign in';
   document.getElementById('signupBtn').style.display = 'none';
@@ -5352,7 +4286,6 @@ async function onSignedIn(session){
   try{
     await initApp();
     if(navigator.onLine) await loadAllProfiles();
-    if(typeof startPresence === 'function') startPresence();
   }catch(e){
     console.error('initApp failed after login', e);
     setSyncStatus('Loaded with errors — see console', 'err');
@@ -5373,15 +4306,12 @@ function applyRoleUI(){
 /* ---------------- Init ---------------- */
 async function initApp(){
   setSyncStatus('Loading…', 'busy');
-  await loadLocalCache();
-  if(!Array.isArray(state.patients)) state.patients = [];
+  state.patients = await loadLocalCache();
   loadTeamStaffCache();
   if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
   renderAll();
   await pullOrg();
   await pullTeamStaff();
-  try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
-  try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
@@ -5391,70 +4321,6 @@ async function initApp(){
   window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
   window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
 }
-
-
-/* Login liquid canvas background — slow organic mesh (~20s drift) */
-(function initLoginCanvas(){
-  const canvas = document.getElementById('loginCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  let raf = 0, w = 0, h = 0;
-  // Bold neon medical fluid mesh
-  const nodes = [
-    { color:{r:173,g:255,b:47},  ampX:0.32, ampY:0.28, speed:1/7,  phase:0.0, radius:0.62 }, // #adff2f neon lime
-    { color:{r:0,g:245,b:212},   ampX:0.30, ampY:0.30, speed:1/8,  phase:1.1, radius:0.58 }, // #00f5d4 electric mint
-    { color:{r:11,g:60,b:38},    ampX:0.28, ampY:0.26, speed:1/9,  phase:2.3, radius:0.70 }, // #0b3c26 forest
-    { color:{r:0,g:180,b:216},   ampX:0.34, ampY:0.24, speed:1/6.5,phase:3.4, radius:0.55 }, // #00b4d8 cyber teal
-    { color:{r:173,g:255,b:47},  ampX:0.26, ampY:0.32, speed:1/7.5,phase:4.2, radius:0.48 },
-    { color:{r:0,g:245,b:212},   ampX:0.22, ampY:0.28, speed:1/8.5,phase:5.0, radius:0.50 }
-  ];
-  function resize(){
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = window.innerWidth; h = window.innerHeight;
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  function draw(now){
-    const t = (now || performance.now()) / 1000;
-    // Deep forest base so neon pops
-    ctx.fillStyle = '#0b3c26';
-    ctx.fillRect(0, 0, w, h);
-    for(const n of nodes){
-      const x = 0.5 + Math.sin(t * Math.PI * 2 * n.speed + n.phase) * n.ampX
-                    + Math.sin(t * Math.PI * 2 * n.speed * 0.4 + n.phase * 2) * 0.08;
-      const y = 0.5 + Math.cos(t * Math.PI * 2 * n.speed * 0.9 + n.phase * 1.4) * n.ampY
-                    + Math.cos(t * Math.PI * 2 * n.speed * 0.35 + n.phase) * 0.07;
-      const px = x * w, py = y * h;
-      const rad = Math.max(w, h) * n.radius;
-      const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
-      const { r, g: gg, b } = n.color;
-      g.addColorStop(0, `rgba(${r},${gg},${b},0.85)`);
-      g.addColorStop(0.35, `rgba(${r},${gg},${b},0.45)`);
-      g.addColorStop(0.7, `rgba(${r},${gg},${b},0.12)`);
-      g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    raf = requestAnimationFrame(draw);
-  }
-  function start(){
-    resize();
-    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      ctx.fillStyle = '#0b3c26';
-      ctx.fillRect(0,0,w,h);
-      return;
-    }
-    raf = requestAnimationFrame(draw);
-  }
-  window.addEventListener('resize', resize);
-  start();
-  window.addEventListener('load', ()=>{ resize(); });
-})();
 
 (async function boot(){
   updateOfflineBanner();
@@ -5506,14 +4372,14 @@ const TEAM_GEO_KEY = 'drcare_team_geo';
 
 const I18N = {
   en: {
-    addMobile: '+ Add site / group', dashboard: 'Dashboard', activity: 'Activity', archived: 'Archived',
+    addMobile: '+ Add Mobile / Walk-in', dashboard: 'Dashboard', activity: 'Activity', archived: 'Archived',
     admin: 'Admin', dark: 'Dark mode', light: 'Light mode', syncNow: 'Sync now',
     exportCsv: 'Export CSV', dailyReport: 'Daily report', importCsv: 'Import CSV',
     pdfReport: 'PDF report', sendReport: 'Send report', recycle: 'Recycle bin',
     searchPh: 'Search name, PhilHealth ID, notes, or team…'
   },
   tl: {
-    addMobile: '+ Magdagdag ng site / grupo', dashboard: 'Dashboard', activity: 'Aktibidad', archived: 'Naka-archive',
+    addMobile: '+ Magdagdag ng Mobile / Walk-in', dashboard: 'Dashboard', activity: 'Aktibidad', archived: 'Naka-archive',
     admin: 'Admin', dark: 'Madilim', light: 'Maliwanag', syncNow: 'I-sync ngayon',
     exportCsv: 'I-export ang CSV', dailyReport: 'Arawang ulat', importCsv: 'Mag-import ng CSV',
     pdfReport: 'Ulat PDF', sendReport: 'Ipadala ang ulat', recycle: 'Basurahan',
@@ -5611,15 +4477,13 @@ function readCustomBenefitsFromForm(){
 
 function openBenefitsAdmin(){
   const list = document.getElementById('benefitsAdminList');
-  if(!list){ alert('Benefits panel missing — re-upload index.html'); return; }
   const defs = loadCustomBenefits();
   list.innerHTML = defs.length ? defs.map((d,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
       <input type="text" value="${escapeAttr(d.label)}" data-edit-ben="${i}">
       <button type="button" class="btn btn-ghost" data-del-ben="${i}">Remove</button>
-    </div>`).join('') : '<div class="empty-state">No custom benefits yet. Add one below.</div>';
-  const bd = document.getElementById('benefitsAdminBackdrop');
-  if(bd){ bd.classList.add('nested','open'); }
+    </div>`).join('') : '<div class="empty-state">No custom benefits yet.</div>';
+  document.getElementById('benefitsAdminBackdrop').classList.add('open');
 }
 document.getElementById('benefitsAdminCloseBtn')?.addEventListener('click', ()=> document.getElementById('benefitsAdminBackdrop').classList.remove('open'));
 document.getElementById('benefitsAdminDone')?.addEventListener('click', ()=> document.getElementById('benefitsAdminBackdrop').classList.remove('open'));
@@ -5836,17 +4700,6 @@ function openRecycle(){
 }
 document.getElementById('recycleBtn')?.addEventListener('click', openRecycle);
 document.getElementById('recycleCloseBtn')?.addEventListener('click', ()=> document.getElementById('recycleBackdrop').classList.remove('open'));
-
-document.getElementById('recycleBackdrop')?.addEventListener('click', e=>{
-  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
-document.getElementById('reportCfgBackdrop')?.addEventListener('click', e=>{
-  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
-document.getElementById('benefitsAdminBackdrop')?.addEventListener('click', e=>{
-  if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
-});
-
 document.getElementById('recycleBody')?.addEventListener('click', e=>{
   const btn = e.target.closest('[data-restore-ri]');
   if(!btn) return;
@@ -5890,9 +4743,8 @@ function buildSummaryText(){
   lines.push('Generated: ' + new Date().toLocaleString());
   lines.push('Total patients: ' + rows.length);
   lines.push('Rice: ' + rows.filter(p=>p.rice).length + ' | Lab: ' + rows.filter(p=>p.lab).length +
-    ' | Meds: ' + rows.filter(p=>p.medicine).length + ' | Vits: ' + rows.filter(p=>p.vitamins).length +
-    ' | Referral: ' + rows.filter(p=>p.referral).length);
-  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1').length +
+    ' | Meds: ' + rows.filter(p=>p.medicine).length);
+  lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1'||p.claim==='t2').length +
     ' | Missed 24h: ' + rows.filter(p=>p.claim==='missed24').length);
   const byTeam = {};
   rows.forEach(p=>{ const t=p.team||'Unknown'; byTeam[t]=(byTeam[t]||0)+1; });
@@ -5911,12 +4763,12 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
   const byTeam = {};
   rows.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, mca:0, t1:0};
     const b = byTeam[t];
-    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1')b.t1++;
+    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1'||p.claim==='t2')b.t1++;
   });
   const teamRows = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>
-    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.vitamins}</td><td>${b.referral}</td><td>${b.t1}</td></tr>`
+    `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.t1}</td></tr>`
   ).join('');
   w.document.write(`<!DOCTYPE html><html><head><title>DR CARE Report</title>
     <style>
@@ -5931,7 +4783,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
     <h1>${org}</h1>
     <div class="sub">Daily operations summary · ${scope} · ${new Date().toLocaleString()}</div>
     <p><b>Total patients:</b> ${rows.length}</p>
-    <table><thead><tr><th>Mobile</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th>T1</th></tr></thead>
+    <table><thead><tr><th>Mobile / Walk-in</th><th>Total</th><th>MCA</th><th>Rice</th><th>Lab</th><th>Meds</th><th>T1</th></tr></thead>
     <tbody>${teamRows || '<tr><td colspan="9">No data</td></tr>'}</tbody></table>
     <p style="margin-top:24px;font-size:11px;color:#888">Generated by DR CARE · Boyz at the Back</p>
     </body></html>`);
@@ -6152,15 +5004,14 @@ setInterval(()=>{
 /* Facilities admin */
 function openFacilitiesAdmin(){
   const list = document.getElementById('facilitiesAdminList');
-  if(!list){ alert('Facilities panel missing — re-upload index.html'); return; }
+  if(!list) return;
   const defs = loadFacilityOptions();
   list.innerHTML = defs.map((f,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
       <input type="text" value="${escapeAttr(f)}" data-edit-fac="${i}">
       <button type="button" class="btn btn-ghost" data-del-fac="${i}">Remove</button>
-    </div>`).join('') || '<div class="empty-state">No facilities yet. Add one below.</div>';
-  const bd = document.getElementById('facilitiesAdminBackdrop');
-  if(bd){ bd.classList.add('nested','open'); }
+    </div>`).join('') || '<div class="empty-state">No facilities</div>';
+  document.getElementById('facilitiesAdminBackdrop')?.classList.add('open');
 }
 (function enhanceAdminFacilities(){
   const tryInject = ()=>{
@@ -6256,7 +5107,7 @@ function openDrawer(id){
   const body = document.getElementById('drawerBody');
   const rows = [
     ['PhilHealth ID', p.phid || '—'],
-    ['Mobile', p.team || '—'],
+    ['Site (Mobile / Walk-in)', p.team || '—'],
     ['Status', (typeof statusLabel !== 'undefined' && statusLabel[p.status]) || p.status || '—'],
     ['Facility', p.facility || '—'],
     ['Claim', p.claim || 'pending'],
@@ -6356,12 +5207,14 @@ document.getElementById('mergeBtn')?.addEventListener('click', ()=>{
   const others = pts.slice(1);
   // Merge flags OR-style
   others.forEach(o=>{
-    ['mca','rice','lab','medicine','vitamins','referral','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
+    ['mca','rice','lab','medicine','within24'].forEach(k=>{ if(o[k]) master[k] = true; });
     if(o.mcaPhoto && !master.mcaPhoto) master.mcaPhoto = o.mcaPhoto;
     if(o.notes && master.notes) master.notes = master.notes + ' | ' + o.notes;
     else if(o.notes) master.notes = o.notes;
-    if(o.claim === 't1') master.claim = 't1';
-    else if(o.claim === 'missed24' && master.claim !== 't1') master.claim = 'missed24';
+    // Claim priority: t2 > t1 > missed24 > pending (T2 implies T1 was done)
+    if(o.claim === 't2') master.claim = 't2';
+    else if(o.claim === 't1' && master.claim !== 't2') master.claim = 't1';
+    else if(o.claim === 'missed24' && master.claim !== 't1' && master.claim !== 't2') master.claim = 'missed24';
     if(!master.dateSubmitted && o.dateSubmitted) master.dateSubmitted = o.dateSubmitted;
     // soft-delete other
     o.deleted = true;
@@ -6472,7 +5325,7 @@ if(typeof allTeams === 'function'){
   };
 }
 
-/* Admin: assign mobiles to user — simple prompt UI */
+/* Admin: assign sites to user — simple prompt UI */
 (function injectTeamAssign(){
   const tryInject = ()=>{
     if(document.getElementById('assignTeamsHelp')) return;
@@ -6482,7 +5335,7 @@ if(typeof allTeams === 'function'){
     help.id = 'assignTeamsHelp';
     help.className = 'field-hint';
     help.style.margin = '8px 0 12px';
-    help.innerHTML = 'To limit an encoder to specific mobiles: open their row menu (or use console) — use <b>Assign mobiles</b> buttons below when available. Admins always see all mobiles.';
+    help.innerHTML = 'To limit an encoder to specific mobiles: open their row menu (or use console) — use <b>Assign sites</b> buttons below when available. Admins always see all sites (mobile & walk-in).';
     body.parentNode.insertBefore(help, body);
   };
   document.getElementById('adminBtn')?.addEventListener('click', ()=> setTimeout(()=>{
@@ -6495,19 +5348,19 @@ if(typeof allTeams === 'function'){
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn btn-ghost btn-sm assign-teams-btn';
-      btn.textContent = 'Assign mobiles';
+      btn.textContent = 'Assign sites';
       btn.addEventListener('click', ()=>{
         const map = loadAssignedTeams();
         const current = (map[id] || []).join(', ');
         const teams = (typeof allTeams === 'function' ? allTeams() : []);
         // Temporarily unfilter for admin listing all team names from patients
         const allNames = [...new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team).filter(Boolean))].sort();
-        const ans = prompt(`Mobiles for this user (comma-separated).\nAvailable: ${allNames.join(', ') || '(none yet)'}\nLeave blank = all mobiles.`, current);
+        const ans = prompt(`Sites for this user (comma-separated, mobile or walk-in).\nAvailable: ${allNames.join(', ') || '(none yet)'}\nLeave blank = all sites (mobile & walk-in).`, current);
         if(ans === null) return;
         const list = ans.split(',').map(s=>s.trim()).filter(Boolean);
         map[id] = list;
         saveAssignedTeams(map);
-        alert(list.length ? `Assigned: ${list.join(', ')}` : 'No restriction (sees all mobiles)');
+        alert(list.length ? `Assigned: ${list.join(', ')}` : 'No restriction (sees all sites (mobile & walk-in))');
       });
       row.appendChild(btn);
     });
@@ -6532,7 +5385,7 @@ function printMcaPackets(ids){
       <p><b>Mobile:</b> ${escapeHtml(p.team||'')} &nbsp; <b>Facility:</b> ${escapeHtml(p.facility||'')}</p>
       <p><b>Status:</b> ${escapeHtml(p.status||'')} &nbsp; <b>Claim:</b> ${escapeHtml(p.claim||'')}</p>
       <p><b>Encoded:</b> ${escapeHtml(p.dateEncoded||'')} &nbsp; <b>Submitted:</b> ${escapeHtml(p.dateSubmitted||'')}</p>
-      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds',p.vitamins&&'Vits',p.referral&&'Referral'].filter(Boolean).join(', ')||'—'}</p>
+      <p><b>Benefits:</b> ${[p.rice&&'Rice',p.lab&&'Lab',p.medicine&&'Meds'].filter(Boolean).join(', ')||'—'}</p>
       <p><b>Notes:</b> ${escapeHtml(p.notes||'—')}</p>
       ${p.mcaPhoto ? `<img src="${p.mcaPhoto}" style="max-width:280px;margin-top:8px;">` : '<p><i>No MCA photo on file</i></p>'}
       <hr>
@@ -6579,141 +5432,6 @@ setTimeout(()=>{
 }, 800);
 
 /* DR CARE — boot: service worker toast, final init hooks */
-
-function updateScaleWarn(){
-  const el = document.getElementById('scaleWarnBanner');
-  if(!el) return;
-  const n = state.patients.filter(p=>!p.deleted).length;
-  const month = document.getElementById('monthFilter')?.value;
-  const dismissed = sessionStorage.getItem('scaleWarnDismissed') === '1';
-  el.style.display = (!dismissed && n >= 800 && !month) ? 'block' : 'none';
-}
-document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
-  sessionStorage.setItem('scaleWarnDismissed', '1');
-  updateScaleWarn();
-});
-
-
-let _didPreferMonth = false;
-function preferMonthIfLarge(){
-  if(_didPreferMonth) return;
-  try{
-    const n = (state.patients || []).filter(p=>!p.deleted).length;
-    const mf = document.getElementById('monthFilter');
-    if(mf && n >= 500 && !mf.value){
-      const now = new Date();
-      mf.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-      _didPreferMonth = true;
-    }
-  }catch(e){}
-}
-
-
-/* ---- Account settings + online presence ---- */
-function openAccountSettings(){
-  if(!currentUser) return;
-  document.getElementById('acc_email').value = currentUser.email || '';
-  document.getElementById('acc_name').value = currentUser.fullName || '';
-  document.getElementById('acc_pass').value = '';
-  document.getElementById('acc_pass2').value = '';
-  const msg = document.getElementById('acc_msg');
-  if(msg){ msg.style.display = 'none'; msg.textContent = ''; }
-  document.getElementById('accountBackdrop').classList.add('open');
-}
-function closeAccountSettings(){
-  document.getElementById('accountBackdrop')?.classList.remove('open');
-}
-document.getElementById('accountBtn')?.addEventListener('click', openAccountSettings);
-document.getElementById('accountCloseBtn')?.addEventListener('click', closeAccountSettings);
-document.getElementById('accountCancelBtn')?.addEventListener('click', closeAccountSettings);
-document.getElementById('accountBackdrop')?.addEventListener('click', e=>{
-  if(e.target.id === 'accountBackdrop') closeAccountSettings();
-});
-
-document.getElementById('accountSaveBtn')?.addEventListener('click', async ()=>{
-  const msg = document.getElementById('acc_msg');
-  const name = (document.getElementById('acc_name').value || '').trim();
-  const pass = document.getElementById('acc_pass').value || '';
-  const pass2 = document.getElementById('acc_pass2').value || '';
-  const btn = document.getElementById('accountSaveBtn');
-  if(pass && pass.length < 6){
-    msg.style.display = 'block'; msg.style.color = 'var(--red)';
-    msg.textContent = 'Password must be at least 6 characters.';
-    return;
-  }
-  if(pass && pass !== pass2){
-    msg.style.display = 'block'; msg.style.color = 'var(--red)';
-    msg.textContent = 'Passwords do not match.';
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
-  try{
-    if(name && currentUser){
-      const { error } = await sb.from('profiles').update({
-        full_name: name,
-        updated_at: new Date().toISOString()
-      }).eq('id', currentUser.id);
-      if(error) throw error;
-      currentUser.fullName = name;
-      if(profileCache[currentUser.id]) profileCache[currentUser.id].full_name = name;
-      try{
-        await sb.auth.updateUser({ data: { full_name: name } });
-      }catch(e){}
-      const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
-      if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel}`;
-    }
-    if(pass){
-      const { error } = await sb.auth.updateUser({ password: pass });
-      if(error) throw error;
-    }
-    msg.style.display = 'block'; msg.style.color = 'var(--green)';
-    msg.textContent = 'Saved.' + (pass ? ' Password updated.' : '');
-    document.getElementById('acc_pass').value = '';
-    document.getElementById('acc_pass2').value = '';
-    setTimeout(closeAccountSettings, 900);
-  }catch(e){
-    console.error(e);
-    msg.style.display = 'block'; msg.style.color = 'var(--red)';
-    msg.textContent = e.message || 'Could not save account changes.';
-  }finally{
-    btn.disabled = false;
-    btn.textContent = 'Save changes';
-  }
-});
-
-async function beatPresence(){
-  if(!currentUser || !navigator.onLine) return;
-  try{
-    await sb.from('profiles').update({
-      last_seen: new Date().toISOString()
-    }).eq('id', currentUser.id);
-  }catch(e){ /* column may not exist yet */ }
-}
-let _presenceTimer = null;
-function startPresence(){
-  beatPresence();
-  if(_presenceTimer) clearInterval(_presenceTimer);
-  _presenceTimer = setInterval(beatPresence, 45000);
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible') beatPresence();
-  });
-}
-
-
-(function wireAdminSubpanels(){
-  const ben = document.getElementById('openBenefitsAdminBtn');
-  const fac = document.getElementById('openFacilitiesAdminBtn');
-  if(ben && !ben.dataset.wired){
-    ben.dataset.wired = '1';
-    ben.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openBenefitsAdmin(); });
-  }
-  if(fac && !fac.dataset.wired){
-    fac.dataset.wired = '1';
-    fac.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openFacilitiesAdmin(); });
-  }
-})();
-
 function showSwUpdateToast(reg){
   if(document.getElementById('swUpdateToast')) return;
   const toast = document.createElement('div');
