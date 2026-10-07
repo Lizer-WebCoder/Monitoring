@@ -1602,6 +1602,65 @@
   #loginOverlay .login-card{ z-index: 2 !important; }
   #loginOverlay .login-liquid{ display: none !important; }
 
+
+  /* High-energy login: neon fluid + stark white card */
+  #loginOverlay{
+    background: #0b3c26 !important;
+  }
+  #loginOverlay .login-card{
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #ffffff !important;
+    outline: none !important;
+    border-radius: 18px !important;
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.12),
+      0 28px 64px rgba(0,0,0,.45) !important;
+    padding: 34px 30px 30px !important;
+  }
+  #loginOverlay .login-brand-mark{
+    background: #0b3c26 !important;
+    box-shadow: 0 8px 20px rgba(11,60,38,.4) !important;
+  }
+  #loginOverlay .login-card h1{
+    color: #0a0f0d !important;
+  }
+  #loginOverlay .login-card p,
+  #loginOverlay #loginSub,
+  #loginOverlay #loginNote,
+  #loginOverlay .login-note{
+    color: #4b5563 !important;
+  }
+  #loginOverlay .login-card label{
+    color: #1f2937 !important;
+  }
+  #loginOverlay .login-card input{
+    background: #ffffff !important;
+    color: #0a0f0d !important;
+    border: 1.5px solid #e5e7eb !important;
+  }
+  #loginOverlay .login-card input:focus{
+    border-color: #0b3c26 !important;
+    box-shadow: 0 0 0 3px rgba(11,60,38,.18) !important;
+  }
+  #loginOverlay #loginBtn{
+    background: #0b3c26 !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(11,60,38,.35) !important;
+    transition: background .2s ease, transform .15s ease, box-shadow .2s ease !important;
+  }
+  #loginOverlay #loginBtn:hover{
+    background: #072a1b !important;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(11,60,38,.45) !important;
+  }
+  #loginOverlay #toggleAuthMode{
+    background: #f9fafb !important;
+    color: #0b3c26 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
 </style>
 </head>
 <body>
@@ -5340,13 +5399,14 @@ async function initApp(){
   if(!canvas) return;
   const ctx = canvas.getContext('2d', { alpha: false });
   let raf = 0, w = 0, h = 0;
-  // Slightly richer pastels so motion is visible but still calm
+  // Bold neon medical fluid mesh
   const nodes = [
-    { color:{r:167,g:243,b:208}, ampX:0.22, ampY:0.18, speed:1/18, phase:0.0,   radius:0.55 }, // mint
-    { color:{r:186,g:230,b:253}, ampX:0.20, ampY:0.20, speed:1/20, phase:1.2,   radius:0.50 }, // sky
-    { color:{r:167,g:243,b:208}, ampX:0.18, ampY:0.22, speed:1/16, phase:2.4,   radius:0.48 }, // sage-ish
-    { color:{r:153,g:246,b:228}, ampX:0.24, ampY:0.14, speed:1/22, phase:3.1,   radius:0.42 }, // teal
-    { color:{r:254,g:243,b:199}, ampX:0.15, ampY:0.20, speed:1/19, phase:4.0,   radius:0.38 }  // soft warm
+    { color:{r:173,g:255,b:47},  ampX:0.32, ampY:0.28, speed:1/7,  phase:0.0, radius:0.62 }, // #adff2f neon lime
+    { color:{r:0,g:245,b:212},   ampX:0.30, ampY:0.30, speed:1/8,  phase:1.1, radius:0.58 }, // #00f5d4 electric mint
+    { color:{r:11,g:60,b:38},    ampX:0.28, ampY:0.26, speed:1/9,  phase:2.3, radius:0.70 }, // #0b3c26 forest
+    { color:{r:0,g:180,b:216},   ampX:0.34, ampY:0.24, speed:1/6.5,phase:3.4, radius:0.55 }, // #00b4d8 cyber teal
+    { color:{r:173,g:255,b:47},  ampX:0.26, ampY:0.32, speed:1/7.5,phase:4.2, radius:0.48 },
+    { color:{r:0,g:245,b:212},   ampX:0.22, ampY:0.28, speed:1/8.5,phase:5.0, radius:0.50 }
   ];
   function resize(){
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -5359,35 +5419,39 @@ async function initApp(){
   }
   function draw(now){
     const t = (now || performance.now()) / 1000;
-    ctx.fillStyle = '#f0fdf4';
+    // Deep forest base so neon pops
+    ctx.fillStyle = '#0b3c26';
     ctx.fillRect(0, 0, w, h);
     for(const n of nodes){
-      // Organic 16–22s loops — clearly visible without being distracting
-      const x = 0.5 + Math.sin(t * Math.PI * 2 * n.speed + n.phase) * n.ampX;
-      const y = 0.5 + Math.cos(t * Math.PI * 2 * n.speed * 0.85 + n.phase * 1.3) * n.ampY;
+      const x = 0.5 + Math.sin(t * Math.PI * 2 * n.speed + n.phase) * n.ampX
+                    + Math.sin(t * Math.PI * 2 * n.speed * 0.4 + n.phase * 2) * 0.08;
+      const y = 0.5 + Math.cos(t * Math.PI * 2 * n.speed * 0.9 + n.phase * 1.4) * n.ampY
+                    + Math.cos(t * Math.PI * 2 * n.speed * 0.35 + n.phase) * 0.07;
       const px = x * w, py = y * h;
       const rad = Math.max(w, h) * n.radius;
       const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
       const { r, g: gg, b } = n.color;
-      g.addColorStop(0, `rgba(${r},${gg},${b},0.55)`);
-      g.addColorStop(0.4, `rgba(${r},${gg},${b},0.28)`);
+      g.addColorStop(0, `rgba(${r},${gg},${b},0.85)`);
+      g.addColorStop(0.35, `rgba(${r},${gg},${b},0.45)`);
+      g.addColorStop(0.7, `rgba(${r},${gg},${b},0.12)`);
       g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+      ctx.globalCompositeOperation = 'screen';
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
+    ctx.globalCompositeOperation = 'source-over';
     raf = requestAnimationFrame(draw);
   }
   function start(){
     resize();
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      ctx.fillStyle = '#f0fdf4';
+      ctx.fillStyle = '#0b3c26';
       ctx.fillRect(0,0,w,h);
       return;
     }
     raf = requestAnimationFrame(draw);
   }
   window.addEventListener('resize', resize);
-  // Start immediately + again on load (in case layout was 0)
   start();
   window.addEventListener('load', ()=>{ resize(); });
 })();
