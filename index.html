@@ -119,54 +119,92 @@
       linear-gradient(160deg, #061a16 0%, #0b2c24 40%, #0e3a30 100%);
   }
   /* Mosaic panes — irregular colored glass shards */
-  .login-bg{ pointer-events:none; z-index:0; }
+  .login-bg{ pointer-events:none; z-index:0; overflow:hidden; }
   .login-bg .glass-base{ z-index:0; }
-  .login-bg .vignette{ z-index:3; pointer-events:none; }
+  .login-bg .vignette{ z-index:1; pointer-events:none; opacity:0.5; }
   .login-bg .lead, .login-bg .spark{ z-index:1; pointer-events:none; }
-  .login-bg .pane-wrap{
+
+  /* Visible mosaic shards — static HTML fallback + JS-enhanced */
+  .login-bg .shard{
     position:absolute;
-    left:0; top:0;
+    z-index:2;
     pointer-events:auto;
     cursor:pointer;
-    z-index:2;
+    opacity:0.9;
+    border:2px solid rgba(255,255,255,0.25);
+    box-shadow:0 4px 20px rgba(0,0,0,0.25), inset 0 0 16px rgba(255,255,255,0.12);
     will-change: transform;
-    transform: translate3d(0,0,0);
   }
-  .login-bg .pane-wrap .pane{
-    display:block;
-    width:100%;
-    height:100%;
-    opacity:0.88;
-    border:1.5px solid rgba(255,255,255,0.22);
-    box-shadow:
-      0 0 24px rgba(47,138,121,0.25),
-      inset 0 0 20px rgba(255,255,255,0.08);
+  .login-bg .shard-1{
+    width:160px; height:180px; left:5%; top:8%;
+    background:linear-gradient(135deg, #2dd4a8, #0f766e);
+    clip-path:polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%);
+    animation: shardMove1 9s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-2{
+    width:140px; height:160px; right:6%; top:12%;
+    background:linear-gradient(200deg, #f0b429, #b45309);
+    clip-path:polygon(40% 0%, 100% 20%, 90% 80%, 40% 100%, 0% 70%, 10% 20%);
+    animation: shardMove2 11s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-3{
+    width:180px; height:130px; left:12%; bottom:10%;
+    background:linear-gradient(90deg, #4ade80, #15803d);
+    clip-path:polygon(0% 30%, 50% 0%, 100% 25%, 95% 100%, 20% 90%);
+    animation: shardMove3 8s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-4{
+    width:130px; height:150px; right:10%; bottom:18%;
+    background:linear-gradient(45deg, #a78bfa, #3b82f6);
+    clip-path:polygon(50% 0%, 100% 35%, 80% 100%, 10% 85%, 0% 30%);
+    animation: shardMove4 10s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-5{
+    width:150px; height:140px; left:45%; top:6%;
+    background:linear-gradient(160deg, #5eead4, #0f766e);
+    clip-path:polygon(25% 0%, 100% 25%, 75% 100%, 0% 70%);
+    animation: shardMove5 12s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-6{
+    width:120px; height:145px; left:8%; top:45%;
+    background:linear-gradient(210deg, #fb7185, #c2410c);
+    clip-path:polygon(0% 0%, 70% 10%, 100% 60%, 50% 100%, 0% 80%);
+    animation: shardMove6 9.5s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-7{
+    width:155px; height:120px; right:8%; top:42%;
+    background:linear-gradient(120deg, #38bdf8, #0e7490);
+    clip-path:polygon(10% 0%, 90% 0%, 100% 100%, 0% 80%);
+    animation: shardMove7 10.5s ease-in-out infinite alternate;
+  }
+  .login-bg .shard-8{
+    width:135px; height:155px; left:40%; bottom:8%;
+    background:linear-gradient(30deg, #34d399, #047857);
+    clip-path:polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%);
+    animation: shardMove8 8.5s ease-in-out infinite alternate;
+  }
+  @keyframes shardMove1{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(40px,30px) rotate(12deg)} }
+  @keyframes shardMove2{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(-35px,25px) rotate(-10deg)} }
+  @keyframes shardMove3{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(30px,-35px) rotate(8deg)} }
+  @keyframes shardMove4{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(-40px,-20px) rotate(-14deg)} }
+  @keyframes shardMove5{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(25px,40px) rotate(6deg)} }
+  @keyframes shardMove6{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(45px,-15px) rotate(-9deg)} }
+  @keyframes shardMove7{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(-30px,35px) rotate(11deg)} }
+  @keyframes shardMove8{ from{transform:translate(0,0) rotate(0deg)} to{transform:translate(20px,-40px) rotate(-7deg)} }
+
+  .login-bg .shard.popping{
+    animation: shardPop 0.4s cubic-bezier(0.34,1.4,0.64,1) forwards !important;
     pointer-events:none;
   }
-  .login-bg .pane-wrap.bump .pane{
-    animation: paneBump 0.35s ease-out;
-  }
-  @keyframes paneBump{
-    0%{ transform:scale(1); filter:brightness(1); }
-    40%{ transform:scale(1.18); filter:brightness(1.45); }
-    100%{ transform:scale(1); filter:brightness(1); }
-  }
-  .login-bg .pane-wrap.popping{
-    pointer-events:none;
-    animation: wrapPop 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards;
-    z-index:5;
-  }
-  @keyframes wrapPop{
-    0%{ transform:scale(1); opacity:1; }
-    40%{ transform:scale(1.35); opacity:0.95; }
+  @keyframes shardPop{
+    0%{ transform:scale(1); opacity:0.9; }
+    40%{ transform:scale(1.4); opacity:1; }
     100%{ transform:scale(0); opacity:0; }
   }
-  .login-bg .pane-wrap.spawning{
-    animation: wrapSpawn 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
-  }
-  @keyframes wrapSpawn{
-    0%{ transform:scale(0); opacity:0; }
-    100%{ transform:scale(1); opacity:1; }
+  .login-bg .shard.bump{
+    filter:brightness(1.4);
+    transform:scale(1.12);
+    transition: transform 0.2s ease, filter 0.2s ease;
   }
   /* Lead lines (stained-glass borders) */
   .login-bg .lead{
@@ -986,14 +1024,21 @@
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
-  <div class="login-bg" aria-hidden="true" id="loginGlassBg">
+  <div class="login-bg" id="loginGlassBg">
     <div class="glass-base"></div>
+    <div class="shard shard-1" data-shard></div>
+    <div class="shard shard-2" data-shard></div>
+    <div class="shard shard-3" data-shard></div>
+    <div class="shard shard-4" data-shard></div>
+    <div class="shard shard-5" data-shard></div>
+    <div class="shard shard-6" data-shard></div>
+    <div class="shard shard-7" data-shard></div>
+    <div class="shard shard-8" data-shard></div>
     <div class="lead lead-h lead-1"></div>
     <div class="lead lead-h lead-2"></div>
     <div class="lead lead-v lead-3"></div>
     <div class="lead lead-v lead-4"></div>
     <div class="lead lead-h lead-5"></div>
-    <div class="spark"></div><div class="spark"></div><div class="spark"></div><div class="spark"></div>
     <div class="spark"></div><div class="spark"></div><div class="spark"></div><div class="spark"></div>
     <div class="vignette"></div>
   </div>
@@ -4160,24 +4205,23 @@ document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
 async 
 
 
-/* ---- Interactive stained-glass panes (motion + collision) ---- */
+
+/* ---- Login glass: click to pop, mouse dodge (shards are in HTML) ---- */
 (function initLoginGlass(){
   function boot(){
     const overlay = document.getElementById('loginOverlay');
-    const bg = document.getElementById('loginGlassBg') || (overlay && overlay.querySelector('.login-bg'));
+    const bg = document.getElementById('loginGlassBg');
     if(!overlay || !bg) return;
 
     const COLORS = [
-      'linear-gradient(135deg, #1fa887 0%, #14806a 100%)',
-      'linear-gradient(200deg, #d4a03a 0%, #b07a18 100%)',
-      'linear-gradient(90deg, #4caf70 0%, #2d8a55 100%)',
-      'linear-gradient(45deg, #7b5cbf 0%, #3d6fa0 100%)',
-      'linear-gradient(160deg, #5ec4a8 0%, #1a7a68 100%)',
-      'linear-gradient(210deg, #e07a5f 0%, #c45c2a 100%)',
-      'linear-gradient(120deg, #4a90c8 0%, #2a6b5a 100%)',
-      'linear-gradient(30deg, #3dba8c 0%, #1a5c48 100%)',
-      'linear-gradient(180deg, #2eb89a 0%, #0d4a3c 100%)',
-      'linear-gradient(70deg, #c9a227 0%, #1f6b58 100%)'
+      'linear-gradient(135deg, #2dd4a8, #0f766e)',
+      'linear-gradient(200deg, #f0b429, #b45309)',
+      'linear-gradient(90deg, #4ade80, #15803d)',
+      'linear-gradient(45deg, #a78bfa, #3b82f6)',
+      'linear-gradient(160deg, #5eead4, #0f766e)',
+      'linear-gradient(210deg, #fb7185, #c2410c)',
+      'linear-gradient(120deg, #38bdf8, #0e7490)',
+      'linear-gradient(30deg, #34d399, #047857)'
     ];
     const CLIPS = [
       'polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%)',
@@ -4190,191 +4234,56 @@ async
       'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)'
     ];
 
-    const pieces = [];
-    const COUNT = 12;
-    const SPEED = 1.1;
-    let W = 0, H = 0;
-    let mouse = { x: -9999, y: -9999 };
-    let running = true;
-
-    function size(){
-      const r = overlay.getBoundingClientRect();
-      W = r.width; H = r.height;
+    function respawn(el){
+      const size = 100 + Math.random() * 80;
+      el.style.width = size + 'px';
+      el.style.height = (size * (0.7 + Math.random() * 0.4)) + 'px';
+      el.style.left = (Math.random() * 80) + '%';
+      el.style.top = (Math.random() * 75) + '%';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+      el.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
+      el.classList.remove('popping');
+      el.style.animation = '';
+      // re-enable a drift animation
+      const n = 1 + Math.floor(Math.random() * 8);
+      el.style.animation = 'shardMove' + n + ' ' + (7 + Math.random() * 5) + 's ease-in-out infinite alternate';
     }
 
-    function rand(a, b){ return a + Math.random() * (b - a); }
-
-    function createPiece(animateIn){
-      const size = rand(90, 170);
-      const wrap = document.createElement('div');
-      wrap.className = 'pane-wrap' + (animateIn ? ' spawning' : '');
-      wrap.style.width = size + 'px';
-      wrap.style.height = size * rand(0.75, 1.15) + 'px';
-
-      const pane = document.createElement('div');
-      pane.className = 'pane';
-      pane.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-      pane.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
-      wrap.appendChild(pane);
-      bg.appendChild(wrap);
-
-      const pw = parseFloat(wrap.style.width);
-      const ph = parseFloat(wrap.style.height);
-      const angle = rand(0, Math.PI * 2);
-      const sp = SPEED * rand(0.7, 1.5);
-      const piece = {
-        el: wrap,
-        w: pw,
-        h: ph,
-        x: rand(20, Math.max(40, W - pw - 20)),
-        y: rand(20, Math.max(40, H - ph - 20)),
-        vx: Math.cos(angle) * sp,
-        vy: Math.sin(angle) * sp,
-        dead: false
-      };
-      wrap.style.transform = 'translate3d(' + piece.x + 'px,' + piece.y + 'px,0)';
-      pieces.push(piece);
-
-      if(animateIn){
-        wrap.addEventListener('animationend', function once(e){
-          if(e.animationName === 'wrapSpawn'){
-            wrap.classList.remove('spawning');
-            wrap.removeEventListener('animationend', once);
-          }
-        });
-      }
-      return piece;
-    }
-
-    function removePiece(piece){
-      piece.dead = true;
-      const i = pieces.indexOf(piece);
-      if(i >= 0) pieces.splice(i, 1);
-    }
-
-    size();
-    for(let i = 0; i < COUNT; i++) createPiece(false);
-
-    function onMove(e){
-      const r = overlay.getBoundingClientRect();
-      mouse.x = e.clientX - r.left;
-      mouse.y = e.clientY - r.top;
-    }
-    function onLeave(){ mouse.x = -9999; mouse.y = -9999; }
-
-    function onClick(e){
-      const wrap = e.target.closest('.pane-wrap');
-      if(!wrap || wrap.classList.contains('popping')) return;
-      const piece = pieces.find(p => p.el === wrap);
-      if(!piece) return;
+    bg.addEventListener('click', function(e){
+      const shard = e.target.closest('[data-shard]');
+      if(!shard || shard.classList.contains('popping')) return;
       e.preventDefault();
       e.stopPropagation();
-      wrap.classList.remove('spawning', 'bump');
-      wrap.classList.add('popping');
-      // freeze motion
-      piece.vx = 0; piece.vy = 0;
-      wrap.addEventListener('animationend', function once(ev){
-        if(ev.animationName === 'wrapPop'){
-          wrap.remove();
-          removePiece(piece);
-          setTimeout(function(){ if(running) createPiece(true); }, 150);
+      shard.classList.add('popping');
+      setTimeout(function(){ respawn(shard); }, 420);
+    });
+
+    // light mouse dodge via CSS custom property
+    overlay.addEventListener('mousemove', function(e){
+      if(overlay.classList.contains('hidden')) return;
+      const r = overlay.getBoundingClientRect();
+      const mx = e.clientX - r.left, my = e.clientY - r.top;
+      bg.querySelectorAll('[data-shard]').forEach(function(shard){
+        if(shard.classList.contains('popping')) return;
+        const pr = shard.getBoundingClientRect();
+        const cx = pr.left - r.left + pr.width / 2;
+        const cy = pr.top - r.top + pr.height / 2;
+        const dx = cx - mx, dy = cy - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if(dist < 130 && dist > 1){
+          const f = (1 - dist / 130) * 28;
+          shard.style.translate = ((dx / dist) * f).toFixed(1) + 'px ' + ((dy / dist) * f).toFixed(1) + 'px';
+        } else {
+          shard.style.translate = '';
         }
       });
-    }
-
-    function collide(a, b){
-      const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
-      const bx = b.x + b.w / 2, by = b.y + b.h / 2;
-      const dx = bx - ax, dy = by - ay;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const minDist = (a.w + b.w) * 0.28;
-      if(dist >= minDist || dist < 0.01) return false;
-
-      // push apart
-      const nx = dx / dist, ny = dy / dist;
-      const overlap = minDist - dist;
-      a.x -= nx * overlap * 0.5;
-      a.y -= ny * overlap * 0.5;
-      b.x += nx * overlap * 0.5;
-      b.y += ny * overlap * 0.5;
-
-      // bounce velocities (swap along normal)
-      const avn = a.vx * nx + a.vy * ny;
-      const bvn = b.vx * nx + b.vy * ny;
-      a.vx += (bvn - avn) * nx;
-      a.vy += (bvn - avn) * ny;
-      b.vx += (avn - bvn) * nx;
-      b.vy += (avn - bvn) * ny;
-
-      // bump animation
-      a.el.classList.remove('bump');
-      b.el.classList.remove('bump');
-      void a.el.offsetWidth;
-      void b.el.offsetWidth;
-      a.el.classList.add('bump');
-      b.el.classList.add('bump');
-      setTimeout(function(){ a.el.classList.remove('bump'); b.el.classList.remove('bump'); }, 360);
-      return true;
-    }
-
-    function frame(){
-      if(!running) return;
-      if(overlay.classList.contains('hidden')){
-        requestAnimationFrame(frame);
-        return;
-      }
-      size();
-      const list = pieces.filter(p => !p.dead && !p.el.classList.contains('popping'));
-
-      for(let i = 0; i < list.length; i++){
-        const p = list[i];
-        // mouse dodge
-        const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
-        const mdx = cx - mouse.x, mdy = cy - mouse.y;
-        const md = Math.sqrt(mdx * mdx + mdy * mdy);
-        if(md < 150 && md > 0.1){
-          const f = (1 - md / 150) * 2.2;
-          p.vx += (mdx / md) * f;
-          p.vy += (mdy / md) * f;
-        }
-        // soft speed limit
-        const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if(sp > 3.2){ p.vx *= 3.2 / sp; p.vy *= 3.2 / sp; }
-        if(sp < 0.35){
-          const a = Math.random() * Math.PI * 2;
-          p.vx += Math.cos(a) * 0.15;
-          p.vy += Math.sin(a) * 0.15;
-        }
-
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // walls
-        if(p.x < 0){ p.x = 0; p.vx = Math.abs(p.vx) * 1.05; }
-        if(p.y < 0){ p.y = 0; p.vy = Math.abs(p.vy) * 1.05; }
-        if(p.x + p.w > W){ p.x = W - p.w; p.vx = -Math.abs(p.vx) * 1.05; }
-        if(p.y + p.h > H){ p.y = H - p.h; p.vy = -Math.abs(p.vy) * 1.05; }
-
-        p.el.style.transform = 'translate3d(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px,0)';
-      }
-
-      // collisions
-      for(let i = 0; i < list.length; i++){
-        for(let j = i + 1; j < list.length; j++){
-          collide(list[i], list[j]);
-        }
-      }
-
-      requestAnimationFrame(frame);
-    }
-
-    overlay.addEventListener('mousemove', onMove, { passive: true });
-    overlay.addEventListener('mouseleave', onLeave);
-    overlay.addEventListener('click', onClick, true);
-    window.addEventListener('resize', size);
-    requestAnimationFrame(frame);
+    }, { passive: true });
+    overlay.addEventListener('mouseleave', function(){
+      bg.querySelectorAll('[data-shard]').forEach(function(s){ s.style.translate = ''; });
+    });
   }
-
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
