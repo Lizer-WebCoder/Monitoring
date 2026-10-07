@@ -885,6 +885,45 @@
   .type-badge.walkin{ background:var(--amber-bg); color:var(--amber); }
   .type-badge.profiling{ background:var(--purple-bg); color:var(--purple); }
 
+
+  .admin-stats{
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;
+  }
+  .admin-stat{
+    flex:1 1 100px; background:var(--table-head); border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; text-align:center;
+  }
+  .admin-stat .n{ font-size:20px; font-weight:800; font-family:'IBM Plex Mono',monospace; }
+  .admin-stat .l{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+  .admin-user-card{
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    border:1px solid var(--line); border-radius:12px; background:var(--card);
+    margin-bottom:8px; flex-wrap:wrap;
+  }
+  .admin-user-card.pending{ border-color:var(--amber); background:var(--amber-bg); }
+  .admin-avatar{
+    width:40px; height:40px; border-radius:50%; background:var(--teal);
+    color:#fff; font-weight:800; font-size:14px; display:flex; align-items:center;
+    justify-content:center; flex:none;
+  }
+  .admin-user-info{ flex:1 1 140px; min-width:0; }
+  .admin-user-info .nm{ font-weight:700; font-size:14px; }
+  .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
+  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .presence-dot{
+    width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
+    background:#94a3b8;
+  }
+  .presence-dot.on{ background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.25); }
+  .presence-lbl{ font-size:11px; color:var(--muted); font-weight:600; }
+  .role-pill{
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    padding:3px 8px; border-radius:20px; background:var(--table-head); color:var(--muted);
+  }
+  .role-pill.admin{ background:var(--purple-bg); color:var(--purple); }
+  .role-pill.encoder{ background:var(--blue-bg); color:var(--blue); }
+  .role-pill.viewer{ background:var(--table-head); color:var(--muted); }
+
 </style>
 </head>
 <body>
@@ -933,7 +972,7 @@
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="whoAmI"></span><button id="logoutBtn">Sign out</button></div>
+        <div class="who-row"><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -1290,13 +1329,51 @@
   </div>
 </div>
 
+
+<!-- Account settings -->
+<div class="dash-backdrop" id="accountBackdrop">
+  <div class="dash-modal" style="max-width:420px;">
+    <div class="dash-head">
+      <div>
+        <h3>My account</h3>
+        <div class="modal-sub">Update your display name or password. Email is your login ID.</div>
+      </div>
+      <button class="dash-close" id="accountCloseBtn" type="button" title="Close">✕</button>
+    </div>
+    <div class="form-grid" style="margin-top:8px;">
+      <div class="full">
+        <label>Email (login)</label>
+        <input type="email" id="acc_email" disabled style="opacity:.7;">
+      </div>
+      <div class="full">
+        <label>Display name</label>
+        <input type="text" id="acc_name" placeholder="Your name">
+      </div>
+      <div class="full">
+        <label>New password</label>
+        <input type="password" id="acc_pass" placeholder="Leave blank to keep current" autocomplete="new-password">
+        <div class="field-hint">At least 6 characters if changing.</div>
+      </div>
+      <div class="full">
+        <label>Confirm new password</label>
+        <input type="password" id="acc_pass2" placeholder="Repeat new password" autocomplete="new-password">
+      </div>
+      <div class="full" id="acc_msg" style="display:none;font-size:12.5px;font-weight:600;"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" id="accountCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="accountSaveBtn">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Admin panel -->
 <div class="dash-backdrop" id="adminBackdrop">
-  <div class="dash-modal" style="max-width:720px;">
+  <div class="dash-modal" style="max-width:780px;">
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve who can log in, and set roles. New signups stay blocked until you check Approved.</div>
+        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
@@ -1609,7 +1686,7 @@ async function loadCurrentProfile(session){
 
 async function loadAllProfiles(){
   try{
-    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at');
+    const { data, error } = await sb.from('profiles').select('id, email, full_name, role, approved, created_at, last_seen');
     if(error) throw error;
     (data || []).forEach(p => { profileCache[p.id] = p; });
     return data || [];
@@ -4064,7 +4141,6 @@ async function renderAdminUsers(){
     `<option value="${r}" ${r===current?'selected':''}>${r}</option>`
   ).join('');
 
-  // Sort: unapproved first, then by name
   users.sort((a,b)=>{
     const aa = (a.role === 'admin' || a.approved) ? 1 : 0;
     const bb = (b.role === 'admin' || b.approved) ? 1 : 0;
@@ -4072,49 +4148,74 @@ async function renderAdminUsers(){
     return String(a.full_name||a.email||'').localeCompare(String(b.full_name||b.email||''));
   });
 
+  const now = Date.now();
+  const ONLINE_MS = 3 * 60 * 1000;
+  function isOnline(u){
+    if(!u.last_seen) return false;
+    const t = new Date(u.last_seen).getTime();
+    return !isNaN(t) && (now - t) < ONLINE_MS;
+  }
+  const onlineCount = users.filter(isOnline).length;
+  const pendingCount = users.filter(u => u.role !== 'admin' && !u.approved).length;
+  const approvedCount = users.filter(u => u.role === 'admin' || u.approved).length;
+
+  function initials(u){
+    const n = (u.full_name || u.email || '?').trim();
+    const parts = n.split(/\s+/);
+    if(parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
+    return n.slice(0,2).toUpperCase();
+  }
+  function seenLabel(u){
+    if(isOnline(u)) return 'Online now';
+    if(!u.last_seen) return 'Never seen';
+    try{
+      const d = new Date(u.last_seen);
+      return 'Last seen ' + d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    }catch(e){ return 'Offline'; }
+  }
+
   body.innerHTML = `
-    <div class="dash-table-wrap">
-      <table class="dash-table">
-        <thead>
-          <tr>
-            <th>Approved</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${users.map(u => {
-            const isSelf = u.id === currentUser.id;
-            const isUserAdmin = u.role === 'admin';
-            const approved = isUserAdmin ? true : !!u.approved;
-            return `
-            <tr data-uid="${u.id}" style="${!approved ? 'background:var(--amber-bg);' : ''}">
-              <td style="text-align:center;">
-                <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
-                  ${approved ? 'checked' : ''}
-                  ${isSelf || isUserAdmin ? 'disabled title="Admins are always approved"' : ''}
-                  title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
-              </td>
-              <td>${escapeHtml(u.full_name || '—')}</td>
-              <td>${escapeHtml(u.email || '—')}</td>
-              <td>
-                <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled title="You cannot change your own role here"' : ''}>
-                  ${roleOptions(u.role || 'encoder')}
-                </select>
-              </td>
-              <td style="font-size:11px;color:var(--muted);">
-                ${isSelf ? 'You' : (!approved ? '<span style="color:var(--amber);font-weight:700;">Pending</span>' : 'OK')}
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+    <div class="admin-stats">
+      <div class="admin-stat"><div class="n">${users.length}</div><div class="l">Total users</div></div>
+      <div class="admin-stat"><div class="n" style="color:var(--green)">${onlineCount}</div><div class="l">Online</div></div>
+      <div class="admin-stat"><div class="n">${approvedCount}</div><div class="l">Approved</div></div>
+      <div class="admin-stat"><div class="n" style="color:var(--amber)">${pendingCount}</div><div class="l">Pending</div></div>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-top:14px;">
-      <b>Approved</b> = can log in. Uncheck to revoke access.<br>
-      Roles: <b>admin</b> — full access + this panel · <b>encoder</b> — add/edit patients · <b>viewer</b> — read-only.
+    ${users.map(u => {
+      const isSelf = currentUser && u.id === currentUser.id;
+      const isUserAdmin = u.role === 'admin';
+      const approved = isUserAdmin ? true : !!u.approved;
+      const online = isOnline(u);
+      return `
+      <div class="admin-user-card ${approved ? '' : 'pending'}" data-uid="${u.id}">
+        <div class="admin-avatar">${escapeHtml(initials(u))}</div>
+        <div class="admin-user-info">
+          <div class="nm">${escapeHtml(u.full_name || '—')}${isSelf ? ' <span style="font-size:11px;color:var(--muted)">(you)</span>' : ''}</div>
+          <div class="em">${escapeHtml(u.email || '—')}</div>
+          <div style="margin-top:4px;">
+            <span class="presence-dot ${online ? 'on' : ''}"></span>
+            <span class="presence-lbl">${escapeHtml(seenLabel(u))}</span>
+            <span class="role-pill ${escapeAttr(u.role||'encoder')}">${escapeHtml(u.role||'encoder')}</span>
+            ${approved ? '' : '<span class="role-pill" style="background:var(--amber-bg);color:var(--amber);">Pending approval</span>'}
+          </div>
+        </div>
+        <div class="admin-user-meta">
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+            <input type="checkbox" class="admin-approve-check" data-uid="${u.id}"
+              ${approved ? 'checked' : ''}
+              ${isSelf || isUserAdmin ? 'disabled' : ''}
+              title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
+            Approve login
+          </label>
+          <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
+            ${roleOptions(u.role || 'encoder')}
+          </select>
+        </div>
+      </div>`;
+    }).join('')}
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5;">
+      <b>Approve login</b> = user can sign in. Uncheck to revoke access.<br>
+      <b>Online</b> = active in the last 3 minutes. Roles: <b>admin</b> full access · <b>encoder</b> add/edit · <b>viewer</b> read-only.
     </p>
   `;
 
@@ -4125,7 +4226,6 @@ async function renderAdminUsers(){
       sel.disabled = true;
       try{
         const patch = { role, updated_at: new Date().toISOString() };
-        // Promoting to admin also approves
         if(role === 'admin') patch.approved = true;
         const { error } = await sb.from('profiles').update(patch).eq('id', uid);
         if(error) throw error;
@@ -4151,7 +4251,7 @@ async function renderAdminUsers(){
         const { error } = await sb.from('profiles').update({ approved, updated_at: new Date().toISOString() }).eq('id', uid);
         if(error) throw error;
         if(profileCache[uid]) profileCache[uid].approved = approved;
-        setSyncStatus(approved ? 'User approved' : 'Access revoked', '');
+        setSyncStatus(approved ? 'User approved — can log in' : 'Access revoked', '');
         await renderAdminUsers();
       }catch(e){
         console.error(e);
@@ -4163,6 +4263,7 @@ async function renderAdminUsers(){
     });
   });
 }
+
 
 /* ---------------- Auth ---------------- */
 const loginOverlay = document.getElementById('loginOverlay');
@@ -4315,6 +4416,7 @@ async function onSignedIn(session){
   try{
     await initApp();
     if(navigator.onLine) await loadAllProfiles();
+    if(typeof startPresence === 'function') startPresence();
   }catch(e){
     console.error('initApp failed after login', e);
     setSyncStatus('Loaded with errors — see console', 'err');
@@ -5501,6 +5603,98 @@ function preferMonthIfLarge(){
       _didPreferMonth = true;
     }
   }catch(e){}
+}
+
+
+/* ---- Account settings + online presence ---- */
+function openAccountSettings(){
+  if(!currentUser) return;
+  document.getElementById('acc_email').value = currentUser.email || '';
+  document.getElementById('acc_name').value = currentUser.fullName || '';
+  document.getElementById('acc_pass').value = '';
+  document.getElementById('acc_pass2').value = '';
+  const msg = document.getElementById('acc_msg');
+  if(msg){ msg.style.display = 'none'; msg.textContent = ''; }
+  document.getElementById('accountBackdrop').classList.add('open');
+}
+function closeAccountSettings(){
+  document.getElementById('accountBackdrop')?.classList.remove('open');
+}
+document.getElementById('accountBtn')?.addEventListener('click', openAccountSettings);
+document.getElementById('accountCloseBtn')?.addEventListener('click', closeAccountSettings);
+document.getElementById('accountCancelBtn')?.addEventListener('click', closeAccountSettings);
+document.getElementById('accountBackdrop')?.addEventListener('click', e=>{
+  if(e.target.id === 'accountBackdrop') closeAccountSettings();
+});
+
+document.getElementById('accountSaveBtn')?.addEventListener('click', async ()=>{
+  const msg = document.getElementById('acc_msg');
+  const name = (document.getElementById('acc_name').value || '').trim();
+  const pass = document.getElementById('acc_pass').value || '';
+  const pass2 = document.getElementById('acc_pass2').value || '';
+  const btn = document.getElementById('accountSaveBtn');
+  if(pass && pass.length < 6){
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
+    msg.textContent = 'Password must be at least 6 characters.';
+    return;
+  }
+  if(pass && pass !== pass2){
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
+    msg.textContent = 'Passwords do not match.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try{
+    if(name && currentUser){
+      const { error } = await sb.from('profiles').update({
+        full_name: name,
+        updated_at: new Date().toISOString()
+      }).eq('id', currentUser.id);
+      if(error) throw error;
+      currentUser.fullName = name;
+      if(profileCache[currentUser.id]) profileCache[currentUser.id].full_name = name;
+      try{
+        await sb.auth.updateUser({ data: { full_name: name } });
+      }catch(e){}
+      const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
+      if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel}`;
+    }
+    if(pass){
+      const { error } = await sb.auth.updateUser({ password: pass });
+      if(error) throw error;
+    }
+    msg.style.display = 'block'; msg.style.color = 'var(--green)';
+    msg.textContent = 'Saved.' + (pass ? ' Password updated.' : '');
+    document.getElementById('acc_pass').value = '';
+    document.getElementById('acc_pass2').value = '';
+    setTimeout(closeAccountSettings, 900);
+  }catch(e){
+    console.error(e);
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
+    msg.textContent = e.message || 'Could not save account changes.';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  }
+});
+
+async function beatPresence(){
+  if(!currentUser || !navigator.onLine) return;
+  try{
+    await sb.from('profiles').update({
+      last_seen: new Date().toISOString()
+    }).eq('id', currentUser.id);
+  }catch(e){ /* column may not exist yet */ }
+}
+let _presenceTimer = null;
+function startPresence(){
+  beatPresence();
+  if(_presenceTimer) clearInterval(_presenceTimer);
+  _presenceTimer = setInterval(beatPresence, 45000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') beatPresence();
+  });
 }
 
 function showSwUpdateToast(reg){
