@@ -861,6 +861,26 @@
     background:var(--table-head); font-family:inherit; color:var(--muted);
   }
 
+
+  .type-switch{
+    display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+    margin:4px 0 10px;
+  }
+  .type-switch label{
+    flex:1; text-align:center; padding:9px 10px; font-size:12.5px; font-weight:700;
+    cursor:pointer; background:var(--card); color:var(--muted); border:none; margin:0;
+    user-select:none;
+  }
+  .type-switch input{ position:absolute; opacity:0; pointer-events:none; }
+  .type-switch label.active{ background:var(--teal); color:#fff; }
+  .type-badge{
+    display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; padding:2px 7px; border-radius:20px; vertical-align:middle;
+    margin-left:6px;
+  }
+  .type-badge.mobile{ background:var(--blue-bg); color:var(--blue); }
+  .type-badge.walkin{ background:var(--amber-bg); color:var(--amber); }
+
 </style>
 </head>
 <body>
@@ -956,6 +976,11 @@
       <option value="vit-no">Vitamins not yet</option>
       <option value="ref-yes">Referral done</option>
       <option value="ref-no">Referral not yet</option>
+    </select>
+    <select id="filterType" title="Mobile vs walk-in">
+      <option value="">All types</option>
+      <option value="mobile">Mobile only</option>
+      <option value="walkin">Walk-in / profiling only</option>
     </select>
     <select id="filterDup" title="Show only records that share a PhilHealth ID with another patient">
       <option value="">All records</option>
@@ -1131,8 +1156,13 @@
     <div class="modal-sub">Use one group per mobile team, clinic site, or walk-in day (example: “Oct 7, 2026 Walk-in”). List staff if needed.</div>
     <div class="form-grid">
       <div class="full">
+        <label>Type</label>
+        <div class="type-switch" id="tm_typeSwitch" role="radiogroup" aria-label="Group type">
+          <label class="active" data-type-lbl="mobile"><input type="radio" name="tm_type" id="tm_type_mobile" value="mobile" checked> Mobile</label>
+          <label data-type-lbl="walkin"><input type="radio" name="tm_type" id="tm_type_walkin" value="walkin"> Walk-in / profiling</label>
+        </div>
         <label>Name</label>
-        <input type="text" id="tm_name" placeholder="e.g. Tacloban Mobile · or Oct 7 2026 Walk-in">
+        <input type="text" id="tm_name" placeholder="e.g. Tacloban Mobile">
       </div>
       <div class="full">
         <label>Site location (GPS)</label>
@@ -1711,6 +1741,39 @@ function loadTeamStaffCache(){
 }
 function saveTeamStaffCache(){ localStorage.setItem(TEAM_STAFF_CACHE_KEY, JSON.stringify(teamStaff)); }
 
+const TEAM_META_KEY = 'drcare_team_meta';
+let teamMeta = {};
+function loadTeamMeta(){
+  try{ teamMeta = JSON.parse(localStorage.getItem(TEAM_META_KEY) || '{}'); }catch(e){ teamMeta = {}; }
+  if(!teamMeta || typeof teamMeta !== 'object') teamMeta = {};
+}
+function saveTeamMeta(){
+  try{ localStorage.setItem(TEAM_META_KEY, JSON.stringify(teamMeta)); }catch(e){}
+}
+function getTeamType(name){
+  if(teamMeta[name] && teamMeta[name].type === 'walkin') return 'walkin';
+  return 'mobile';
+}
+function setTeamType(name, type){
+  if(!name) return;
+  teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { type: type === 'walkin' ? 'walkin' : 'mobile' });
+  saveTeamMeta();
+}
+async function pushTeamMeta(){
+  try{ await sb.from('settings').upsert({ key: 'teamMeta', value: JSON.stringify(teamMeta) }); }catch(e){}
+}
+async function pullTeamMeta(){
+  try{
+    const { data } = await sb.from('settings').select('value').eq('key','teamMeta').maybeSingle();
+    if(data && data.value){
+      const parsed = JSON.parse(data.value);
+      if(parsed && typeof parsed === 'object'){ teamMeta = parsed; saveTeamMeta(); }
+    }
+  }catch(e){}
+}
+loadTeamMeta();
+
+
 function staffEntryToText(s){
   if(typeof s === 'string') return s;
   if(s && typeof s === 'object'){
@@ -2063,6 +2126,15 @@ function renderAll(){
     const teamsWithPatients = new Set(monthList.map(p => p.team));
     teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
   }
+  const typeFilter = (document.getElementById('filterType') || {}).value || '';
+  if(typeFilter === 'mobile' || typeFilter === 'walkin'){
+    teamsToShow = teamsToShow.filter(t => getTeamType(t) === typeFilter);
+  }
+  teamsToShow = teamsToShow.slice().sort(function(a,b){
+    const ta = getTeamType(a), tb = getTeamType(b);
+    if(ta !== tb) return ta === 'mobile' ? -1 : 1;
+    return a.localeCompare(b);
+  });
 
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
@@ -2118,7 +2190,7 @@ function renderAll(){
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
-          <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${getTeamType(team)==='walkin'?'Walk-in':'Mobile'}</span></h2>
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
@@ -2284,8 +2356,21 @@ function icon(name, size=15, extraStyle=''){
 
 function populateTeamSelect(teams){
   const sel = document.getElementById('f_team');
+  if(!sel) return;
   const current = sel.value;
-  sel.innerHTML = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  const mobiles = teams.filter(t => getTeamType(t) === 'mobile');
+  const walkins = teams.filter(t => getTeamType(t) === 'walkin');
+  let htmlOpts = '';
+  if(mobiles.length){
+    htmlOpts += `<optgroup label="Mobile">${mobiles.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
+  }
+  if(walkins.length){
+    htmlOpts += `<optgroup label="Walk-in / profiling">${walkins.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}</optgroup>`;
+  }
+  if(!htmlOpts){
+    htmlOpts = teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
+  }
+  sel.innerHTML = htmlOpts;
   if(teams.includes(current)) sel.value = current;
 }
 
@@ -2434,6 +2519,7 @@ groupsContainer.addEventListener('click', e=>{
 function removeEmptyTeam(team){
   pendingEmptyTeams.delete(team);
   delete teamStaff[team];
+  if(typeof teamMeta !== 'undefined'){ delete teamMeta[team]; saveTeamMeta(); pushTeamMeta(); }
   expandedTeams.delete(team);
   saveTeamStaffCache();
   pushTeamStaff();
@@ -2805,6 +2891,13 @@ function openTeamModal(existingName){
   editingTeamOriginalName = existingName || null;
   document.getElementById('teamModalTitle').textContent = existingName ? 'Edit site / group' : 'Add site / group';
   document.getElementById('tm_name').value = existingName || '';
+  const _tt = existingName ? getTeamType(existingName) : 'mobile';
+  const _rm = document.getElementById('tm_type_mobile');
+  const _rw = document.getElementById('tm_type_walkin');
+  if(_rm && _rw){ _rm.checked = _tt !== 'walkin'; _rw.checked = _tt === 'walkin'; }
+  document.querySelectorAll('#tm_typeSwitch label').forEach(function(l){
+    l.classList.toggle('active', l.getAttribute('data-type-lbl') === (_tt === 'walkin' ? 'walkin' : 'mobile'));
+  });
   renderStaffRows(existingName ? (teamStaff[existingName]||[]) : []);
   teamModalBackdrop.classList.add('open');
   document.getElementById('tm_name').focus();
@@ -2844,10 +2937,32 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     pendingEmptyTeams.add(name);
   }
   teamStaff[name] = staffNames;
+  var typ = document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked ? 'walkin' : 'mobile';
+  if(editingTeamOriginalName && editingTeamOriginalName !== name && teamMeta[editingTeamOriginalName]){
+    delete teamMeta[editingTeamOriginalName];
+  }
+  setTeamType(name, typ);
   pushTeamStaff();
+  pushTeamMeta();
   renderAll();
   closeTeamModal();
 });
+
+
+(function(){
+  var sw = document.getElementById('tm_typeSwitch');
+  if(!sw) return;
+  sw.addEventListener('click', function(e){
+    var lbl = e.target.closest('label');
+    if(!lbl) return;
+    var inp = lbl.querySelector('input');
+    if(inp) inp.checked = true;
+    sw.querySelectorAll('label').forEach(function(l){ l.classList.toggle('active', l === lbl); });
+    var t = document.getElementById('tm_type_walkin') && document.getElementById('tm_type_walkin').checked ? 'walkin' : 'mobile';
+    var ph = document.getElementById('tm_name');
+    if(ph && !ph.value) ph.placeholder = t === 'walkin' ? 'e.g. Oct 7, 2026 Walk-in' : 'e.g. Tacloban Mobile';
+  });
+})();
 
 document.getElementById('addTeamBtn').addEventListener('click', ()=> openTeamModal(null));
 
@@ -2859,6 +2974,7 @@ document.getElementById('search').addEventListener('input', ()=>{
 document.getElementById('filterStatus').addEventListener('change', renderAll);
 document.getElementById('filterBenefit').addEventListener('change', renderAll);
 document.getElementById('filterDup').addEventListener('change', renderAll);
+if(document.getElementById('filterType')) document.getElementById('filterType').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', ()=>{
@@ -4090,6 +4206,7 @@ async function initApp(){
   renderAll();
   await pullOrg();
   await pullTeamStaff();
+  try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
