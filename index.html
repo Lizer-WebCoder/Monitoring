@@ -1588,6 +1588,17 @@
     #loginOverlay .login-liquid{ animation: none !important; }
   }
 
+
+  #loginOverlay .login-canvas{
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+  }
+  #loginOverlay .login-liquid{ display: none !important; }
+
 </style>
 </head>
 <body>
@@ -1598,12 +1609,7 @@
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
-  <div class="login-bg" aria-hidden="true">
-    <div class="login-liquid login-liquid-1"></div>
-    <div class="login-liquid login-liquid-2"></div>
-    <div class="login-liquid login-liquid-3"></div>
-    <div class="login-liquid login-liquid-4"></div>
-  </div>
+  <canvas id="loginCanvas" class="login-canvas" aria-hidden="true"></canvas>
   <div class="login-card">
     <div class="login-brand-mark">DR</div>
     <h1 id="loginTitle">DR CARE — Sign in</h1>
@@ -5323,6 +5329,69 @@ async function initApp(){
   window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
   window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
 }
+
+
+/* Login liquid canvas background — slow organic mesh (~20s drift) */
+(function initLoginCanvas(){
+  const canvas = document.getElementById('loginCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  let raf = 0, w = 0, h = 0;
+  const colors = [
+    { r:240,g:253,b:244 },
+    { r:240,g:249,b:255 },
+    { r:230,g:244,b:234 },
+    { r:236,g:253,b:245 },
+    { r:224,g:242,b:254 }
+  ];
+  const nodes = colors.map((c,i)=>({
+    x: 0.15 + (i * 0.18) % 0.7,
+    y: 0.2 + ((i * 0.23) % 0.6),
+    vx: (0.00008 + i * 0.00002) * (i % 2 === 0 ? 1 : -1),
+    vy: (0.00006 + i * 0.000015) * (i % 2 === 0 ? -1 : 1),
+    color: c,
+    radius: 0.35 + (i % 3) * 0.08
+  }));
+  function resize(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function draw(){
+    ctx.fillStyle = '#f0fdf4';
+    ctx.fillRect(0, 0, w, h);
+    for(const n of nodes){
+      n.x += n.vx; n.y += n.vy;
+      if(n.x < 0.05 || n.x > 0.95) n.vx *= -1;
+      if(n.y < 0.05 || n.y > 0.95) n.vy *= -1;
+      const px = n.x * w, py = n.y * h;
+      const rad = Math.max(w, h) * n.radius;
+      const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
+      const { r, g: gg, b } = n.color;
+      g.addColorStop(0, `rgba(${r},${gg},${b},0.95)`);
+      g.addColorStop(0.45, `rgba(${r},${gg},${b},0.45)`);
+      g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+    raf = requestAnimationFrame(draw);
+  }
+  function start(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      resize();
+      ctx.fillStyle = '#f0fdf4';
+      ctx.fillRect(0,0,w,h);
+      return;
+    }
+    resize(); draw();
+  }
+  window.addEventListener('resize', resize);
+  start();
+})();
 
 (async function boot(){
   updateOfflineBanner();
