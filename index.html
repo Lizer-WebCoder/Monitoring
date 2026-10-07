@@ -1998,11 +1998,19 @@ function getTeams(){
   // Only surface brand-new empty mobiles created this session.
   // Do NOT pull every teamStaff key — that caused empty mobiles to appear in every month.
   if(!showArchived){
-    pendingEmptyTeams.forEach(x=>t.add(x));
+    Object.keys(pendingEmptyTeams).forEach(x=>t.add(x));
   }
   return [...t];
 }
-const pendingEmptyTeams = new Set();
+// Empty sites scoped to the month they were created in: { teamName: "YYYY-MM" }
+let pendingEmptyTeams = {};
+try {
+  const raw = localStorage.getItem('dr_pending_empty_teams');
+  if(raw){ const parsed = JSON.parse(raw); if(parsed && typeof parsed === 'object') pendingEmptyTeams = parsed; }
+} catch(e){}
+function savePendingEmptyTeams(){
+  try { localStorage.setItem('dr_pending_empty_teams', JSON.stringify(pendingEmptyTeams)); } catch(e){}
+}
 
 function monthLabel(ym){
   if(!ym) return '';
@@ -2221,7 +2229,10 @@ function renderAll(){
   let teamsToShow = teams;
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team));
-    teamsToShow = teams.filter(t => teamsWithPatients.has(t) || pendingEmptyTeams.has(t));
+    teamsToShow = teams.filter(t =>
+      teamsWithPatients.has(t) ||
+      (pendingEmptyTeams[t] && pendingEmptyTeams[t] === monthVal)
+    );
   }
 
   groupsContainer.innerHTML = '';
@@ -2596,7 +2607,8 @@ groupsContainer.addEventListener('click', e=>{
 });
 
 function removeEmptyTeam(team){
-  pendingEmptyTeams.delete(team);
+  delete pendingEmptyTeams[team];
+  savePendingEmptyTeams();
   delete teamStaff[team];
   expandedTeams.delete(team);
   saveTeamStaffCache();
@@ -2919,7 +2931,7 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
   if(editingId){ p = state.patients.find(p=>p.id===editingId); Object.assign(p, data); }
   else { p = Object.assign({id:cryptoId(), createdAt: new Date().toISOString()}, data); state.patients.push(p); }
   p.updatedAt = new Date().toISOString();
-  pendingEmptyTeams.delete(data.team);
+  delete pendingEmptyTeams[data.team]; savePendingEmptyTeams();
   persistChange(p);
   closeModal();
 });
@@ -2993,11 +3005,18 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   if(editingTeamOriginalName && editingTeamOriginalName !== name){
     // Renamed: move this team's patients, its pending-empty marker, and its staff list to the new name.
     state.patients.forEach(p=>{ if(p.team === editingTeamOriginalName){ p.team = name; pendingIds.add(p.id); } });
-    if(pendingEmptyTeams.has(editingTeamOriginalName)){ pendingEmptyTeams.delete(editingTeamOriginalName); pendingEmptyTeams.add(name); }
+    if(pendingEmptyTeams[editingTeamOriginalName]){
+      pendingEmptyTeams[name] = pendingEmptyTeams[editingTeamOriginalName];
+      delete pendingEmptyTeams[editingTeamOriginalName];
+      savePendingEmptyTeams();
+    }
     delete teamStaff[editingTeamOriginalName];
     savePending(); saveLocalCache(); flushPending();
   } else if(!editingTeamOriginalName && !existingTeams.includes(name)){
-    pendingEmptyTeams.add(name);
+    const mf = document.getElementById('monthFilter');
+    const ym = (mf && mf.value) ? mf.value : new Date().toISOString().slice(0,7);
+    pendingEmptyTeams[name] = ym;
+    savePendingEmptyTeams();
   }
   teamStaff[name] = staffNames;
   pushTeamStaff();
@@ -3018,13 +3037,11 @@ document.getElementById('filterDup').addEventListener('change', renderAll);
 const monthFilterEl = document.getElementById('monthFilter');
 monthFilterEl.value = new Date().toISOString().slice(0,7);
 monthFilterEl.addEventListener('change', ()=>{
-  // Empty mobiles belong only to the month they were created in.
-  pendingEmptyTeams.clear();
+  // Empty sites stay bound to their creation month; filter decides visibility.
   renderAll();
 });
 document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
   monthFilterEl.value = '';
-  pendingEmptyTeams.clear();
   renderAll();
 });
 
