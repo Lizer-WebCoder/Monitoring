@@ -114,7 +114,7 @@
   .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
   .login-card button:hover{ background:var(--teal-deep); }
   .login-card button:disabled{ opacity:0.6; cursor:default; }
-  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; }
+  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; font-weight:600; min-height:1.2em; }
   .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
 
   /* ---------- Header ---------- */
@@ -1422,18 +1422,23 @@ async function saveLocalCache(){
 async function loadLocalCache(){
   try{
     const data = await idbGet('roster');
-    if(Array.isArray(data)) state.patients = data;
+    if(Array.isArray(data)){
+      state.patients = data;
+    } else if(!Array.isArray(state.patients)){
+      state.patients = [];
+    }
     const photos = await idbGet('roster_photos');
-    if(photos && typeof photos === 'object'){
+    if(photos && typeof photos === 'object' && Array.isArray(state.patients)){
       state.patients.forEach(p=>{
         if(photos[p.id]) p.mcaPhoto = photos[p.id];
         else if(p.mcaPhoto === '__local__') p.mcaPhoto = null;
       });
     }
-    return true;
+    return state.patients;
   }catch(e){
     console.warn('loadLocalCache', e);
-    return false;
+    if(!Array.isArray(state.patients)) state.patients = [];
+    return state.patients;
   }
 }
 
@@ -1731,12 +1736,9 @@ async function pullTeamStaff(){
   }catch(e){ /* ignore, offline or not set up yet */ }
 }
 
-/* Called after any local add/edit/delete */
-async 
 /* Performance: coalesce rapid re-renders */
 let _renderAllTimer = null;
 let _renderAllPending = false;
-const _renderAllImmediate = typeof renderAll === 'function' ? null : null;
 function scheduleRenderAll(delay){
   if(typeof renderAll !== 'function') return;
   _renderAllPending = true;
@@ -1747,7 +1749,8 @@ function scheduleRenderAll(delay){
   }, delay == null ? 50 : delay);
 }
 
-function persistChange(p){
+/* Called after any local add/edit/delete */
+async function persistChange(p){
   if(!canEdit()){
     setSyncStatus('View only — changes not saved', 'err');
     renderAll();
@@ -4080,7 +4083,8 @@ function applyRoleUI(){
 /* ---------------- Init ---------------- */
 async function initApp(){
   setSyncStatus('Loading…', 'busy');
-  state.patients = await loadLocalCache();
+  await loadLocalCache();
+  if(!Array.isArray(state.patients)) state.patients = [];
   loadTeamStaffCache();
   if(state.patients.length === 0 && !navigator.onLine) state.patients = seedData();
   renderAll();
