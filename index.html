@@ -130,55 +130,55 @@
     z-index:2;
     pointer-events:auto;
     cursor:pointer;
-    opacity:0.9;
+    opacity:0.65;
     border:2px solid rgba(255,255,255,0.25);
     box-shadow:0 4px 20px rgba(0,0,0,0.25), inset 0 0 16px rgba(255,255,255,0.12);
     will-change: transform;
   }
   .login-bg .shard-1{
-    width:160px; height:180px; left:5%; top:8%;
+    width:72px; height:80px; left:5%; top:8%;
     background:linear-gradient(135deg, #2dd4a8, #0f766e);
     clip-path:polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
     animation: shardMove1 9s ease-in-out infinite alternate;
   }
   .login-bg .shard-2{
-    width:140px; height:160px; right:6%; top:12%;
+    width:64px; height:72px; right:6%; top:12%;
     background:linear-gradient(200deg, #f0b429, #b45309);
     clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
     animation: shardMove2 11s ease-in-out infinite alternate;
   }
   .login-bg .shard-3{
-    width:180px; height:130px; left:12%; bottom:10%;
+    width:80px; height:58px; left:12%; bottom:10%;
     background:linear-gradient(90deg, #4ade80, #15803d);
     clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
     animation: shardMove3 8s ease-in-out infinite alternate;
   }
   .login-bg .shard-4{
-    width:130px; height:150px; right:10%; bottom:18%;
+    width:60px; height:70px; right:10%; bottom:18%;
     background:linear-gradient(45deg, #a78bfa, #3b82f6);
     clip-path:polygon(10% 0%, 90% 8%, 100% 55%, 70% 100%, 0% 80%, 5% 30%);
     animation: shardMove4 10s ease-in-out infinite alternate;
   }
   .login-bg .shard-5{
-    width:150px; height:140px; left:45%; top:6%;
+    width:68px; height:64px; left:45%; top:6%;
     background:linear-gradient(160deg, #5eead4, #0f766e);
     clip-path:polygon(50% 0%, 100% 100%, 0% 100%);
     animation: shardMove5 12s ease-in-out infinite alternate;
   }
   .login-bg .shard-6{
-    width:120px; height:145px; left:8%; top:45%;
+    width:56px; height:66px; left:8%; top:45%;
     background:linear-gradient(210deg, #fb7185, #c2410c);
     clip-path:polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
     animation: shardMove6 9.5s ease-in-out infinite alternate;
   }
   .login-bg .shard-7{
-    width:155px; height:120px; right:8%; top:42%;
+    width:70px; height:54px; right:8%; top:42%;
     background:linear-gradient(120deg, #38bdf8, #0e7490);
     clip-path:polygon(50% 0%, 90% 30%, 100% 70%, 50% 100%, 0% 70%, 10% 30%);
     animation: shardMove7 10.5s ease-in-out infinite alternate;
   }
   .login-bg .shard-8{
-    width:135px; height:155px; left:40%; bottom:8%;
+    width:62px; height:72px; left:40%; bottom:8%;
     background:linear-gradient(30deg, #34d399, #047857);
     clip-path:polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%);
     animation: shardMove8 8.5s ease-in-out infinite alternate;
@@ -4291,14 +4291,14 @@ document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
         el.style.setProperty('pointer-events', 'auto', 'important');
         el.style.setProperty('cursor', 'pointer', 'important');
         el.style.setProperty('z-index', '5', 'important');
-        el.style.setProperty('opacity', '0.92', 'important');
+        el.style.setProperty('opacity', '0.7', 'important');
         el.style.setProperty('will-change', 'transform', 'important');
         el.style.setProperty('transition', 'filter 0.15s ease', 'important');
       }
 
       function makePiece(el, isNew){
         stylePiece(el);
-        const size = isNew ? rand(100, 170) : (el.offsetWidth || rand(120, 160));
+        const size = isNew ? rand(48, 88) : (el.offsetWidth || rand(55, 80));
         const h = isNew ? size * rand(0.75, 1.15) : (el.offsetHeight || size);
         if(isNew){
           el.style.width = size + 'px';
