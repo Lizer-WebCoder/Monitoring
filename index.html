@@ -125,7 +125,33 @@
     opacity:0.55;
     mix-blend-mode:screen;
     animation: paneShimmer 4s ease-in-out infinite, paneDrift 8s ease-in-out infinite;
+    cursor:pointer;
+    pointer-events:auto;
+    transition: transform 0.18s ease-out, opacity 0.2s ease;
+    will-change: transform, opacity;
   }
+  .login-bg .pane.dodging{
+    animation-play-state: paused;
+    transition: transform 0.12s ease-out;
+  }
+  .login-bg .pane.popping{
+    animation: panePop 0.45s cubic-bezier(0.34,1.4,0.64,1) forwards;
+    pointer-events:none;
+  }
+  @keyframes panePop{
+    0%{ transform:scale(1) rotate(0deg); opacity:0.6; filter:brightness(1.2); }
+    40%{ transform:scale(1.35) rotate(8deg); opacity:0.9; filter:brightness(1.6); }
+    100%{ transform:scale(0) rotate(-15deg); opacity:0; filter:brightness(2); }
+  }
+  .login-bg .pane.spawning{
+    animation: paneSpawn 0.55s cubic-bezier(0.22,1,0.36,1) forwards, paneShimmer 4s ease-in-out 0.55s infinite, paneDrift 8s ease-in-out 0.55s infinite;
+  }
+  @keyframes paneSpawn{
+    0%{ transform:scale(0) rotate(-20deg); opacity:0; }
+    100%{ transform:scale(1) rotate(0deg); opacity:0.55; }
+  }
+  .login-bg{ pointer-events:none; }
+  .login-bg .pane{ pointer-events:auto; }
   .login-bg .pane-1{
     width:280px; height:280px; top:-5%; left:-5%;
     background:linear-gradient(135deg, #1a6b5c 0%, #2f8a79 50%, #14524a 100%);
@@ -4181,7 +4207,135 @@ document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
   setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
 });
 
-async function doLogin(){
+async 
+/* ---- Interactive stained-glass panes ---- */
+(function initLoginGlass(){
+  const overlay = document.getElementById('loginOverlay');
+  const bg = overlay && overlay.querySelector('.login-bg');
+  if(!overlay || !bg) return;
+
+  const PALETTES = [
+    'linear-gradient(135deg, #1a6b5c 0%, #2f8a79 50%, #14524a 100%)',
+    'linear-gradient(200deg, #c8862b 0%, #a86b1a 40%, #14524a 100%)',
+    'linear-gradient(90deg, #3d7a4f 0%, #2f8a79 60%, #1a5c4a 100%)',
+    'linear-gradient(45deg, #6b3fa0 0%, #2f5f8a 50%, #14524a 100%)',
+    'linear-gradient(160deg, #2f8a79 0%, #bfe8da 50%, #14524a 100%)',
+    'linear-gradient(210deg, #a8402f 0%, #c8862b 45%, #0b3630 100%)',
+    'linear-gradient(120deg, #2f5f8a 0%, #3d7a4f 60%, #0b3630 100%)',
+    'linear-gradient(30deg, #14524a 0%, #7fd6a0 50%, #0b3630 100%)',
+    'linear-gradient(180deg, #0e4d42 0%, #3d9b7a 55%, #062820 100%)',
+    'linear-gradient(70deg, #8b5a2b 0%, #2f8a79 50%, #0b3630 100%)'
+  ];
+  const CLIPS = [
+    'polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%)',
+    'polygon(40% 0%, 100% 20%, 90% 80%, 40% 100%, 0% 70%, 10% 20%)',
+    'polygon(0% 30%, 50% 0%, 100% 25%, 95% 100%, 20% 90%)',
+    'polygon(50% 0%, 100% 35%, 80% 100%, 10% 85%, 0% 30%)',
+    'polygon(25% 0%, 100% 25%, 75% 100%, 0% 70%)',
+    'polygon(0% 0%, 70% 10%, 100% 60%, 50% 100%, 0% 80%)',
+    'polygon(10% 0%, 90% 0%, 100% 100%, 0% 80%)',
+    'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)',
+    'polygon(15% 10%, 85% 0%, 100% 55%, 60% 100%, 0% 75%)',
+    'polygon(0% 40%, 45% 0%, 100% 30%, 85% 100%, 10% 90%)'
+  ];
+
+  const DODGE_RADIUS = 140;
+  const DODGE_STRENGTH = 55;
+  let mouse = { x: -9999, y: -9999 };
+  let panes = [];
+  let raf = null;
+
+  function refreshPanes(){
+    panes = Array.from(bg.querySelectorAll('.pane:not(.popping)'));
+  }
+
+  function onMove(e){
+    const r = overlay.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+    if(!raf) raf = requestAnimationFrame(tick);
+  }
+
+  function onLeave(){
+    mouse.x = -9999; mouse.y = -9999;
+    panes.forEach(p => {
+      p.classList.remove('dodging');
+      p.style.transform = '';
+    });
+  }
+
+  function tick(){
+    raf = null;
+    panes.forEach(p => {
+      if(p.classList.contains('popping') || p.classList.contains('spawning')) return;
+      const pr = p.getBoundingClientRect();
+      const or = overlay.getBoundingClientRect();
+      const cx = pr.left - or.left + pr.width / 2;
+      const cy = pr.top - or.top + pr.height / 2;
+      const dx = cx - mouse.x;
+      const dy = cy - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if(dist < DODGE_RADIUS && dist > 0){
+        const force = (1 - dist / DODGE_RADIUS) * DODGE_STRENGTH;
+        const nx = (dx / dist) * force;
+        const ny = (dy / dist) * force;
+        p.classList.add('dodging');
+        p.style.transform = `translate(${nx.toFixed(1)}px, ${ny.toFixed(1)}px)`;
+      } else if(p.classList.contains('dodging')){
+        p.classList.remove('dodging');
+        p.style.transform = '';
+      }
+    });
+  }
+
+  function spawnPane(){
+    const el = document.createElement('div');
+    el.className = 'pane spawning';
+    const size = 100 + Math.random() * 160;
+    el.style.width = size + 'px';
+    el.style.height = (size * (0.7 + Math.random() * 0.5)) + 'px';
+    el.style.left = (Math.random() * 85) + '%';
+    el.style.top = (Math.random() * 80) + '%';
+    el.style.background = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+    el.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
+    el.style.opacity = '0.55';
+    el.style.animationDelay = (Math.random() * -2).toFixed(1) + 's, ' + (Math.random() * -3).toFixed(1) + 's';
+    bg.appendChild(el);
+    el.addEventListener('animationend', function handler(ev){
+      if(ev.animationName === 'paneSpawn'){
+        el.classList.remove('spawning');
+        el.removeEventListener('animationend', handler);
+        refreshPanes();
+      }
+    });
+    refreshPanes();
+  }
+
+  function onClick(e){
+    const pane = e.target.closest('.pane');
+    if(!pane || pane.classList.contains('popping')) return;
+    e.stopPropagation();
+    pane.classList.remove('dodging', 'spawning');
+    pane.style.transform = '';
+    pane.classList.add('popping');
+    pane.addEventListener('animationend', function handler(ev){
+      if(ev.animationName === 'panePop'){
+        pane.remove();
+        pane.removeEventListener('animationend', handler);
+        setTimeout(spawnPane, 120 + Math.random() * 200);
+        refreshPanes();
+      }
+    });
+  }
+
+  overlay.addEventListener('mousemove', onMove);
+  overlay.addEventListener('mouseleave', onLeave);
+  bg.addEventListener('click', onClick);
+  refreshPanes();
+})();
+
+
+function doLogin(){
   const emailEl = document.getElementById('loginEmail');
   const passEl = document.getElementById('loginPassword');
   const email = (emailEl.value || '').trim().toLowerCase();
