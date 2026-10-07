@@ -119,56 +119,54 @@
       linear-gradient(160deg, #061a16 0%, #0b2c24 40%, #0e3a30 100%);
   }
   /* Mosaic panes — irregular colored glass shards */
-  .login-bg{ pointer-events:none; }
+  .login-bg{ pointer-events:none; z-index:0; }
+  .login-bg .glass-base{ z-index:0; }
+  .login-bg .vignette{ z-index:3; pointer-events:none; }
+  .login-bg .lead, .login-bg .spark{ z-index:1; pointer-events:none; }
   .login-bg .pane-wrap{
     position:absolute;
+    left:0; top:0;
     pointer-events:auto;
     cursor:pointer;
-    z-index:1;
-    transition: transform 0.1s ease-out;
+    z-index:2;
     will-change: transform;
+    transform: translate3d(0,0,0);
   }
   .login-bg .pane-wrap .pane{
-    position:absolute; inset:0;
-    width:100% !important; height:100% !important;
-    left:auto !important; top:auto !important;
-    opacity:0.6;
-    mix-blend-mode:screen;
-    animation: paneShimmer 3.5s ease-in-out infinite;
+    display:block;
+    width:100%;
+    height:100%;
+    opacity:0.88;
+    border:1.5px solid rgba(255,255,255,0.22);
+    box-shadow:
+      0 0 24px rgba(47,138,121,0.25),
+      inset 0 0 20px rgba(255,255,255,0.08);
     pointer-events:none;
+  }
+  .login-bg .pane-wrap.bump .pane{
+    animation: paneBump 0.35s ease-out;
+  }
+  @keyframes paneBump{
+    0%{ transform:scale(1); filter:brightness(1); }
+    40%{ transform:scale(1.18); filter:brightness(1.45); }
+    100%{ transform:scale(1); filter:brightness(1); }
   }
   .login-bg .pane-wrap.popping{
     pointer-events:none;
-    animation: wrapPop 0.4s cubic-bezier(0.34,1.4,0.64,1) forwards;
+    animation: wrapPop 0.38s cubic-bezier(0.34,1.4,0.64,1) forwards;
+    z-index:5;
   }
   @keyframes wrapPop{
     0%{ transform:scale(1); opacity:1; }
-    45%{ transform:scale(1.4); opacity:0.9; }
+    40%{ transform:scale(1.35); opacity:0.95; }
     100%{ transform:scale(0); opacity:0; }
   }
   .login-bg .pane-wrap.spawning{
-    animation: wrapSpawn 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+    animation: wrapSpawn 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
   }
   @keyframes wrapSpawn{
     0%{ transform:scale(0); opacity:0; }
     100%{ transform:scale(1); opacity:1; }
-  }
-  .login-bg .pane{
-    position:absolute;
-    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-    opacity:0.55;
-    mix-blend-mode:screen;
-    animation: paneShimmer 4s ease-in-out infinite, paneDrift 8s ease-in-out infinite;
-  }
-  @keyframes paneShimmer{
-    0%, 100%{ filter:brightness(1) saturate(1); opacity:0.5; }
-    50%{ filter:brightness(1.35) saturate(1.3); opacity:0.75; }
-  }
-  @keyframes paneDrift{
-    0%, 100%{ transform:translate(0,0) rotate(0deg) scale(1); }
-    25%{ transform:translate(18px,-14px) rotate(3deg) scale(1.04); }
-    50%{ transform:translate(-12px,10px) rotate(-2deg) scale(0.97); }
-    75%{ transform:translate(10px,16px) rotate(2deg) scale(1.02); }
   }
   /* Lead lines (stained-glass borders) */
   .login-bg .lead{
@@ -4161,24 +4159,25 @@ document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
 
 async 
 
-/* ---- Interactive stained-glass panes ---- */
+
+/* ---- Interactive stained-glass panes (motion + collision) ---- */
 (function initLoginGlass(){
   function boot(){
     const overlay = document.getElementById('loginOverlay');
     const bg = document.getElementById('loginGlassBg') || (overlay && overlay.querySelector('.login-bg'));
     if(!overlay || !bg) return;
 
-    const PALETTES = [
-      'linear-gradient(135deg, #1a6b5c 0%, #2f8a79 50%, #14524a 100%)',
-      'linear-gradient(200deg, #c8862b 0%, #a86b1a 40%, #14524a 100%)',
-      'linear-gradient(90deg, #3d7a4f 0%, #2f8a79 60%, #1a5c4a 100%)',
-      'linear-gradient(45deg, #6b3fa0 0%, #2f5f8a 50%, #14524a 100%)',
-      'linear-gradient(160deg, #2f8a79 0%, #bfe8da 50%, #14524a 100%)',
-      'linear-gradient(210deg, #a8402f 0%, #c8862b 45%, #0b3630 100%)',
-      'linear-gradient(120deg, #2f5f8a 0%, #3d7a4f 60%, #0b3630 100%)',
-      'linear-gradient(30deg, #14524a 0%, #7fd6a0 50%, #0b3630 100%)',
-      'linear-gradient(180deg, #0e4d42 0%, #3d9b7a 55%, #062820 100%)',
-      'linear-gradient(70deg, #8b5a2b 0%, #2f8a79 50%, #0b3630 100%)'
+    const COLORS = [
+      'linear-gradient(135deg, #1fa887 0%, #14806a 100%)',
+      'linear-gradient(200deg, #d4a03a 0%, #b07a18 100%)',
+      'linear-gradient(90deg, #4caf70 0%, #2d8a55 100%)',
+      'linear-gradient(45deg, #7b5cbf 0%, #3d6fa0 100%)',
+      'linear-gradient(160deg, #5ec4a8 0%, #1a7a68 100%)',
+      'linear-gradient(210deg, #e07a5f 0%, #c45c2a 100%)',
+      'linear-gradient(120deg, #4a90c8 0%, #2a6b5a 100%)',
+      'linear-gradient(30deg, #3dba8c 0%, #1a5c48 100%)',
+      'linear-gradient(180deg, #2eb89a 0%, #0d4a3c 100%)',
+      'linear-gradient(70deg, #c9a227 0%, #1f6b58 100%)'
     ];
     const CLIPS = [
       'polygon(20% 0%, 80% 5%, 100% 40%, 85% 90%, 30% 100%, 0% 60%)',
@@ -4188,110 +4187,196 @@ async
       'polygon(25% 0%, 100% 25%, 75% 100%, 0% 70%)',
       'polygon(0% 0%, 70% 10%, 100% 60%, 50% 100%, 0% 80%)',
       'polygon(10% 0%, 90% 0%, 100% 100%, 0% 80%)',
-      'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)',
-      'polygon(15% 10%, 85% 0%, 100% 55%, 60% 100%, 0% 75%)',
-      'polygon(0% 40%, 45% 0%, 100% 30%, 85% 100%, 10% 90%)'
+      'polygon(30% 0%, 100% 20%, 70% 100%, 0% 60%)'
     ];
 
-    const DODGE_R = 160;
-    const DODGE_F = 70;
+    const pieces = [];
+    const COUNT = 12;
+    const SPEED = 1.1;
+    let W = 0, H = 0;
     let mouse = { x: -9999, y: -9999 };
-    let wraps = [];
-    let raf = 0;
+    let running = true;
 
-    function refresh(){
-      wraps = Array.from(bg.querySelectorAll('.pane-wrap:not(.popping)'));
+    function size(){
+      const r = overlay.getBoundingClientRect();
+      W = r.width; H = r.height;
     }
 
-    function makePane(spawnAnim){
+    function rand(a, b){ return a + Math.random() * (b - a); }
+
+    function createPiece(animateIn){
+      const size = rand(90, 170);
       const wrap = document.createElement('div');
-      wrap.className = 'pane-wrap' + (spawnAnim ? ' spawning' : '');
-      const w = 110 + Math.random() * 170;
-      const h = w * (0.65 + Math.random() * 0.5);
-      wrap.style.width = w + 'px';
-      wrap.style.height = h + 'px';
-      wrap.style.left = (Math.random() * 82) + '%';
-      wrap.style.top = (Math.random() * 78) + '%';
+      wrap.className = 'pane-wrap' + (animateIn ? ' spawning' : '');
+      wrap.style.width = size + 'px';
+      wrap.style.height = size * rand(0.75, 1.15) + 'px';
 
       const pane = document.createElement('div');
       pane.className = 'pane';
-      pane.style.background = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+      pane.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
       pane.style.clipPath = CLIPS[Math.floor(Math.random() * CLIPS.length)];
       wrap.appendChild(pane);
       bg.appendChild(wrap);
 
-      if(spawnAnim){
-        wrap.addEventListener('animationend', function once(ev){
-          if(ev.animationName === 'wrapSpawn'){
+      const pw = parseFloat(wrap.style.width);
+      const ph = parseFloat(wrap.style.height);
+      const angle = rand(0, Math.PI * 2);
+      const sp = SPEED * rand(0.7, 1.5);
+      const piece = {
+        el: wrap,
+        w: pw,
+        h: ph,
+        x: rand(20, Math.max(40, W - pw - 20)),
+        y: rand(20, Math.max(40, H - ph - 20)),
+        vx: Math.cos(angle) * sp,
+        vy: Math.sin(angle) * sp,
+        dead: false
+      };
+      wrap.style.transform = 'translate3d(' + piece.x + 'px,' + piece.y + 'px,0)';
+      pieces.push(piece);
+
+      if(animateIn){
+        wrap.addEventListener('animationend', function once(e){
+          if(e.animationName === 'wrapSpawn'){
             wrap.classList.remove('spawning');
             wrap.removeEventListener('animationend', once);
           }
         });
       }
-      refresh();
-      return wrap;
+      return piece;
     }
 
-    // Seed initial panes
-    for(let i = 0; i < 10; i++) makePane(false);
+    function removePiece(piece){
+      piece.dead = true;
+      const i = pieces.indexOf(piece);
+      if(i >= 0) pieces.splice(i, 1);
+    }
+
+    size();
+    for(let i = 0; i < COUNT; i++) createPiece(false);
 
     function onMove(e){
       const r = overlay.getBoundingClientRect();
       mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
-      if(!raf) raf = requestAnimationFrame(tick);
     }
-    function onLeave(){
-      mouse.x = -9999; mouse.y = -9999;
-      wraps.forEach(w => { w.style.transform = ''; });
-    }
-    function tick(){
-      raf = 0;
-      const or = overlay.getBoundingClientRect();
-      wraps.forEach(w => {
-        if(w.classList.contains('popping') || w.classList.contains('spawning')) return;
-        const pr = w.getBoundingClientRect();
-        const cx = pr.left - or.left + pr.width / 2;
-        const cy = pr.top - or.top + pr.height / 2;
-        const dx = cx - mouse.x;
-        const dy = cy - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if(dist < DODGE_R && dist > 0.1){
-          const force = (1 - dist / DODGE_R) * DODGE_F;
-          w.style.transform = 'translate(' + ((dx / dist) * force).toFixed(1) + 'px,' + ((dy / dist) * force).toFixed(1) + 'px)';
-        } else {
-          w.style.transform = '';
-        }
-      });
-    }
+    function onLeave(){ mouse.x = -9999; mouse.y = -9999; }
+
     function onClick(e){
       const wrap = e.target.closest('.pane-wrap');
       if(!wrap || wrap.classList.contains('popping')) return;
+      const piece = pieces.find(p => p.el === wrap);
+      if(!piece) return;
       e.preventDefault();
       e.stopPropagation();
-      wrap.classList.remove('spawning');
-      wrap.style.transform = '';
+      wrap.classList.remove('spawning', 'bump');
       wrap.classList.add('popping');
+      // freeze motion
+      piece.vx = 0; piece.vy = 0;
       wrap.addEventListener('animationend', function once(ev){
         if(ev.animationName === 'wrapPop'){
           wrap.remove();
-          refresh();
-          setTimeout(function(){ makePane(true); }, 100 + Math.random() * 180);
+          removePiece(piece);
+          setTimeout(function(){ if(running) createPiece(true); }, 150);
         }
       });
+    }
+
+    function collide(a, b){
+      const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+      const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+      const dx = bx - ax, dy = by - ay;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const minDist = (a.w + b.w) * 0.28;
+      if(dist >= minDist || dist < 0.01) return false;
+
+      // push apart
+      const nx = dx / dist, ny = dy / dist;
+      const overlap = minDist - dist;
+      a.x -= nx * overlap * 0.5;
+      a.y -= ny * overlap * 0.5;
+      b.x += nx * overlap * 0.5;
+      b.y += ny * overlap * 0.5;
+
+      // bounce velocities (swap along normal)
+      const avn = a.vx * nx + a.vy * ny;
+      const bvn = b.vx * nx + b.vy * ny;
+      a.vx += (bvn - avn) * nx;
+      a.vy += (bvn - avn) * ny;
+      b.vx += (avn - bvn) * nx;
+      b.vy += (avn - bvn) * ny;
+
+      // bump animation
+      a.el.classList.remove('bump');
+      b.el.classList.remove('bump');
+      void a.el.offsetWidth;
+      void b.el.offsetWidth;
+      a.el.classList.add('bump');
+      b.el.classList.add('bump');
+      setTimeout(function(){ a.el.classList.remove('bump'); b.el.classList.remove('bump'); }, 360);
+      return true;
+    }
+
+    function frame(){
+      if(!running) return;
+      if(overlay.classList.contains('hidden')){
+        requestAnimationFrame(frame);
+        return;
+      }
+      size();
+      const list = pieces.filter(p => !p.dead && !p.el.classList.contains('popping'));
+
+      for(let i = 0; i < list.length; i++){
+        const p = list[i];
+        // mouse dodge
+        const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+        const mdx = cx - mouse.x, mdy = cy - mouse.y;
+        const md = Math.sqrt(mdx * mdx + mdy * mdy);
+        if(md < 150 && md > 0.1){
+          const f = (1 - md / 150) * 2.2;
+          p.vx += (mdx / md) * f;
+          p.vy += (mdy / md) * f;
+        }
+        // soft speed limit
+        const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        if(sp > 3.2){ p.vx *= 3.2 / sp; p.vy *= 3.2 / sp; }
+        if(sp < 0.35){
+          const a = Math.random() * Math.PI * 2;
+          p.vx += Math.cos(a) * 0.15;
+          p.vy += Math.sin(a) * 0.15;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // walls
+        if(p.x < 0){ p.x = 0; p.vx = Math.abs(p.vx) * 1.05; }
+        if(p.y < 0){ p.y = 0; p.vy = Math.abs(p.vy) * 1.05; }
+        if(p.x + p.w > W){ p.x = W - p.w; p.vx = -Math.abs(p.vx) * 1.05; }
+        if(p.y + p.h > H){ p.y = H - p.h; p.vy = -Math.abs(p.vy) * 1.05; }
+
+        p.el.style.transform = 'translate3d(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px,0)';
+      }
+
+      // collisions
+      for(let i = 0; i < list.length; i++){
+        for(let j = i + 1; j < list.length; j++){
+          collide(list[i], list[j]);
+        }
+      }
+
+      requestAnimationFrame(frame);
     }
 
     overlay.addEventListener('mousemove', onMove, { passive: true });
     overlay.addEventListener('mouseleave', onLeave);
-    // Capture clicks on panes even though bg has pointer-events none on non-pane areas
     overlay.addEventListener('click', onClick, true);
+    window.addEventListener('resize', size);
+    requestAnimationFrame(frame);
   }
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 
 
