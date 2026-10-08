@@ -611,9 +611,16 @@
   .dash-head .modal-sub{ margin-bottom:0; }
   .dash-close{ border:none; background:var(--table-head); color:var(--muted); border-radius:8px; padding:6px 8px; cursor:pointer; flex:none; }
   .dash-close:hover{ color:var(--ink); background:var(--line); }
-  .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 18px; }
+  .dash-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; margin:16px 0 18px; }
   .dash-controls select{ min-width:190px; }
-  .dash-scope-note{ font-size:11px; color:var(--muted); }
+  .dash-encoder-wrap{ display:flex; flex-direction:column; gap:4px; }
+  .dash-encoder-label{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .dash-controls select#dashEncoderSelect{
+    min-width:230px; min-height:92px; padding:6px 8px; font-size:12.5px;
+    border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink);
+  }
+  .dash-controls select#dashEncoderSelect option{ padding:3px 4px; }
+  .dash-scope-note{ font-size:11px; color:var(--muted); align-self:center; }
   .dash-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:22px; }
   .dash-card{ background:var(--table-head); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
   .dash-card .dc-num{ font-size:22px; font-weight:800; font-family:'IBM Plex Mono',monospace; line-height:1; color:var(--teal-deep); }
@@ -1564,6 +1571,10 @@
     <div class="dash-controls">
       <select id="dashMonthSelect"></select>
       <select id="dashTeamSelect"></select>
+      <div class="dash-encoder-wrap">
+        <label class="dash-encoder-label" for="dashEncoderSelect">Employees</label>
+        <select id="dashEncoderSelect" multiple size="4" title="Hold Ctrl (Windows) or Cmd (Mac) to select multiple"></select>
+      </div>
       <span class="dash-scope-note" id="dashScopeNote"></span>
     </div>
     <div id="dashBody"></div>
@@ -3721,6 +3732,7 @@ document.getElementById('syncNowBtn').addEventListener('click', ()=>{ flushPendi
 const dashBackdrop = document.getElementById('dashBackdrop');
 const dashMonthSelect = document.getElementById('dashMonthSelect');
 const dashTeamSelect = document.getElementById('dashTeamSelect');
+const dashEncoderSelect = document.getElementById('dashEncoderSelect');
 const dashBody = document.getElementById('dashBody');
 document.getElementById('dashCloseBtn').innerHTML = icon('x', 15);
 
@@ -3752,11 +3764,53 @@ function populateDashboardControls(){
   dashTeamSelect.innerHTML = `<option value="all">All mobiles / walk-ins</option>` +
     teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
   dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
+
+  // Employee / encoder multi-select (preserve selection when possible)
+  if(dashEncoderSelect){
+    const prevEnc = new Set([...dashEncoderSelect.selectedOptions].map(o => o.value));
+    const monthVal = dashMonthSelect.value;
+    const teamVal = dashTeamSelect.value;
+    const encoderMap = new Map(); // uid -> display name
+    state.patients.forEach(p=>{
+      if(p.deleted) return;
+      if(monthVal !== 'all'){
+        const enc = (p.dateEncoded||'').trim();
+        if(enc && enc.slice(0,7) !== monthVal) return;
+      }
+      if(teamVal !== 'all' && p.team !== teamVal) return;
+      const uid = String(p.createdBy || p.updatedBy || '_unknown');
+      if(encoderMap.has(uid)) return;
+      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
+        || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 18));
+      encoderMap.set(uid, name);
+    });
+    const sorted = [...encoderMap.entries()].sort((a,b)=> a[1].localeCompare(b[1]));
+    dashEncoderSelect.innerHTML =
+      `<option value="all">All employees</option>` +
+      sorted.map(([uid, name]) => `<option value="${escapeAttr(uid)}">${escapeHtml(name)}</option>`).join('');
+    // restore selection
+    let any = false;
+    [...dashEncoderSelect.options].forEach(opt=>{
+      if(prevEnc.has(opt.value)){ opt.selected = true; any = true; }
+    });
+    if(!any){
+      const allOpt = dashEncoderSelect.querySelector('option[value="all"]');
+      if(allOpt) allOpt.selected = true;
+    }
+  }
+}
+
+function getSelectedDashboardEncoders(){
+  if(!dashEncoderSelect) return [];
+  const vals = [...dashEncoderSelect.selectedOptions].map(o => o.value);
+  if(!vals.length || vals.includes('all')) return [];
+  return vals.filter(v => v !== 'all');
 }
 
 function dashboardScopePatients(){
   const month = dashMonthSelect.value;
   const team = dashTeamSelect.value;
+  const encoders = getSelectedDashboardEncoders();
   return state.patients.filter(p=>{
     if(p.deleted) return false;
     if(month !== 'all'){
@@ -3764,6 +3818,10 @@ function dashboardScopePatients(){
       if(enc && enc.slice(0,7) !== month) return false;
     }
     if(team !== 'all' && p.team !== team) return false;
+    if(encoders.length){
+      const uid = String(p.createdBy || p.updatedBy || '_unknown');
+      if(!encoders.includes(uid)) return false;
+    }
     return true;
   });
 }
@@ -3799,8 +3857,16 @@ function renderDashboard(){
 
   const monthVal = dashMonthSelect.value;
   const teamVal = dashTeamSelect.value;
+  const encSel = getSelectedDashboardEncoders();
+  let encNote = 'all employees';
+  if(encSel.length === 1){
+    const opt = dashEncoderSelect && dashEncoderSelect.querySelector(`option[value="${CSS.escape(encSel[0])}"]`);
+    encNote = opt ? opt.textContent : '1 employee';
+  } else if(encSel.length > 1){
+    encNote = encSel.length + ' employees';
+  }
   document.getElementById('dashScopeNote').textContent =
-    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles / walk-ins' : teamVal}`;
+    `Showing ${monthVal==='all' ? 'all months' : monthLabel(monthVal)} · ${teamVal==='all' ? 'all mobiles / walk-ins' : teamVal} · ${encNote}`;
 
   if(total === 0){
     dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope yet. Try "All months" / "All mobiles / walk-ins".</div>`;
@@ -4102,6 +4168,7 @@ document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
 dashMonthSelect.addEventListener('change', renderDashboard);
 dashTeamSelect.addEventListener('change', renderDashboard);
+if(dashEncoderSelect) dashEncoderSelect.addEventListener('change', renderDashboard);
 
 /* Encoder T1/T2 list button (delegated — buttons are re-rendered) */
 document.getElementById('dashBody').addEventListener('click', e=>{
