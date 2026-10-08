@@ -103,121 +103,134 @@
   /* ---------- Login overlay ---------- */
   #loginOverlay{
     position:fixed; inset:0;
-    background:#0a1f1a;
+    background:#071a16;
     display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
     overflow:hidden;
   }
   #loginOverlay.hidden{ display:none; }
 
-  /* ---- Isometric cube pattern background ---- */
+  /* ---- Isometric cube grid (clean, no floating objects) ---- */
   .login-bg{
     position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
   }
   .login-bg .iso-base{
     position:absolute; inset:0;
-    background:linear-gradient(160deg, #061a16 0%, #0b2c24 45%, #0e3a30 100%);
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 40%, #0d332c 0%, transparent 60%),
+      linear-gradient(165deg, #061a16 0%, #0a2822 50%, #0c332b 100%);
   }
-  /* Repeating isometric cube tile via CSS */
   .login-bg .iso-grid{
-    position:absolute; inset:-20%;
-    width:140%; height:140%;
-    opacity:0.55;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'%3E%3Cg fill='none' stroke-width='1'%3E%3Cpath d='M60 8 L110 36 L60 64 L10 36 Z' fill='%2314524a' fill-opacity='0.55' stroke='%232f8a79' stroke-opacity='0.45'/%3E%3Cpath d='M10 36 L60 64 L60 96 L10 68 Z' fill='%230b3630' fill-opacity='0.7' stroke='%231a6b5c' stroke-opacity='0.35'/%3E%3Cpath d='M60 64 L110 36 L110 68 L60 96 Z' fill='%230e3a30' fill-opacity='0.65' stroke='%231a6b5c' stroke-opacity='0.3'/%3E%3C/g%3E%3C/svg%3E");
-    background-size:120px 104px;
-    animation: isoDrift 40s linear infinite;
+    position:absolute; inset:-25%;
+    width:150%; height:150%;
+    opacity:0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='86' viewBox='0 0 100 86'%3E%3Cpath d='M50 6 L92 30 L50 54 L8 30 Z' fill='%231a5c4e' fill-opacity='0.45' stroke='%232f8a79' stroke-opacity='0.25' stroke-width='0.8'/%3E%3Cpath d='M8 30 L50 54 L50 82 L8 58 Z' fill='%230b2e28' fill-opacity='0.55' stroke='%231a5c4e' stroke-opacity='0.2' stroke-width='0.8'/%3E%3Cpath d='M50 54 L92 30 L92 58 L50 82 Z' fill='%230e3a32' fill-opacity='0.5' stroke='%231a5c4e' stroke-opacity='0.18' stroke-width='0.8'/%3E%3C/svg%3E");
+    background-size:100px 86px;
+    animation: isoDrift 50s linear infinite;
   }
   .login-bg .iso-grid-2{
-    position:absolute; inset:-20%;
-    width:140%; height:140%;
-    opacity:0.28;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'%3E%3Cg fill='none'%3E%3Cpath d='M60 8 L110 36 L60 64 L10 36 Z' fill='%232f8a79' fill-opacity='0.35'/%3E%3Cpath d='M10 36 L60 64 L60 96 L10 68 Z' fill='%23062a24' fill-opacity='0.5'/%3E%3Cpath d='M60 64 L110 36 L110 68 L60 96 Z' fill='%231a5c4a' fill-opacity='0.4'/%3E%3C/g%3E%3C/svg%3E");
-    background-size:120px 104px;
-    background-position:60px 52px;
-    animation: isoDrift 55s linear infinite reverse;
+    position:absolute; inset:-25%;
+    width:150%; height:150%;
+    opacity:0.22;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='86' viewBox='0 0 100 86'%3E%3Cpath d='M50 6 L92 30 L50 54 L8 30 Z' fill='%232f8a79' fill-opacity='0.3'/%3E%3Cpath d='M8 30 L50 54 L50 82 L8 58 Z' fill='%2306201c' fill-opacity='0.4'/%3E%3Cpath d='M50 54 L92 30 L92 58 L50 82 Z' fill='%2314524a' fill-opacity='0.35'/%3E%3C/svg%3E");
+    background-size:100px 86px;
+    background-position:50px 43px;
+    animation: isoDrift 70s linear infinite reverse;
   }
   @keyframes isoDrift{
     0%{ transform:translate(0,0); }
-    100%{ transform:translate(-120px, -104px); }
-  }
-  /* Floating isometric cubes */
-  .login-bg .cube{
-    position:absolute;
-    width:52px;
-    height:60px;
-    opacity:0.8;
-    pointer-events:none;
-    animation: cubeBob 10s ease-in-out infinite;
-  }
-  .login-bg .cube .f{ position:absolute; display:block; }
-  .login-bg .cube .f-top{
-    width:52px; height:30px;
-    top:0; left:0;
-    background:linear-gradient(135deg, #5ec4a8, #2f8a79);
-    clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-  }
-  .login-bg .cube .f-left{
-    width:26px; height:36px;
-    top:15px; left:0;
-    background:linear-gradient(180deg, #1a6b5c, #0b3630);
-    clip-path:polygon(100% 0%, 100% 70%, 0% 100%, 0% 30%);
-  }
-  .login-bg .cube .f-right{
-    width:26px; height:36px;
-    top:15px; left:26px;
-    background:linear-gradient(180deg, #14524a, #062820);
-    clip-path:polygon(0% 0%, 100% 30%, 100% 100%, 0% 70%);
-  }
-  .login-bg .cube .f-top.alt{ background:linear-gradient(135deg, #e0b84a, #a67c12); }
-  .login-bg .cube .f-left.alt{ background:linear-gradient(180deg, #7a5e18, #3d2e08); }
-  .login-bg .cube .f-right.alt{ background:linear-gradient(180deg, #6b5214, #2a2006); }
-  .login-bg .cube .f-top.blue{ background:linear-gradient(135deg, #6ba3d4, #2f5f8a); }
-  .login-bg .cube .f-left.blue{ background:linear-gradient(180deg, #2a5080, #152a40); }
-  .login-bg .cube .f-right.blue{ background:linear-gradient(180deg, #234a72, #0e1c2c); }
-
-  .login-bg .cube.c1{ top:10%; left:7%; animation-duration:11s; }
-  .login-bg .cube.c2{ top:16%; right:9%; left:auto; animation-duration:13s; animation-delay:-2s; transform:scale(0.8); }
-  .login-bg .cube.c3{ bottom:14%; left:10%; top:auto; animation-duration:12s; animation-delay:-4s; transform:scale(1.15); }
-  .login-bg .cube.c4{ bottom:18%; right:11%; left:auto; top:auto; animation-duration:14s; animation-delay:-1s; transform:scale(0.7); }
-  .login-bg .cube.c5{ top:40%; left:4%; animation-duration:10s; animation-delay:-3s; transform:scale(0.6); }
-  .login-bg .cube.c6{ top:48%; right:5%; left:auto; animation-duration:15s; animation-delay:-5s; transform:scale(0.9); }
-  .login-bg .cube.c7{ top:7%; left:40%; animation-duration:12s; animation-delay:-2.5s; transform:scale(0.5); opacity:0.55; }
-  .login-bg .cube.c8{ bottom:9%; left:44%; top:auto; animation-duration:11s; animation-delay:-6s; transform:scale(0.65); opacity:0.6; }
-
-  @keyframes cubeBob{
-    0%, 100%{ translate: 0 0; }
-    50%{ translate: 0 -12px; }
+    100%{ transform:translate(-100px,-86px); }
   }
   .login-bg .vignette{
-    position:absolute; inset:0; z-index:2; pointer-events:none;
-    background:radial-gradient(ellipse 55% 50% at 50% 50%, transparent 25%, rgba(6,26,22,0.65) 100%);
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 50% 45% at 50% 48%, transparent 20%, rgba(6,22,18,0.55) 70%, rgba(4,14,12,0.85) 100%);
   }
 
+  /* ---- Polished login card ---- */
   .login-card{
-    position:relative; z-index:3;
-    background:rgba(255,255,255,0.96); border-radius:16px; padding:34px 32px; width:100%; max-width:380px;
+    position:relative; z-index:2;
+    background:rgba(18, 32, 28, 0.82);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:18px;
+    padding:36px 34px 30px;
+    width:100%; max-width:400px;
     box-shadow:
-      0 4px 6px rgba(6,26,22,0.1),
-      0 28px 70px rgba(6,26,22,0.4),
-      0 0 0 1px rgba(255,255,255,0.12);
-    backdrop-filter:blur(14px);
-    animation: loginCardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+      0 0 0 1px rgba(47,138,121,0.12),
+      0 8px 16px rgba(0,0,0,0.2),
+      0 32px 64px rgba(0,0,0,0.35);
+    backdrop-filter:blur(20px) saturate(1.2);
+    -webkit-backdrop-filter:blur(20px) saturate(1.2);
+    animation: loginCardIn 0.55s cubic-bezier(0.22,1,0.36,1) both;
+    color:#e8efec;
   }
   @keyframes loginCardIn{
-    from{ opacity:0; transform:translateY(16px) scale(0.96); }
+    from{ opacity:0; transform:translateY(20px) scale(0.97); }
     to{ opacity:1; transform:translateY(0) scale(1); }
   }
   body.dark .login-card{
-    background:rgba(24,36,33,0.96);
+    background:rgba(18, 32, 28, 0.88);
   }
-  .login-card h1{ font-size:18px; margin:0 0 4px; color:var(--ink); }
-  .login-card p{ font-size:12px; color:var(--muted); margin:0 0 20px; }
-  .login-card label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--label-accent); display:block; margin:12px 0 4px; }
-  .login-card input{ width:100%; font-family:inherit; font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); }
-  .login-card button{ width:100%; margin-top:18px; background:var(--teal); color:#fff; border:none; padding:11px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; }
-  .login-card button:hover{ background:var(--teal-deep); }
-  .login-card button:disabled{ opacity:0.6; cursor:default; }
-  .login-err{ color:var(--red); font-size:12px; margin-top:10px; display:none; }
-  .login-note{ font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5; }
+  .login-card .login-brand{
+    display:flex; align-items:center; gap:12px; margin-bottom:6px;
+  }
+  .login-card .login-mark{
+    width:36px; height:36px; border-radius:10px; flex:none;
+    background:linear-gradient(145deg, #1a6b5c, #0b3630);
+    border:1px solid rgba(191,232,218,0.25);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 12px rgba(11,54,48,0.4);
+  }
+  .login-card .login-mark svg{ width:18px; height:18px; }
+  .login-card h1{
+    font-size:20px; font-weight:800; margin:0; color:#f2f7f5;
+    letter-spacing:-0.01em; line-height:1.25;
+  }
+  .login-card p#loginSub, .login-card > p{
+    font-size:12.5px; color:rgba(200,214,208,0.75); margin:4px 0 22px; line-height:1.45;
+  }
+  .login-card label{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:#8fd9c4; display:block; margin:14px 0 6px;
+  }
+  .login-card input{
+    width:100%; font-family:inherit; font-size:14px; padding:12px 14px;
+    border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.25); color:#f2f7f5;
+    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .login-card input::placeholder{ color:rgba(200,214,208,0.4); }
+  .login-card input:focus{
+    outline:none; border-color:rgba(47,138,121,0.65);
+    box-shadow:0 0 0 3px rgba(47,138,121,0.2);
+    background:rgba(0,0,0,0.35);
+  }
+  .login-card button#loginBtn, .login-card > button:first-of-type{
+    width:100%; margin-top:20px; background:linear-gradient(180deg, #2f8a79, #1a6b5c);
+    color:#fff; border:none; padding:13px; border-radius:10px;
+    font-weight:700; font-size:14.5px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(26,107,92,0.35);
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  }
+  .login-card button#loginBtn:hover, .login-card > button:first-of-type:hover{
+    filter:brightness(1.08); transform:translateY(-1px);
+    box-shadow:0 6px 18px rgba(26,107,92,0.45);
+  }
+  .login-card button#loginBtn:active{ transform:translateY(0); }
+  .login-card button:disabled{ opacity:0.55; cursor:default; transform:none !important; }
+  .login-card button.btn-ghost, .login-card #signupBtn{
+    background:transparent; color:#8fd9c4; border:none; box-shadow:none;
+    margin-top:8px; padding:10px; font-size:13px;
+  }
+  .login-card button.btn-ghost:hover, .login-card #signupBtn:hover{
+    color:#bfe8da; filter:none; transform:none;
+  }
+  .login-err{ color:#f0a090; font-size:12.5px; margin-top:12px; display:none; }
+  .login-note{ font-size:11.5px; color:rgba(200,214,208,0.55); margin-top:16px; line-height:1.55; }
+  #loginOverlay #toggleAuthMode, .login-card a{
+    color:#8fd9c4; font-size:13px; font-weight:600;
+  }
+  #loginOverlay #toggleAuthMode:hover, .login-card a:hover{ color:#bfe8da; }
+
 
   /* ---------- Header ---------- */
   header{
@@ -973,18 +986,17 @@
     <div class="iso-base"></div>
     <div class="iso-grid"></div>
     <div class="iso-grid-2"></div>
-    <div class="cube c1"><div class="f f-top"></div><div class="f f-left"></div><div class="f f-right"></div></div>
-    <div class="cube c2"><div class="f f-top alt"></div><div class="f f-left alt"></div><div class="f f-right alt"></div></div>
-    <div class="cube c3"><div class="f f-top"></div><div class="f f-left"></div><div class="f f-right"></div></div>
-    <div class="cube c4"><div class="f f-top blue"></div><div class="f f-left blue"></div><div class="f f-right blue"></div></div>
-    <div class="cube c5"><div class="f f-top"></div><div class="f f-left"></div><div class="f f-right"></div></div>
-    <div class="cube c6"><div class="f f-top alt"></div><div class="f f-left alt"></div><div class="f f-right alt"></div></div>
-    <div class="cube c7"><div class="f f-top blue"></div><div class="f f-left blue"></div><div class="f f-right blue"></div></div>
-    <div class="cube c8"><div class="f f-top"></div><div class="f f-left"></div><div class="f f-right"></div></div>
     <div class="vignette"></div>
   </div>
   <div class="login-card">
-    <h1 id="loginTitle">DR CARE — Sign in</h1>
+    <div class="login-brand">
+      <div class="login-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7V3z" fill="#bfe8da"/>
+        </svg>
+      </div>
+      <h1 id="loginTitle">DR CARE — Sign in</h1>
+    </div>
     <p id="loginSub">Divine Rays Patient Operations · individual accounts</p>
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username">
