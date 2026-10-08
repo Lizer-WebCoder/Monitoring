@@ -3359,7 +3359,6 @@
     </div>
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
-      <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -4795,10 +4794,6 @@ function renderAll(){
   const teams = getTeams();
   const monthList = monthPatients();
   let list = filteredPatients();
-  if(window.__todayMission){
-    const td = (typeof isoToday === 'function' ? isoToday() : new Date().toISOString().slice(0,10));
-    list = list.filter(p => (p.dateEncoded || p.dateSubmitted || '').slice(0,10) === td);
-  }
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
@@ -8634,28 +8629,11 @@ function photoPctForTeam(team, rows){
   return 'MCA photos: ' + withPhoto + '/' + list.length;
 }
 
-/* Today's mission mode */
-window.__todayMission = false;
 function isoToday(){
   const d = new Date();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return d.getFullYear() + '-' + m + '-' + day;
-}
-function toggleTodayMission(){
-  window.__todayMission = !window.__todayMission;
-  const btn = document.getElementById('todayMissionBtn');
-  if(btn) btn.classList.toggle('on', window.__todayMission);
-  if(window.__todayMission){
-    const today = isoToday();
-    const month = today.slice(0,7);
-    const mf = document.getElementById('monthFilter');
-    if(mf){ mf.value = month; }
-    softToast("Today's mission — focusing " + today);
-  } else {
-    softToast('Showing full month view');
-  }
-  if(typeof renderAll === 'function') renderAll();
 }
 
 function endOfDayPack(){
@@ -8708,7 +8686,6 @@ function branchHeatmapHtml(){
 }
 
 /* Patch hooks after DOM ready pieces exist */
-document.getElementById('todayMissionBtn')?.addEventListener('click', toggleTodayMission);
 // endOfDay removed — use Daily report
 
 /* Keyboard shortcuts */
@@ -8765,7 +8742,6 @@ document.addEventListener('change', (e)=>{
 /* Taglish tooltips */
 const TL = {
   'Add site / group': 'Magdagdag ng site / grupo',
-  "Today's mission": 'Misyon ngayong araw',
   'End-of-day pack': 'Ulat sa katapusan ng araw',
   'Search name, PhilHealth ID, notes, or team…': 'Maghanap ng pangalan, PhilHealth ID, notes, o team…'
 };
