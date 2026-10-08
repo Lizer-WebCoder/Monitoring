@@ -5437,7 +5437,7 @@ async function applyBulkChange(mutator){
   if(!ids.length) return;
   let changed = 0;
   for(const id of ids){
-    const p = state.patients.find(x => x.id === id && !x.deleted);
+    const p = state.patients.find(x => String(x.id) === String(id) && !x.deleted);
     if(!p) continue;
     mutator(p);
     pendingIds.add(p.id);
@@ -5560,7 +5560,7 @@ function openModal(id, presetTeam){
     return;
   }
   editingId = id || null;
-  const p = id ? state.patients.find(p=>p.id===id) : null;
+  const p = id ? state.patients.find(p => String(p.id) === String(id) && !p.deleted) : null;
   document.getElementById('modalTitle').textContent = p ? (canEdit() ? "Edit Patient" : "View Patient") : "Add Patient";
   populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
   document.getElementById('f_name').value = p ? p.name : '';
@@ -6505,6 +6505,7 @@ function populateDashboardControls(){
     if(typeof isAdmin === 'function' && isAdmin()){
       encWrap.style.display = '';
       const encoders = {};
+      // From patient records
       state.patients.forEach(p=>{
         if(p.deleted) return;
         const uid = p.createdBy || p.updatedBy;
@@ -6512,13 +6513,17 @@ function populateDashboardControls(){
         const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
         encoders[uid] = name;
       });
-      if(typeof allProfiles !== 'undefined' && Array.isArray(allProfiles)){
-        allProfiles.forEach(u=>{
-          if(!u || !u.id) return;
+      // From profile cache (all accounts)
+      if(typeof profileCache === 'object' && profileCache){
+        Object.keys(profileCache).forEach(id=>{
+          const u = profileCache[id];
+          if(!u) return;
           if(u.role === 'viewer') return;
-          encoders[u.id] = u.fullName || u.email || u.id;
+          if(u.full_name && String(u.full_name).startsWith('[DECLINED]')) return;
+          encoders[u.id] = u.full_name || u.fullName || u.email || id;
         });
       }
+      // Always include signed-in user
       if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
       if(!window.__dashEncSelected) window.__dashEncSelected = new Set();
       const prev = window.__dashEncSelected;
@@ -6865,10 +6870,10 @@ function renderTrendChart(mode){
   wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
-function openDashboard(){
-  
+async function openDashboard(){
   dashMonthSelect.value = '';
   dashTeamSelect.value = '';
+  try{ await loadAllProfiles(); }catch(e){ console.warn('loadAllProfiles', e); }
   populateDashboardControls();
   renderDashboard();
   dashBackdrop.classList.add('open');
@@ -8389,7 +8394,10 @@ document.getElementById('drawerBackdrop')?.addEventListener('click', e=>{
   if(e.target.id === 'drawerBackdrop') closeDrawer();
 });
 document.getElementById('drawerEdit')?.addEventListener('click', ()=>{
-  if(drawerPatientId){ closeDrawer(); openModal(drawerPatientId); }
+  const id = drawerPatientId;
+  if(!id) return;
+  closeDrawer();
+  openModal(id);
 });
 document.getElementById('drawerRemind')?.addEventListener('click', ()=>{
   if(drawerPatientId) sendClaimReminder(drawerPatientId);
