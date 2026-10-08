@@ -2828,6 +2828,19 @@
     .check-row:nth-last-child(1):nth-child(odd){ grid-column: auto; }
   }
 
+
+  /* 2x2 benefit checks — even cells */
+  .check-grid .check-row:nth-last-child(1):nth-child(odd){
+    grid-column: auto !important;
+  }
+  .check-grid .check-row:nth-child(3),
+  .check-grid .check-row:nth-child(4){
+    border-bottom: none !important;
+  }
+  .check-grid .check-row:nth-child(2n){
+    border-right: none !important;
+  }
+
 </style>
 </head>
 <body>
@@ -3081,14 +3094,15 @@
       <div class="full">
         <label class="check-section-label">Benefits &amp; attachments</label>
         <div class="check-grid">
-          <div class="check-row"><input type="checkbox" id="f_mca"><label for="f_mca">Digital MCA on file</label></div>
           <div class="check-row"><input type="checkbox" id="f_within24"><label for="f_within24">Submitted within 24h</label></div>
           <div class="check-row"><input type="checkbox" id="f_rice"><label for="f_rice">Rice availed</label></div>
           <div class="check-row"><input type="checkbox" id="f_lab"><label for="f_lab">Lab availed</label></div>
           <div class="check-row"><input type="checkbox" id="f_medicine"><label for="f_medicine">Medicines availed</label></div>
-          <div class="check-row"><input type="checkbox" id="f_vitamins"><label for="f_vitamins">Vitamins availed</label></div>
-          <div class="check-row"><input type="checkbox" id="f_referral"><label for="f_referral">Referral completed</label></div>
         </div>
+        <!-- MCA / vitamins / referral kept in data model; set via table/photo/bulk if needed -->
+        <input type="checkbox" id="f_mca" class="sr-only" tabindex="-1" aria-hidden="true">
+        <input type="checkbox" id="f_vitamins" class="sr-only" tabindex="-1" aria-hidden="true">
+        <input type="checkbox" id="f_referral" class="sr-only" tabindex="-1" aria-hidden="true">
       </div>
       <div class="full">
         <label>PhilHealth ID check</label>
