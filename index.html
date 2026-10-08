@@ -6,6 +6,9 @@
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./favicon.svg" sizes="any">
+<link rel="apple-touch-icon" href="./favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
 <!-- Offline: keep ./supabase.js and ./xlsx.full.min.js next to this file. -->
@@ -2060,6 +2063,213 @@
     display:block !important; text-align:center !important; margin-top:14px !important;
   }
 
+
+  /* ===== Isometric cube login (classic DR CARE) ===== */
+  #loginOverlay{
+    position:fixed !important; inset:0 !important; z-index:200 !important;
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    padding:24px !important;
+    background:#0a2420 !important;
+    overflow:hidden !important;
+  }
+  #loginOverlay.hidden{ display:none !important; }
+  #loginOverlay .login-canvas{ display:none !important; }
+  #loginOverlay .login-bg{
+    position:absolute !important; inset:0 !important; overflow:hidden !important;
+    pointer-events:none !important; z-index:0 !important; display:block !important;
+  }
+  #loginOverlay .iso-base{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 80% 60% at 30% 20%, rgba(47,138,121,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 75% 80%, rgba(61,155,122,0.28) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(20,82,74,0.4) 0%, transparent 70%),
+      linear-gradient(160deg, #0c2e28 0%, #134038 40%, #0f3530 100%);
+  }
+  #loginOverlay .iso-grid{
+    position:absolute; inset:-30%; width:160%; height:160%; opacity:0.75;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%232a7a6a' fill-opacity='0.55' stroke='%234db89a' stroke-opacity='0.45' stroke-width='1'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%23104038' fill-opacity='0.65' stroke='%231a6b5c' stroke-opacity='0.4' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%23165248' fill-opacity='0.6' stroke='%231a6b5c' stroke-opacity='0.35' stroke-width='1'/%3E%3C/svg%3E");
+    background-size:110px 95px;
+    animation: isoDrift 22s linear infinite;
+  }
+  #loginOverlay .iso-grid-2{
+    position:absolute; inset:-30%; width:160%; height:160%; opacity:0.4;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%233d9b7a' fill-opacity='0.45'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%230a2a24' fill-opacity='0.5'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%231a5c4e' fill-opacity='0.45'/%3E%3C/svg%3E");
+    background-size:110px 95px;
+    background-position:55px 47px;
+    animation: isoDrift 36s linear infinite reverse;
+  }
+  #loginOverlay .iso-shine{
+    position:absolute; inset:0;
+    background:linear-gradient(115deg, transparent 0%, transparent 40%, rgba(191,232,218,0.08) 48%, rgba(255,255,255,0.12) 50%, rgba(191,232,218,0.08) 52%, transparent 60%, transparent 100%);
+    background-size:200% 200%;
+    animation: isoShine 7s ease-in-out infinite;
+  }
+  #loginOverlay .glow{
+    position:absolute; border-radius:50%; filter:blur(48px);
+    animation: glowPulse 6s ease-in-out infinite;
+  }
+  #loginOverlay .glow-1{
+    width:280px; height:280px; top:-8%; left:-5%;
+    background:radial-gradient(circle, rgba(61,186,140,0.5) 0%, transparent 70%);
+    animation-duration:7s;
+  }
+  #loginOverlay .glow-2{
+    width:220px; height:220px; bottom:-5%; right:-3%;
+    background:radial-gradient(circle, rgba(47,138,121,0.45) 0%, transparent 70%);
+    animation-duration:9s; animation-delay:-2s;
+  }
+  #loginOverlay .glow-3{
+    width:180px; height:180px; top:40%; left:55%;
+    background:radial-gradient(circle, rgba(201,162,39,0.2) 0%, transparent 70%);
+    animation-duration:8s; animation-delay:-4s;
+  }
+  #loginOverlay .glow-4{
+    width:160px; height:160px; top:15%; right:20%;
+    background:radial-gradient(circle, rgba(94,196,168,0.35) 0%, transparent 70%);
+    animation-duration:10s; animation-delay:-1s;
+  }
+  #loginOverlay .iso-breathe{
+    position:absolute; inset:0;
+    animation: isoBreathe 12s ease-in-out infinite;
+  }
+  #loginOverlay .vignette{
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+    background: radial-gradient(ellipse 55% 50% at 50% 48%, transparent 15%, rgba(8,28,24,0.35) 55%, rgba(6,20,18,0.72) 100%);
+  }
+  @keyframes isoDrift{
+    0%{ transform:translate(0,0); }
+    100%{ transform:translate(-110px,-95px); }
+  }
+  @keyframes isoShine{
+    0%{ background-position:120% 0%; opacity:0.45; }
+    50%{ background-position:0% 50%; opacity:1; }
+    100%{ background-position:-120% 100%; opacity:0.45; }
+  }
+  @keyframes glowPulse{
+    0%,100%{ opacity:0.55; transform:scale(1); }
+    50%{ opacity:1; transform:scale(1.12); }
+  }
+  @keyframes isoBreathe{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.88; }
+  }
+  #loginOverlay .login-card{
+    position:relative !important; z-index:2 !important;
+    background:rgba(18, 32, 28, 0.88) !important;
+    border:1px solid rgba(255,255,255,0.12) !important;
+    border-radius:18px !important;
+    padding:36px 34px 30px !important;
+    width:100% !important; max-width:400px !important;
+    box-shadow:
+      0 0 0 1px rgba(47,138,121,0.15),
+      0 8px 16px rgba(0,0,0,0.25),
+      0 32px 64px rgba(0,0,0,0.4) !important;
+    backdrop-filter:blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter:blur(20px) saturate(1.2) !important;
+    color:#e8efec !important;
+  }
+  #loginOverlay .login-brand-mark{
+    width:40px; height:40px; border-radius:10px;
+    background:linear-gradient(145deg, #1a6b5c, #0b3630) !important;
+    color:#fff !important; font-weight:800; font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:14px;
+    border:1px solid rgba(191,232,218,0.25);
+    box-shadow:0 4px 12px rgba(11,54,48,0.45);
+  }
+  #loginOverlay .login-card h1{
+    color:#f2f7f5 !important; font-size:20px !important; font-weight:800 !important;
+    margin:0 0 4px !important;
+  }
+  #loginOverlay .login-card p,
+  #loginOverlay #loginSub,
+  #loginOverlay #loginNote{
+    color:rgba(200,214,208,0.78) !important; font-size:12.5px !important;
+  }
+  #loginOverlay .login-card label{
+    color:#8fd9c4 !important;
+  }
+  #loginOverlay .login-card input{
+    background:#1a3330 !important;
+    color:#f2f7f5 !important;
+    border:1px solid rgba(255,255,255,0.18) !important;
+    -webkit-text-fill-color:#f2f7f5 !important;
+    caret-color:#bfe8da;
+  }
+  #loginOverlay .login-card input::placeholder{
+    color:rgba(200,214,208,0.45) !important;
+    -webkit-text-fill-color:rgba(200,214,208,0.45);
+  }
+  #loginOverlay .login-card input:focus{
+    border-color:rgba(79,168,148,0.85) !important;
+    box-shadow:0 0 0 3px rgba(47,138,121,0.25) !important;
+    background:#1f3c38 !important;
+  }
+  #loginOverlay #loginBtn{
+    background:linear-gradient(180deg, #1a7a6d, #0f4c44) !important;
+    color:#fff !important;
+    border:none !important;
+    box-shadow:0 6px 18px rgba(11,54,48,0.45) !important;
+  }
+  #loginOverlay #loginBtn:hover{
+    background:linear-gradient(180deg, #1f8f80, #14524a) !important;
+  }
+  #loginOverlay #toggleAuthMode{
+    background:rgba(255,255,255,0.06) !important;
+    color:#8fd9c4 !important;
+    border:1px solid rgba(255,255,255,0.12) !important;
+    border-radius:10px !important;
+    padding:10px 12px !important;
+    text-decoration:none !important;
+    display:block !important; text-align:center !important; margin-top:14px !important;
+  }
+  @media (prefers-reduced-motion: reduce){
+    #loginOverlay .iso-grid,
+    #loginOverlay .iso-grid-2,
+    #loginOverlay .iso-shine,
+    #loginOverlay .glow,
+    #loginOverlay .iso-breathe{ animation:none !important; }
+  }
+
+
+  /* Extra dark-mode contrast pass */
+  body.dark .toolbar .btn,
+  body.dark .toolbar select,
+  body.dark .toolbar input{
+    color: #eef5f2 !important;
+  }
+  body.dark .toolbar select option{
+    background: #15201d;
+    color: #eef5f2;
+  }
+  body.dark .team-head h2,
+  body.dark .team-head .count,
+  body.dark .legend-summary,
+  body.dark .modal-sub,
+  body.dark .field-hint,
+  body.dark .admin-user-info .em,
+  body.dark .presence-lbl,
+  body.dark .kpi-sub{
+    color: #b7c4bf !important;
+  }
+  body.dark table .dup-tag,
+  body.dark .sync-tag{
+    opacity: 1;
+  }
+  body.dark .btn-ghost{
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.14) !important;
+  }
+  body.dark a{
+    color: #8fd9c4 !important;
+  }
+  body.dark #whoAmI,
+  body.dark #logoutBtn,
+  body.dark #accountBtn{
+    color: #d5e8e2 !important;
+  }
+
 </style>
 </head>
 <body>
@@ -2070,7 +2280,19 @@
 
 <!-- ============ LOGIN OVERLAY ============ -->
 <div id="loginOverlay">
-  <canvas id="loginCanvas" class="login-canvas" aria-hidden="true"></canvas>
+  <div class="login-bg" aria-hidden="true">
+    <div class="iso-base"></div>
+    <div class="iso-breathe">
+      <div class="iso-grid"></div>
+      <div class="iso-grid-2"></div>
+    </div>
+    <div class="iso-shine"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="glow glow-4"></div>
+    <div class="vignette"></div>
+  </div>
   <div class="login-card">
     <div class="login-brand-mark">DR</div>
     <h1 id="loginTitle">DR CARE — Sign in</h1>
