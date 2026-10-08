@@ -471,8 +471,24 @@
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
   /* ---------- Groups ---------- */
-  .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
-  .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
+  .team-group{
+    max-width:1400px; margin:20px auto; padding:0 16px;
+  }
+  .team-group-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    border-left:4px solid var(--teal);
+  }
+  .team-head{
+    display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;
+    cursor:pointer; user-select:none;
+    padding:14px 16px 12px;
+    background:linear-gradient(180deg, var(--table-head) 0%, var(--card) 100%);
+    border-bottom:1px solid var(--line);
+  }
   .team-head .chev{
     flex:none; width:28px; height:28px; border-radius:8px;
     display:inline-flex; align-items:center; justify-content:center;
@@ -482,16 +498,40 @@
   }
   .team-head:hover .chev{ background:var(--line); border-color:var(--teal); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
-  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(420px, 40vw); }
-  .team-title-block{ display:flex; flex-direction:row; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; }
+  .team-head h2{
+    font-size:16px; font-weight:800; margin:0; letter-spacing:-0.01em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(480px, 55vw);
+    color:var(--ink);
+  }
+  .team-title-block{
+    display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+    min-width:0; flex:1 1 220px;
+  }
+  .team-title-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; width:100%;
+  }
+  .team-sub-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;
+  }
+  .team-site-label{
+    font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin:0;
+  }
   .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; flex:none; }
   .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
   .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
   .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
   .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
-  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; flex:none; white-space:nowrap; }
-  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  .team-head .count{
+    font-size:11.5px; font-weight:700; color:var(--teal-deep);
+    font-family:'IBM Plex Mono',monospace;
+    background:rgba(20,82,74,0.1); border:1px solid rgba(20,82,74,0.15);
+    padding:4px 10px; border-radius:20px; flex:none; white-space:nowrap;
+  }
+  body.dark .count{ color:#bfe8da; background:rgba(47,138,121,0.2); border-color:rgba(143,217,196,0.25); }
+  
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:flex-start; padding-top:2px; }
   .team-head .team-tools .tt-btn{
     display:inline-flex; align-items:center; gap:5px;
     border:1px solid var(--line); background:var(--card); color:var(--ink);
@@ -506,7 +546,11 @@
   .team-head .team-tools .tt-btn.tt-danger:hover{ border-color:var(--red); background:var(--red-bg); }
   .team-head{ flex-wrap:wrap; gap:8px 10px; }
   .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
-  .table-wrap{ max-width:100%; }
+  .table-wrap{ max-width:100%; padding:0; }
+  .team-group-card .table-wrap{ border-top:1px solid var(--line); }
+  .team-group-card .pager, .team-group-card .team-pager{
+    padding:10px 14px; border-top:1px solid var(--line); background:var(--table-head);
+  }
   table{ min-width:960px; }
   @media (max-width: 900px){
     .team-head h2{ max-width:100%; }
@@ -1109,11 +1153,19 @@
   tbody td{ padding:5px 6px !important; }
   .empty-state-cta{ margin-top:10px; }
   .team-checklist{
-    display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; font-size:11px;
+    display:flex; flex-wrap:wrap; gap:6px; font-size:11px;
   }
   .team-checklist label{
-    display:inline-flex; align-items:center; gap:3px; background:var(--table-head);
-    border:1px solid var(--line); border-radius:12px; padding:2px 8px; cursor:pointer; color:var(--muted);
+    display:inline-flex; align-items:center; gap:5px;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:4px 10px; cursor:pointer;
+    color:var(--muted); font-weight:600;
+  }
+  .team-checklist label:has(input:checked){
+    background:rgba(20,82,74,0.12); border-color:rgba(20,82,74,0.35); color:var(--teal-deep);
+  }
+  body.dark .team-checklist label:has(input:checked){
+    background:rgba(47,138,121,0.22); border-color:rgba(143,217,196,0.4); color:#bfe8da;
   }
   .team-checklist input{ margin:0; }
   .merge-banner{
@@ -3017,11 +3069,15 @@
   .qb-btn:hover{ border-color:var(--teal); color:var(--teal-deep); }
 
   .handoff-box{
-    width:100%; margin-top:6px; font-size:12px;
+    flex:1 1 180px; min-width:140px; max-width:360px; font-size:12px;
   }
   .handoff-box input{
-    width:100%; font-size:12px; padding:6px 10px; border-radius:8px;
-    border:1px dashed var(--line); background:var(--table-head); color:var(--ink);
+    width:100%; font-size:12px; padding:7px 12px; border-radius:9px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  .handoff-box input:focus{
+    outline:none; border-color:var(--teal);
+    box-shadow:0 0 0 3px rgba(20,82,74,0.1);
   }
   .photo-pct{
     font-size:11px; font-weight:650; color:var(--muted);
@@ -4870,15 +4926,22 @@ function renderAll(){
       </div>`;
 
     wrap.innerHTML = `
+      <div class="team-group-card">
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
-          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
-          <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
-          <div class="handoff-box" style="flex:1 1 100%;"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}" onclick="event.stopPropagation()"></div>
+          <div class="team-site-label">Site / group</div>
+          <div class="team-title-row">
+            <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
+            <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span>
+            <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
+            <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+            ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
+          </div>
+          <div class="team-sub-row" onclick="event.stopPropagation()">
+            <div class="handoff-box"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}"></div>
+          </div>
         </div>
-        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
-        ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
@@ -4910,6 +4973,7 @@ function renderAll(){
         </table>
       </div>
       ${pagerHtml}`}
+      </div>
     `;
     groupsContainer.appendChild(wrap);
   });
@@ -5568,14 +5632,21 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   }
 });
 
-document.getElementById('saveBtn').addEventListener('click', ()=>{
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
   if(saveBtnEl.disabled) return;
   const name = document.getElementById('f_name').value.trim();
   const phid = normalizePhilHealthId(document.getElementById('f_phid').value);
   if(!name || !phid){ return; }
   const digits = String(phid).replace(/\D/g, '');
   if(digits.length > 0 && digits.length !== 12){
-    if(!confirm('PhilHealth ID does not have 12 digits (got '+digits.length+'). Save anyway?')) return;
+    const ok = await showAppConfirm({
+      title: 'PhilHealth ID length',
+      message: 'PhilHealth ID should have 12 digits (got ' + digits.length + '). Save anyway?',
+      confirmLabel: 'Save anyway',
+      cancelLabel: 'Go back',
+      danger: true
+    });
+    if(!ok) return;
   }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
@@ -8411,8 +8482,9 @@ if(typeof renderAll === 'function'){
         const team = h2.textContent.trim();
         const div = document.createElement('div');
         div.innerHTML = teamChecklistHtml(team);
+        const sub = head.querySelector('.team-sub-row');
         const block = head.querySelector('.team-title-block') || h2.parentElement;
-        block.appendChild(div.firstChild);
+        (sub || block).appendChild(div.firstChild);
       });
       // zebra rows
       document.querySelectorAll('tbody tr[data-id]').forEach((tr,i)=>{
