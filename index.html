@@ -3097,6 +3097,70 @@
     padding-right: 32px !important;
   }
 
+
+  /* Clean encoder multi-select (dashboard) */
+  .enc-dd-btn{
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-width: 180px;
+    height: 40px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--line) !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .enc-dd-btn::after{
+    content: '';
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--teal);
+    flex: none;
+  }
+  .enc-dd-btn.open::after{ transform: rotate(180deg); }
+  .enc-dd-panel{
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    min-width: 220px;
+    z-index: 30;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(18,49,43,0.18);
+    padding: 8px;
+    max-height: 240px;
+    overflow: auto;
+  }
+  .enc-dd-item{
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    margin: 0 !important;
+    text-transform: none !important;
+  }
+  .enc-dd-item:hover{ background: var(--table-head); }
+  .enc-dd-item input{ width: 16px; height: 16px; accent-color: var(--teal); margin: 0; flex: none; }
+  .enc-dd-list{ border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+  body.dark .enc-dd-btn{ background: var(--card) !important; }
+  body.dark .enc-dd-panel{ box-shadow: 0 12px 32px rgba(0,0,0,0.45); }
+
 </style>
 </head>
 <body>
@@ -3562,10 +3626,14 @@
         <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Site / group</label>
         <select id="dashTeamSelect"></select>
       </div>
-      <div id="dashEncoderWrap" style="min-width:160px;">
+      <div id="dashEncoderWrap" style="min-width:180px;position:relative;">
         <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
-        <select id="dashEncoderSelect" multiple style="min-width:160px;min-height:38px;"></select>
-        <div class="field-hint" id="dashEncoderHint" style="margin:2px 0 0;">Admin: multi-select encoders. Leave empty = all.</div>
+        <button type="button" id="dashEncoderBtn" class="enc-dd-btn">All encoders</button>
+        <div id="dashEncoderPanel" class="enc-dd-panel" hidden>
+          <label class="enc-dd-item enc-dd-all"><input type="checkbox" id="dashEncAll" checked> All encoders</label>
+          <div id="dashEncoderList" class="enc-dd-list"></div>
+        </div>
+        <select id="dashEncoderSelect" multiple hidden aria-hidden="true"></select>
       </div>
       <span class="dash-scope-note" id="dashScopeNote" style="align-self:center;"></span>
     </div>
@@ -6068,6 +6136,62 @@ function clearPrintIsolation(){
 window.addEventListener('afterprint', clearPrintIsolation);
 document.getElementById('syncNowBtn').addEventListener('click', ()=>{ flushPending().then(pullRemote); });
 
+
+function getSelectedEncoderIds(){
+  if(!window.__dashEncSelected || window.__dashEncSelected.size === 0) return [];
+  return [...window.__dashEncSelected];
+}
+function updateEncoderBtnLabel(){
+  const btn = document.getElementById('dashEncoderBtn');
+  if(!btn) return;
+  const n = window.__dashEncSelected ? window.__dashEncSelected.size : 0;
+  if(!n) btn.textContent = 'All encoders';
+  else if(n === 1){
+    const id = [...window.__dashEncSelected][0];
+    const lab = document.querySelector('#dashEncoderList [data-enc-id="'+CSS.escape(id)+'"]');
+    const name = lab && lab.parentElement ? lab.parentElement.textContent.trim() : '1 selected';
+    btn.textContent = name || '1 selected';
+  } else btn.textContent = n + ' selected';
+}
+function closeEncoderPanel(){
+  const panel = document.getElementById('dashEncoderPanel');
+  const btn = document.getElementById('dashEncoderBtn');
+  if(panel) panel.hidden = true;
+  if(btn) btn.classList.remove('open');
+}
+(function wireEncoderDropdown(){
+  const btn = document.getElementById('dashEncoderBtn');
+  const panel = document.getElementById('dashEncoderPanel');
+  if(!btn || !panel) return;
+  if(btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn.classList.toggle('open', open);
+  });
+  panel.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', ()=> closeEncoderPanel());
+  panel.addEventListener('change', (e)=>{
+    if(!window.__dashEncSelected) window.__dashEncSelected = new Set();
+    if(e.target.id === 'dashEncAll'){
+      if(e.target.checked){
+        window.__dashEncSelected.clear();
+        panel.querySelectorAll('[data-enc-id]').forEach(cb => { cb.checked = false; });
+      }
+    } else if(e.target.hasAttribute('data-enc-id')){
+      const id = e.target.getAttribute('data-enc-id');
+      if(e.target.checked) window.__dashEncSelected.add(id);
+      else window.__dashEncSelected.delete(id);
+      const allCb = document.getElementById('dashEncAll');
+      if(allCb) allCb.checked = window.__dashEncSelected.size === 0;
+    }
+    updateEncoderBtnLabel();
+    if(typeof renderDashboard === 'function') renderDashboard();
+  });
+})();
+
 /* ---------------- Dashboard ---------------- */
 const dashBackdrop = document.getElementById('dashBackdrop');
 const dashMonthSelect = document.getElementById('dashMonthSelect');
@@ -6164,8 +6288,7 @@ function dashWeekBounds(dateStr){
 function dashboardScopePatients(){
   const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
   const team = dashTeamSelect ? dashTeamSelect.value : 'all';
-  const encSel = document.getElementById('dashEncoderSelect');
-  const selectedEnc = encSel ? [...encSel.selectedOptions].map(o=>o.value) : [];
+  const selectedEnc = (typeof getSelectedEncoderIds === 'function') ? getSelectedEncoderIds() : [];
 
   // Role scope: non-admin encoders only see their own encodes
   const forceSelf = !(typeof isAdmin === 'function' && isAdmin());
@@ -6478,7 +6601,7 @@ if(dashTeamSelect) dashTeamSelect.addEventListener('change', renderDashboard);
 document.getElementById('dashRangeMode')?.addEventListener('change', ()=>{ updateDashRangeVisibility(); renderDashboard(); });
 document.getElementById('dashDayInput')?.addEventListener('change', renderDashboard);
 document.getElementById('dashWeekInput')?.addEventListener('change', renderDashboard);
-document.getElementById('dashEncoderSelect')?.addEventListener('change', renderDashboard);
+// encoder filter wired via checklist dropdown
 
 /* ---------------- Recent Activity (admin-only log) ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
