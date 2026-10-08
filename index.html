@@ -45,6 +45,7 @@
     --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.3);
   }
   body.dark input, body.dark select{ color-scheme: dark; }
+  #loginOverlay input, #loginOverlay select{ color-scheme: dark; }
   body.dark #monthFilter{ color: var(--teal); }
   body{
     background:var(--paper); color:var(--ink);
@@ -257,15 +258,32 @@
   }
   .login-card input{
     width:100%; font-family:inherit; font-size:14px; padding:12px 14px;
-    border-radius:10px; border:1px solid rgba(255,255,255,0.12);
-    background:rgba(0,0,0,0.25); color:#f2f7f5;
+    border-radius:10px; border:1px solid rgba(255,255,255,0.18);
+    background:rgba(255,255,255,0.08); color:#f2f7f5 !important;
+    caret-color:#bfe8da;
+    color-scheme: dark;
     transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
   }
-  .login-card input::placeholder{ color:rgba(200,214,208,0.4); }
+  .login-card input[type="password"]{
+    background:rgba(255,255,255,0.08) !important;
+    color:#f2f7f5 !important;
+    -webkit-text-fill-color:#f2f7f5;
+  }
+  .login-card input::placeholder{ color:rgba(200,214,208,0.45); }
   .login-card input:focus{
-    outline:none; border-color:rgba(47,138,121,0.65);
-    box-shadow:0 0 0 3px rgba(47,138,121,0.2);
-    background:rgba(0,0,0,0.35);
+    outline:none; border-color:rgba(79,168,148,0.8);
+    box-shadow:0 0 0 3px rgba(47,138,121,0.25);
+    background:rgba(255,255,255,0.12) !important;
+  }
+  /* Browser autofill — keep readable on dark card */
+  .login-card input:-webkit-autofill,
+  .login-card input:-webkit-autofill:hover,
+  .login-card input:-webkit-autofill:focus{
+    -webkit-text-fill-color:#f2f7f5 !important;
+    caret-color:#bfe8da;
+    box-shadow:0 0 0 1000px #1a3330 inset !important;
+    border:1px solid rgba(255,255,255,0.18);
+    transition:background-color 99999s ease-out;
   }
   .login-card button#loginBtn, .login-card > button:first-of-type{
     width:100%; margin-top:20px; background:linear-gradient(180deg, #2f8a79, #1a6b5c);
@@ -287,7 +305,7 @@
   .login-card button.btn-ghost:hover, .login-card #signupBtn:hover{
     color:#bfe8da; filter:none; transform:none;
   }
-  .login-err{ color:#f0a090; font-size:12.5px; margin-top:12px; display:none; }
+  .login-err{ color:#ffb4a8; font-size:12.5px; margin-top:12px; display:none; font-weight:600; }
   .login-note{ font-size:11.5px; color:rgba(200,214,208,0.55); margin-top:16px; line-height:1.55; }
   #loginOverlay #toggleAuthMode, .login-card a{
     color:#8fd9c4; font-size:13px; font-weight:600;
@@ -4264,7 +4282,8 @@ async function doLogin(){
   const passEl = document.getElementById('loginPassword');
   const email = (emailEl.value || '').trim().toLowerCase();
   const password = passEl.value || '';
-  const fullName = (document.getElementById('loginFullName').value || '').trim();
+  const fullNameEl = document.getElementById('loginFullName');
+  const fullName = (fullNameEl && fullNameEl.value || '').trim();
   const btn = document.getElementById('loginBtn');
   loginErr.style.display = 'none';
   loginErr.textContent = '';
