@@ -103,47 +103,110 @@
   /* ---------- Login overlay ---------- */
   #loginOverlay{
     position:fixed; inset:0;
-    background:#071a16;
+    background:#0a2420;
     display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;
     overflow:hidden;
   }
   #loginOverlay.hidden{ display:none; }
 
-  /* ---- Isometric cube grid (clean, no floating objects) ---- */
+  /* ---- Enhanced isometric background ---- */
   .login-bg{
     position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
   }
   .login-bg .iso-base{
     position:absolute; inset:0;
     background:
-      radial-gradient(ellipse 90% 70% at 50% 40%, #0d332c 0%, transparent 60%),
-      linear-gradient(165deg, #061a16 0%, #0a2822 50%, #0c332b 100%);
+      radial-gradient(ellipse 80% 60% at 30% 20%, rgba(47,138,121,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 75% 80%, rgba(61,155,122,0.28) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(20,82,74,0.4) 0%, transparent 70%),
+      linear-gradient(160deg, #0c2e28 0%, #134038 40%, #0f3530 100%);
   }
+  /* Primary cube lattice */
   .login-bg .iso-grid{
-    position:absolute; inset:-25%;
-    width:150%; height:150%;
-    opacity:0.5;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='86' viewBox='0 0 100 86'%3E%3Cpath d='M50 6 L92 30 L50 54 L8 30 Z' fill='%231a5c4e' fill-opacity='0.45' stroke='%232f8a79' stroke-opacity='0.25' stroke-width='0.8'/%3E%3Cpath d='M8 30 L50 54 L50 82 L8 58 Z' fill='%230b2e28' fill-opacity='0.55' stroke='%231a5c4e' stroke-opacity='0.2' stroke-width='0.8'/%3E%3Cpath d='M50 54 L92 30 L92 58 L50 82 Z' fill='%230e3a32' fill-opacity='0.5' stroke='%231a5c4e' stroke-opacity='0.18' stroke-width='0.8'/%3E%3C/svg%3E");
-    background-size:100px 86px;
-    animation: isoDrift 50s linear infinite;
+    position:absolute; inset:-30%;
+    width:160%; height:160%;
+    opacity:0.7;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%232a7a6a' fill-opacity='0.55' stroke='%234db89a' stroke-opacity='0.4' stroke-width='1'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%23104038' fill-opacity='0.65' stroke='%231a6b5c' stroke-opacity='0.35' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%23165248' fill-opacity='0.6' stroke='%231a6b5c' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
+    background-size:110px 95px;
+    animation: isoDrift 28s linear infinite;
   }
+  /* Secondary offset lattice for depth */
   .login-bg .iso-grid-2{
-    position:absolute; inset:-25%;
-    width:150%; height:150%;
-    opacity:0.22;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='86' viewBox='0 0 100 86'%3E%3Cpath d='M50 6 L92 30 L50 54 L8 30 Z' fill='%232f8a79' fill-opacity='0.3'/%3E%3Cpath d='M8 30 L50 54 L50 82 L8 58 Z' fill='%2306201c' fill-opacity='0.4'/%3E%3Cpath d='M50 54 L92 30 L92 58 L50 82 Z' fill='%2314524a' fill-opacity='0.35'/%3E%3C/svg%3E");
-    background-size:100px 86px;
-    background-position:50px 43px;
-    animation: isoDrift 70s linear infinite reverse;
+    position:absolute; inset:-30%;
+    width:160%; height:160%;
+    opacity:0.35;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%233d9b7a' fill-opacity='0.4'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%230a2a24' fill-opacity='0.5'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%231a5c4e' fill-opacity='0.45'/%3E%3C/svg%3E");
+    background-size:110px 95px;
+    background-position:55px 47px;
+    animation: isoDrift 42s linear infinite reverse;
+  }
+  /* Soft light sweep across the field */
+  .login-bg .iso-shine{
+    position:absolute; inset:0;
+    background:linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(191,232,218,0.07) 48%,
+      rgba(255,255,255,0.1) 50%,
+      rgba(191,232,218,0.07) 52%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size:200% 200%;
+    animation: isoShine 8s ease-in-out infinite;
+  }
+  /* Ambient glow orbs (soft, not solid objects) */
+  .login-bg .glow{
+    position:absolute; border-radius:50%; filter:blur(48px);
+    animation: glowPulse 6s ease-in-out infinite;
+  }
+  .login-bg .glow-1{
+    width:280px; height:280px; top:-8%; left:-5%;
+    background:radial-gradient(circle, rgba(61,186,140,0.45) 0%, transparent 70%);
+    animation-duration:7s;
+  }
+  .login-bg .glow-2{
+    width:220px; height:220px; bottom:-5%; right:-3%;
+    background:radial-gradient(circle, rgba(47,138,121,0.4) 0%, transparent 70%);
+    animation-duration:9s; animation-delay:-2s;
+  }
+  .login-bg .glow-3{
+    width:180px; height:180px; top:40%; left:55%;
+    background:radial-gradient(circle, rgba(201,162,39,0.18) 0%, transparent 70%);
+    animation-duration:8s; animation-delay:-4s;
+  }
+  .login-bg .glow-4{
+    width:160px; height:160px; top:15%; right:20%;
+    background:radial-gradient(circle, rgba(94,196,168,0.3) 0%, transparent 70%);
+    animation-duration:10s; animation-delay:-1s;
   }
   @keyframes isoDrift{
-    0%{ transform:translate(0,0); }
-    100%{ transform:translate(-100px,-86px); }
+    0%{ transform:translate(0,0) scale(1); }
+    100%{ transform:translate(-110px,-95px) scale(1); }
+  }
+  @keyframes isoShine{
+    0%{ background-position:120% 0%; opacity:0.4; }
+    50%{ background-position:0% 50%; opacity:1; }
+    100%{ background-position:-120% 100%; opacity:0.4; }
+  }
+  @keyframes glowPulse{
+    0%, 100%{ opacity:0.55; transform:scale(1); }
+    50%{ opacity:1; transform:scale(1.12); }
+  }
+  /* Subtle breathing scale on whole grid layer */
+  .login-bg .iso-breathe{
+    position:absolute; inset:0;
+    animation: isoBreathe 14s ease-in-out infinite;
+  }
+  @keyframes isoBreathe{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.85; }
   }
   .login-bg .vignette{
     position:absolute; inset:0; z-index:1; pointer-events:none;
     background:
-      radial-gradient(ellipse 50% 45% at 50% 48%, transparent 20%, rgba(6,22,18,0.55) 70%, rgba(4,14,12,0.85) 100%);
+      radial-gradient(ellipse 55% 50% at 50% 48%, transparent 15%, rgba(8,28,24,0.35) 55%, rgba(6,20,18,0.7) 100%);
   }
 
   /* ---- Polished login card ---- */
@@ -984,8 +1047,15 @@
 <div id="loginOverlay">
   <div class="login-bg" id="loginGlassBg" aria-hidden="true">
     <div class="iso-base"></div>
-    <div class="iso-grid"></div>
-    <div class="iso-grid-2"></div>
+    <div class="iso-breathe">
+      <div class="iso-grid"></div>
+      <div class="iso-grid-2"></div>
+    </div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="glow glow-4"></div>
+    <div class="iso-shine"></div>
     <div class="vignette"></div>
   </div>
   <div class="login-card">
