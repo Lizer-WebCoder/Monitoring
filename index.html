@@ -7055,7 +7055,8 @@ adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeA
 async function renderAdminUsers(){
   const body = document.getElementById('adminUsersBody');
   body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
-  const users = await loadAllProfiles();
+  let users = await loadAllProfiles();
+  users = (users || []).filter(u => !String(u.full_name || '').startsWith('[DECLINED]'));
   if(!users.length){
     body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
     return;
@@ -7194,7 +7195,7 @@ async function renderAdminUsers(){
       if(!uid) return;
       const ok = await showAppConfirm({
         title: 'Decline signup?',
-        message: 'Decline "' + label + '"? Their profile will be removed and they will not be able to use the system until they sign up again and are approved.',
+        message: 'Decline "' + label + '"? Their access will be removed and they will not appear in this list. They cannot use the system until they sign up again and are approved.',
         confirmLabel: 'Decline & delete',
         cancelLabel: 'Cancel',
         danger: true
@@ -7202,23 +7203,49 @@ async function renderAdminUsers(){
       if(!ok) return;
       btn.disabled = true;
       try{
-        const { error } = await sb.from('profiles').delete().eq('id', uid);
-        if(error) throw error;
+        // 1) Prefer hard delete
+        let removed = false;
+        const del = await sb.from('profiles').delete().eq('id', uid).select('id');
+        if(!del.error && del.data && del.data.length){
+          removed = true;
+        } else if(del.error){
+          console.warn('Profile DELETE blocked (often RLS):', del.error.message || del.error);
+          // 2) Soft-decline — works when admins can UPDATE but not DELETE
+          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
+          const up = await sb.from('profiles').update({
+            approved: false,
+            full_name: '[DECLINED] ' + clean,
+            updated_at: new Date().toISOString()
+          }).eq('id', uid).select('id');
+          if(up.error) throw up.error;
+          if(!up.data || !up.data.length){
+            throw new Error('No profile row updated. Check Supabase RLS: allow admins to UPDATE/DELETE profiles.');
+          }
+          removed = true;
+        } else {
+          // delete returned no error but no rows — try soft decline
+          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
+          const up = await sb.from('profiles').update({
+            approved: false,
+            full_name: '[DECLINED] ' + clean,
+            updated_at: new Date().toISOString()
+          }).eq('id', uid).select('id');
+          if(up.error) throw up.error;
+          removed = !!(up.data && up.data.length);
+          if(!removed) throw new Error('Profile not found or RLS blocked the change.');
+        }
         if(typeof profileCache !== 'undefined' && profileCache[uid]) delete profileCache[uid];
-        setSyncStatus('Signup declined — profile removed', '');
+        setSyncStatus('Signup declined — removed from list', '');
         await renderAdminUsers();
       }catch(e){
-        console.error(e);
-        if(typeof showAppConfirm === 'function'){
-          await showAppConfirm({
-            title: 'Could not decline',
-            message: (e && e.message) ? e.message : String(e),
-            confirmLabel: 'OK',
-            info: true
-          });
-        } else {
-          alert('Could not decline: ' + (e.message || e));
-        }
+        console.error('Decline failed:', e);
+        const msg = (e && e.message) ? e.message : String(e);
+        await showAppConfirm({
+          title: 'Could not decline',
+          message: msg + '\n\nIn Supabase → Authentication/policies for "profiles", allow admin DELETE or UPDATE.',
+          confirmLabel: 'OK',
+          info: true
+        });
         btn.disabled = false;
       }
     });
