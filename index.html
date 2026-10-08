@@ -1226,7 +1226,14 @@
   .admin-user-info{ flex:1 1 140px; min-width:0; }
   .admin-user-info .nm{ font-weight:700; font-size:14px; }
   .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
-  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .admin-decline-btn{
+    font-size:11px !important; font-weight:700 !important;
+    padding:5px 12px !important; border-radius:8px !important;
+    background:transparent !important; color:var(--red) !important;
+    border:1px solid var(--red) !important; cursor:pointer;
+  }
+  .admin-decline-btn:hover{ background:var(--red-bg) !important; }
   .presence-dot{
     width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
     background:#94a3b8;
@@ -3846,7 +3853,7 @@
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
+        <div class="modal-sub">Approve or decline logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them. Decline removes their profile.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
@@ -7123,6 +7130,7 @@ async function renderAdminUsers(){
               title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
             Approve login
           </label>
+          ${(!approved && !isSelf && !isUserAdmin) ? `<button type="button" class="btn admin-decline-btn" data-uid="${u.id}" data-label="${escapeAttr(u.full_name || u.email || 'this user')}" title="Decline signup and remove this account">Decline</button>` : ''}
           <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
             ${roleOptions(u.role || 'encoder')}
           </select>
@@ -7175,6 +7183,43 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }finally{
         cb.disabled = false;
+      }
+    });
+  });
+
+  body.querySelectorAll('.admin-decline-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const uid = btn.dataset.uid;
+      const label = btn.dataset.label || 'this user';
+      if(!uid) return;
+      const ok = await showAppConfirm({
+        title: 'Decline signup?',
+        message: 'Decline "' + label + '"? Their profile will be removed and they will not be able to use the system until they sign up again and are approved.',
+        confirmLabel: 'Decline & delete',
+        cancelLabel: 'Cancel',
+        danger: true
+      });
+      if(!ok) return;
+      btn.disabled = true;
+      try{
+        const { error } = await sb.from('profiles').delete().eq('id', uid);
+        if(error) throw error;
+        if(typeof profileCache !== 'undefined' && profileCache[uid]) delete profileCache[uid];
+        setSyncStatus('Signup declined — profile removed', '');
+        await renderAdminUsers();
+      }catch(e){
+        console.error(e);
+        if(typeof showAppConfirm === 'function'){
+          await showAppConfirm({
+            title: 'Could not decline',
+            message: (e && e.message) ? e.message : String(e),
+            confirmLabel: 'OK',
+            info: true
+          });
+        } else {
+          alert('Could not decline: ' + (e.message || e));
+        }
+        btn.disabled = false;
       }
     });
   });
