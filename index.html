@@ -2841,6 +2841,49 @@
     border-right: none !important;
   }
 
+
+  /* ===== Single card group (no double corners) ===== */
+  .team-group{
+    max-width: 1600px !important;
+    margin: 16px auto !important;
+    padding: 0 16px !important;
+    box-sizing: border-box;
+  }
+  .team-group > .team-head,
+  .team-group .team-head{
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    border: 1px solid var(--line) !important;
+    border-bottom: 1px solid var(--line) !important;
+    border-radius: 12px 12px 0 0 !important;
+    background: var(--card) !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 1;
+  }
+  .team-group .team-head.collapsed{
+    border-radius: 12px !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .team-group .table-wrap{
+    margin: 0 !important;
+    margin-top: -1px !important; /* seam with header */
+    border: 1px solid var(--line) !important;
+    border-top: none !important;
+    border-radius: 0 0 12px 12px !important;
+    box-shadow: none !important;
+    background: var(--card) !important;
+    overflow-x: auto;
+  }
+  .team-group .team-head.collapsed + .table-wrap,
+  .team-group.collapsed .table-wrap{
+    display: none;
+  }
+  /* kill older double styles */
+  .team-head{
+    border-bottom-width: 1px !important;
+  }
+
 </style>
 </head>
 <body>
