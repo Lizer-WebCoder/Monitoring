@@ -3161,6 +3161,26 @@
   body.dark .enc-dd-btn{ background: var(--card) !important; }
   body.dark .enc-dd-panel{ box-shadow: 0 12px 32px rgba(0,0,0,0.45); }
 
+
+  #dashEncoderSelect,
+  select#dashEncoderSelect[multiple]{
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  #dashEncoderPanel:not([hidden]){
+    display: block !important;
+  }
+  .enc-dd-all{
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px !important;
+    padding-bottom: 10px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -3630,7 +3650,7 @@
         <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
         <button type="button" id="dashEncoderBtn" class="enc-dd-btn">All encoders</button>
         <div id="dashEncoderPanel" class="enc-dd-panel" hidden>
-          <label class="enc-dd-item enc-dd-all"><input type="checkbox" id="dashEncAll" checked> All encoders</label>
+          <label class="enc-dd-item enc-dd-all"><input type="checkbox" id="dashEncAll" checked> Select all</label>
           <div id="dashEncoderList" class="enc-dd-list"></div>
         </div>
         <select id="dashEncoderSelect" multiple hidden aria-hidden="true"></select>
@@ -6177,6 +6197,7 @@ function closeEncoderPanel(){
     if(!window.__dashEncSelected) window.__dashEncSelected = new Set();
     if(e.target.id === 'dashEncAll'){
       if(e.target.checked){
+        // Select all = no filter (show everyone)
         window.__dashEncSelected.clear();
         panel.querySelectorAll('[data-enc-id]').forEach(cb => { cb.checked = false; });
       }
@@ -6185,7 +6206,11 @@ function closeEncoderPanel(){
       if(e.target.checked) window.__dashEncSelected.add(id);
       else window.__dashEncSelected.delete(id);
       const allCb = document.getElementById('dashEncAll');
-      if(allCb) allCb.checked = window.__dashEncSelected.size === 0;
+      const boxes = [...panel.querySelectorAll('[data-enc-id]')];
+      if(allCb){
+        // Select all only when none specifically chosen
+        allCb.checked = window.__dashEncSelected.size === 0;
+      }
     }
     updateEncoderBtnLabel();
     if(typeof renderDashboard === 'function') renderDashboard();
@@ -6225,31 +6250,41 @@ function populateDashboardControls(){
       teams.map(t=>`<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('');
     dashTeamSelect.value = (prevTeamVal === 'all' || teams.includes(prevTeamVal)) ? prevTeamVal : 'all';
   }
-  // Encoder multi-select (admin only useful)
-  const encSel = document.getElementById('dashEncoderSelect');
+  // Encoder checklist dropdown (admin only)
   const encWrap = document.getElementById('dashEncoderWrap');
-  const encHint = document.getElementById('dashEncoderHint');
-  if(encSel){
-    const encoders = {};
-    state.patients.forEach(p=>{
-      if(p.deleted) return;
-      const uid = p.createdBy || p.updatedBy;
-      if(!uid) return;
-      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
-      encoders[uid] = name;
-    });
-    if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
-    const prev = new Set([...encSel.selectedOptions].map(o=>o.value));
-    encSel.innerHTML = Object.entries(encoders).sort((a,b)=>String(a[1]).localeCompare(String(b[1]))).map(([id,name])=>{
-      const sel = prev.has(id) ? 'selected' : '';
-      return `<option value="${escapeAttr(id)}" ${sel}>${escapeHtml(name)}</option>`;
-    }).join('');
-    encSel.size = 1; // single-line dropdown; multi-select still works with Ctrl/Cmd
-  }
+  const encList = document.getElementById('dashEncoderList');
+  const encSel = document.getElementById('dashEncoderSelect');
+  if(encSel){ encSel.hidden = true; encSel.style.display = 'none'; }
   if(encWrap){
     if(typeof isAdmin === 'function' && isAdmin()){
       encWrap.style.display = '';
-      if(encHint) encHint.textContent = 'Admin: select one or more encoders (Ctrl/Cmd+click). Empty = all.';
+      const encoders = {};
+      state.patients.forEach(p=>{
+        if(p.deleted) return;
+        const uid = p.createdBy || p.updatedBy;
+        if(!uid) return;
+        const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
+        encoders[uid] = name;
+      });
+      if(typeof allProfiles !== 'undefined' && Array.isArray(allProfiles)){
+        allProfiles.forEach(u=>{
+          if(!u || !u.id) return;
+          if(u.role === 'viewer') return;
+          encoders[u.id] = u.fullName || u.email || u.id;
+        });
+      }
+      if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
+      if(!window.__dashEncSelected) window.__dashEncSelected = new Set();
+      const prev = window.__dashEncSelected;
+      if(encList){
+        encList.innerHTML = Object.entries(encoders).sort((a,b)=>String(a[1]).localeCompare(String(b[1]))).map(([id,name])=>{
+          const chk = prev.has(id) ? 'checked' : '';
+          return '<label class="enc-dd-item"><input type="checkbox" data-enc-id="'+escapeAttr(id)+'" '+chk+'> '+escapeHtml(String(name))+'</label>';
+        }).join('') || '<div style="padding:8px 10px;font-size:12px;color:var(--muted);">No encoders found yet</div>';
+      }
+      const allCb = document.getElementById('dashEncAll');
+      if(allCb) allCb.checked = prev.size === 0;
+      if(typeof updateEncoderBtnLabel === 'function') updateEncoderBtnLabel();
     } else {
       encWrap.style.display = 'none';
     }
