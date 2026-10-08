@@ -93,6 +93,66 @@
   body > header{ /* keep header full-bleed */ }
   .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
 
+
+  /* ---------- App confirm dialog ---------- */
+  #appConfirmBackdrop{
+    display:none; position:fixed; inset:0; z-index:320;
+    background:rgba(4,18,16,0.72); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #appConfirmBackdrop.open{ display:flex !important; }
+  #appConfirmBackdrop .app-confirm-modal{
+    background:linear-gradient(165deg, #1c3632 0%, #122824 100%);
+    border:1px solid rgba(191,232,218,0.2);
+    border-radius:16px; width:100%; max-width:420px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.5);
+    color:#eef6f3; overflow:hidden;
+    animation: appConfirmIn 0.25s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes appConfirmIn{
+    from{ opacity:0; transform:translateY(12px) scale(0.97); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  #appConfirmBackdrop .app-confirm-icon{
+    width:48px; height:48px; border-radius:14px; margin:22px 22px 0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:800; color:#fff;
+    background:linear-gradient(145deg, #2f8a79, #1a6b5c);
+  }
+  #appConfirmBackdrop .app-confirm-icon.danger{
+    background:linear-gradient(145deg, #c45c4a, #8a3028);
+  }
+  #appConfirmBackdrop .app-confirm-body{ padding:14px 22px 8px; }
+  #appConfirmBackdrop .app-confirm-body h3{
+    margin:0; font-size:17px; font-weight:800; color:#fff;
+  }
+  #appConfirmBackdrop .app-confirm-body p,
+  #appConfirmBackdrop .app-confirm-body .modal-sub{
+    margin:8px 0 0; font-size:13.5px; line-height:1.55;
+    color:rgba(220,235,228,0.8);
+  }
+  #appConfirmBackdrop .app-confirm-actions{
+    display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+    padding:16px 22px 20px;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  #appConfirmBackdrop .app-confirm-actions .btn{
+    min-width:100px; padding:10px 16px; border-radius:10px; font-weight:700;
+  }
+  #appConfirmBackdrop .app-confirm-actions .btn-primary{
+    background:linear-gradient(180deg, #2f8a79, #1a6b5c); color:#fff; border:none;
+  }
+  #appConfirmBackdrop .app-confirm-actions .btn-danger,
+  #appConfirmBackdrop .app-confirm-actions .btn-primary.danger-btn,
+  #appConfirmBackdrop .app-confirm-actions .btn.danger{
+    background:linear-gradient(180deg, #c45c4a, #8a3028) !important;
+    color:#fff !important; border:none;
+  }
+  #appConfirmBackdrop .app-confirm-actions .btn-ghost{
+    background:rgba(255,255,255,0.08); color:#eef6f3;
+    border:1px solid rgba(255,255,255,0.14);
+  }
+
   /* ---------- Offline banner ---------- */
   #offlineBanner{
     display:none; position:sticky; top:0; z-index:40; background:var(--amber-bg); color:var(--amber);
@@ -338,19 +398,52 @@
     display:flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,0.14); color:#bfe8da;
   }
-  .pulse-line{ stroke-dasharray:100; stroke-dashoffset:0; animation:pulse-travel 2.2s linear infinite; }
-  @keyframes pulse-travel{ 0%{ stroke-dashoffset:100; } 100%{ stroke-dashoffset:0; } }
+  .pulse-line{
+    stroke-dasharray: 35 65;
+    stroke-dashoffset: 0;
+    animation: pulse-travel 1.25s linear infinite;
+  }
+  @keyframes pulse-travel{
+    0%{ stroke-dashoffset: 100; }
+    100%{ stroke-dashoffset: 0; }
+  }
+  .pulse-badge svg{ overflow: visible; }
   .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
   .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
   .org-input::placeholder{ color:rgba(242,237,224,0.55); }
   .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
   .sync-row{ display:flex; align-items:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
-  .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#c7dcd5; }
-  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; }
-  .sync-pill.err::before{ background:#e2897a; }
-  .sync-pill.busy::before{ background:#e0c479; }
-  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
-  .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
+  .sync-pill{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:600; color:#f0faf6;
+    background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.14);
+    padding:5px 12px 5px 10px; border-radius:999px;
+  }
+  .sync-pill::before{
+    content:''; width:8px; height:8px; border-radius:50%; background:#5ee0a0; flex:none;
+    box-shadow:0 0 0 3px rgba(94,224,160,0.28);
+    animation: syncDotPulse 2s ease-in-out infinite;
+  }
+  .sync-pill.err::before{ background:#f0a090; box-shadow:0 0 0 3px rgba(240,160,144,0.28); animation:none; }
+  .sync-pill.busy::before{ background:#e8c86a; box-shadow:0 0 0 3px rgba(232,200,106,0.28); animation: syncDotPulse 0.7s ease-in-out infinite; }
+  @keyframes syncDotPulse{
+    0%, 100%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.2); opacity:0.7; }
+  }
+  .who-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:12px; color:#e8f5f0;
+  }
+  .who-row #whoAmI, .who-row #syncStory{
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14);
+    padding:4px 10px; border-radius:999px; font-weight:600; font-size:11.5px; color:#fff;
+  }
+  .who-row button{
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);
+    color:#fff; text-decoration:none; cursor:pointer;
+    font-size:11.5px; font-weight:600; padding:4px 12px; border-radius:999px;
+  }
+  .who-row button:hover{ background:rgba(255,255,255,0.16); }
 
   .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
   .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
@@ -8701,7 +8794,7 @@ document.querySelectorAll('button, input[placeholder]').forEach(el=>{
       if(!navigator.onLine) story.textContent = '· offline · saved on device';
       else if(mode === 'busy') story.textContent = '· uploading…';
       else if(pending > 0) story.textContent = '· ' + pending + ' waiting to upload';
-      else story.textContent = '· all clear';
+      else story.textContent = '· Up to date';
     }
   };
 })();
