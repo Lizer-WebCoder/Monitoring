@@ -3057,6 +3057,46 @@
     .brand-title .pulse-line{ animation-duration:2.8s !important; }
   }
 
+
+  /* Single select arrow — no double chevron, number not covered */
+  #activityPageSize,
+  .activity-toolbar select{
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding: 6px 28px 6px 10px !important;
+    background-color: var(--card) !important;
+    background-image: linear-gradient(45deg, transparent 50%, var(--teal) 50%),
+                      linear-gradient(135deg, var(--teal) 50%, transparent 50%) !important;
+    background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px) !important;
+    background-size: 5px 5px, 5px 5px !important;
+    background-repeat: no-repeat !important;
+    min-width: 56px;
+  }
+  #dashEncoderSelect{
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding: 8px 32px 8px 12px !important;
+    background-image: linear-gradient(45deg, transparent 50%, var(--teal) 50%),
+                      linear-gradient(135deg, var(--teal) 50%, transparent 50%) !important;
+    background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px) !important;
+    background-size: 5px 5px, 5px 5px !important;
+    background-repeat: no-repeat !important;
+    background-color: var(--card) !important;
+  }
+  body.dark #activityPageSize,
+  body.dark #dashEncoderSelect{
+    background-image: linear-gradient(45deg, transparent 50%, #bfe8da 50%),
+                      linear-gradient(135deg, #bfe8da 50%, transparent 50%) !important;
+  }
+  /* Kill stacked browser + custom arrows on dash selects */
+  .dash-controls select{
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    padding-right: 32px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -3524,7 +3564,7 @@
       </div>
       <div id="dashEncoderWrap" style="min-width:160px;">
         <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
-        <select id="dashEncoderSelect" multiple size="1" style="min-width:160px;min-height:34px;"></select>
+        <select id="dashEncoderSelect" multiple style="min-width:160px;min-height:38px;"></select>
         <div class="field-hint" id="dashEncoderHint" style="margin:2px 0 0;">Admin: multi-select encoders. Leave empty = all.</div>
       </div>
       <span class="dash-scope-note" id="dashScopeNote" style="align-self:center;"></span>
@@ -6502,27 +6542,13 @@ function updateActivityButtonVisibility(){
 }
 
 function buildActivityFeed(){
+  // Dedicated log only — Clear all must empty this list (no patient-timestamp fallback)
   const events = activityLog.map(e => ({
     id: e.id, at: e.at, who: e.who, whoName: e.whoName,
     action: e.action, name: e.name, team: e.team, extra: e.extra,
     kind: /add/i.test(e.action) ? 'add' : (/archiv|delet/i.test(e.action) ? 'archive' : 'edit'),
     deletable: true
   }));
-  if(events.length) return events;
-  (state.patients || []).forEach(p => {
-    const name = p.name || '(unnamed)';
-    const team = p.team || '—';
-    if(p.createdAt){
-      events.push({ id:null, at:p.createdAt, who:p.createdBy, action:'Added', name, team, kind:'add', deletable:false });
-    }
-    if(p.updatedAt && p.updatedAt !== p.createdAt){
-      events.push({
-        id:null, at:p.updatedAt, who:p.updatedBy || p.createdBy,
-        action: p.deleted ? 'Archived' : 'Edited', name, team,
-        kind: p.deleted ? 'archive' : 'edit', deletable:false
-      });
-    }
-  });
   events.sort((a,b) => String(b.at||'').localeCompare(String(a.at||'')));
   return events;
 }
@@ -6591,6 +6617,7 @@ document.getElementById('activityClearAll')?.addEventListener('click', () => {
   if(confirm('Clear the entire activity log on this device? This cannot be undone.')){
     activityLog = [];
     saveActivityLog();
+    try{ localStorage.removeItem(ACTIVITY_KEY); }catch(e){}
     activityPage = 0;
     renderActivityPage();
   }
