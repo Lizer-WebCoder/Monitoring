@@ -1,1 +1,30 @@
-PLACEHOLDER_WILL_FAIL
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DR CARE — Loading…</title>
+<link rel="manifest" href="./manifest.json">
+</head><body style="font-family:system-ui;background:#0b3c26;color:#e8f0ed;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center"><div style="font-weight:800;font-size:18px;margin-bottom:8px">DR CARE</div><div style="opacity:.8">Loading app…</div></div>
+<script>
+(async function(){
+  try {
+    const n = 7;
+    let b64 = '';
+    for (let i = 0; i < n; i++) {
+      const r = await fetch('./index.part' + i + '.b64?v=1');
+      if (!r.ok) throw new Error('Missing part ' + i + ' (' + r.status + ')');
+      b64 += await r.text();
+    }
+    const bin = atob(b64.trim());
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const html = new TextDecoder('utf-8').decode(bytes);
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.body.innerHTML = '<div style="max-width:420px;padding:24px;text-align:center"><b>Could not load DR CARE</b><br><br>' + (e && e.message ? e.message : e) + '<br><br>Hard refresh or clear site data, then try again.</div>';
+  }
+})();
+</script>
+</body></html>
