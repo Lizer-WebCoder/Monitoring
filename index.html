@@ -2270,6 +2270,301 @@
     color: #d5e8e2 !important;
   }
 
+
+  /* ===== Header polish + dash align + dark arrows ===== */
+  header{
+    padding: 18px 22px 16px !important;
+    background:
+      radial-gradient(ellipse 90% 80% at 10% -30%, rgba(61,184,154,0.25), transparent 50%),
+      radial-gradient(ellipse 70% 60% at 95% 120%, rgba(15,82,74,0.5), transparent 45%),
+      linear-gradient(165deg, #0a3d37 0%, #0f5c52 45%, #14524a 100%) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  header .brand-eyebrow{
+    font-size: 10px !important;
+    letter-spacing: 0.14em !important;
+    color: #a9c9bf !important;
+    margin-bottom: 4px !important;
+  }
+  header .brand-title{
+    font-size: 24px !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+  header .brand-title .tag{
+    background: rgba(255,255,255,0.16) !important;
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 4px 10px !important;
+  }
+  header .org-input{
+    margin-top: 8px !important;
+    max-width: 320px;
+    width: min(320px, 100%);
+  }
+  header .sync-row{
+    margin-top: 10px !important;
+    gap: 14px !important;
+  }
+  header .stat-strip,
+  header .stat-strip .stat,
+  .stat-strip{
+    align-items: stretch;
+  }
+  .stat-strip .stat,
+  .stat{
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    min-width: 78px;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+  }
+  .stat .num{ font-size: 18px !important; color: #fff; }
+  .stat .lbl{ color: rgba(242,237,224,0.75) !important; font-size: 9.5px !important; }
+
+  /* Dashboard filters — equal height, aligned */
+  .dash-controls{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 12px 14px !important;
+    align-items: end !important;
+    padding: 14px 16px !important;
+  }
+  .dash-controls > div{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 58px;
+  }
+  .dash-controls label{
+    min-height: 14px;
+    margin-bottom: 6px !important;
+  }
+  .dash-controls select,
+  .dash-controls input[type=date],
+  .dash-controls input[type=month]{
+    height: 40px !important;
+    min-height: 40px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    border-radius: 999px !important;
+    padding: 0 36px 0 14px !important;
+    line-height: 40px !important;
+    display: block;
+  }
+  .dash-controls #dashEncoderSelect{
+    height: 40px !important;
+    min-height: 40px !important;
+    size: 1;
+  }
+  .dash-scope-note{
+    grid-column: 1 / -1;
+    min-height: auto !important;
+    align-self: center;
+    padding-top: 2px;
+  }
+
+  /* Select / chevron arrows — visible in light AND dark */
+  select,
+  .dr-select,
+  .toolbar select,
+  .dash-controls select{
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--teal) 50%),
+      linear-gradient(135deg, var(--teal) 50%, transparent 50%) !important;
+    background-position:
+      calc(100% - 16px) calc(50% - 2px),
+      calc(100% - 11px) calc(50% - 2px) !important;
+    background-size: 5px 5px, 5px 5px !important;
+    background-repeat: no-repeat !important;
+  }
+  body.dark select,
+  body.dark .dr-select,
+  body.dark .toolbar select,
+  body.dark .dash-controls select{
+    background-image:
+      linear-gradient(45deg, transparent 50%, #8fd9c4 50%),
+      linear-gradient(135deg, #8fd9c4 50%, transparent 50%) !important;
+    background-position:
+      calc(100% - 16px) calc(50% - 2px),
+      calc(100% - 11px) calc(50% - 2px) !important;
+    background-size: 6px 6px, 6px 6px !important;
+    background-repeat: no-repeat !important;
+    color: #eef5f2 !important;
+    border-color: #3a4a45 !important;
+  }
+  body.dark .team-head .chev{
+    border-color: #8fd9c4 !important;
+    color: #8fd9c4 !important;
+    background: rgba(143,217,196,0.12) !important;
+  }
+  body.dark .team-head .chev svg,
+  body.dark .team-head .chev path{
+    stroke: #8fd9c4 !important;
+    fill: #8fd9c4 !important;
+  }
+  /* Collapse chevron built with borders */
+  body.dark .chev{
+    border-right-color: #8fd9c4 !important;
+    border-bottom-color: #8fd9c4 !important;
+    opacity: 1 !important;
+  }
+  body.dark .badge-select{
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%) !important;
+    background-position:
+      calc(100% - 12px) calc(50% - 2px),
+      calc(100% - 7px) calc(50% - 2px) !important;
+    background-size: 5px 5px, 5px 5px !important;
+    background-repeat: no-repeat !important;
+  }
+
+
+  /* ===== Header matches login cubes + dark chevrons ===== */
+  header{
+    position: relative !important;
+    overflow: hidden !important;
+    isolation: isolate;
+    padding: 20px 22px 18px !important;
+    background: #0a2420 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+  }
+  header .header-bg{
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  header .hdr-iso{
+    position: absolute;
+    inset: -40%;
+    width: 180%;
+    height: 180%;
+    opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%232a7a6a' fill-opacity='0.5' stroke='%234db89a' stroke-opacity='0.4' stroke-width='1'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%23104038' fill-opacity='0.6' stroke='%231a6b5c' stroke-opacity='0.35' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%23165248' fill-opacity='0.55' stroke='%231a6b5c' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 90px 78px;
+    animation: hdrIsoDrift 26s linear infinite;
+  }
+  header .hdr-iso-2{
+    opacity: 0.28;
+    background-position: 45px 39px;
+    animation-duration: 40s;
+    animation-direction: reverse;
+  }
+  header .hdr-shine{
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(191,232,218,0.1) 48%,
+      rgba(255,255,255,0.14) 50%,
+      rgba(191,232,218,0.1) 52%,
+      transparent 58%,
+      transparent 100%
+    );
+    background-size: 220% 100%;
+    animation: hdrShine 8s ease-in-out infinite;
+  }
+  header .hdr-glow{
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: hdrGlow 7s ease-in-out infinite;
+  }
+  header .hdr-glow-a{
+    width: 220px; height: 220px;
+    top: -60%; left: 5%;
+    background: radial-gradient(circle, rgba(61,186,140,0.55) 0%, transparent 70%);
+  }
+  header .hdr-glow-b{
+    width: 180px; height: 180px;
+    bottom: -50%; right: 8%;
+    background: radial-gradient(circle, rgba(47,138,121,0.45) 0%, transparent 70%);
+    animation-delay: -3s;
+  }
+  @keyframes hdrIsoDrift{
+    0%{ transform: translate(0,0); }
+    100%{ transform: translate(-90px,-78px); }
+  }
+  @keyframes hdrShine{
+    0%{ background-position: 120% 0; opacity: 0.5; }
+    50%{ background-position: 0% 0; opacity: 1; }
+    100%{ background-position: -120% 0; opacity: 0.5; }
+  }
+  @keyframes hdrGlow{
+    0%,100%{ opacity: 0.6; transform: scale(1); }
+    50%{ opacity: 1; transform: scale(1.15); }
+  }
+  header .header-row{
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  /* Soft base gradient under cubes */
+  header::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 100% at 20% 0%, rgba(47,138,121,0.35), transparent 55%),
+      linear-gradient(165deg, rgba(12,46,40,0.92) 0%, rgba(19,64,56,0.88) 50%, rgba(15,53,48,0.95) 100%);
+    pointer-events: none;
+  }
+  header::after{ display: none !important; }
+
+  /* Chevrons / arrows — force visible always */
+  .team-head .chev{
+    color: #1a7a6d !important;
+    background: #eef0e8 !important;
+    border: 1px solid #c5d0cb !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+  }
+  body.dark .team-head .chev{
+    color: #bfe8da !important;
+    background: #1e2d28 !important;
+    border: 1px solid #4db89a !important;
+    text-shadow: 0 0 8px rgba(191,232,218,0.5);
+    opacity: 1 !important;
+  }
+  body.dark select,
+  body.dark .toolbar select,
+  body.dark .dash-controls select,
+  body.dark .form-grid select,
+  body.dark .modal select{
+    background-color: #15201d !important;
+    color: #eef5f2 !important;
+    background-image:
+      linear-gradient(45deg, transparent 50%, #bfe8da 50%),
+      linear-gradient(135deg, #bfe8da 50%, transparent 50%) !important;
+    background-position:
+      calc(100% - 16px) calc(50% - 3px),
+      calc(100% - 10px) calc(50% - 3px) !important;
+    background-size: 7px 7px, 7px 7px !important;
+    background-repeat: no-repeat !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+  body.dark .badge-select{
+    background-image:
+      linear-gradient(45deg, transparent 50%, #bfe8da 50%),
+      linear-gradient(135deg, #bfe8da 50%, transparent 50%) !important;
+    background-position:
+      calc(100% - 12px) calc(50% - 2px),
+      calc(100% - 6px) calc(50% - 2px) !important;
+    background-size: 6px 6px, 6px 6px !important;
+    background-repeat: no-repeat !important;
+  }
+  @media (prefers-reduced-motion: reduce){
+    header .hdr-iso, header .hdr-shine, header .hdr-glow{ animation: none !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -2318,6 +2613,13 @@
 </div>
 
 <header>
+  <div class="header-bg" aria-hidden="true">
+    <div class="hdr-iso"></div>
+    <div class="hdr-iso hdr-iso-2"></div>
+    <div class="hdr-shine"></div>
+    <div class="hdr-glow hdr-glow-a"></div>
+    <div class="hdr-glow hdr-glow-b"></div>
+  </div>
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays · Patient Care Tracker</div>
