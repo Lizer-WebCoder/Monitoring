@@ -256,34 +256,41 @@
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
     color:#8fd9c4; display:block; margin:14px 0 6px;
   }
-  .login-card input{
+  .login-card input,
+  .login-card input[type="text"],
+  .login-card input[type="email"],
+  .login-card input[type="password"]{
     width:100%; font-family:inherit; font-size:14px; padding:12px 14px;
     border-radius:10px; border:1px solid rgba(255,255,255,0.18);
-    background:rgba(255,255,255,0.08); color:#f2f7f5 !important;
-    caret-color:#bfe8da;
-    color-scheme: dark;
-    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
-  }
-  .login-card input[type="password"]{
-    background:rgba(255,255,255,0.08) !important;
+    background:#1a3330 !important;
     color:#f2f7f5 !important;
-    -webkit-text-fill-color:#f2f7f5;
-  }
-  .login-card input::placeholder{ color:rgba(200,214,208,0.45); }
-  .login-card input:focus{
-    outline:none; border-color:rgba(79,168,148,0.8);
-    box-shadow:0 0 0 3px rgba(47,138,121,0.25);
-    background:rgba(255,255,255,0.12) !important;
-  }
-  /* Browser autofill — keep readable on dark card */
-  .login-card input:-webkit-autofill,
-  .login-card input:-webkit-autofill:hover,
-  .login-card input:-webkit-autofill:focus{
     -webkit-text-fill-color:#f2f7f5 !important;
     caret-color:#bfe8da;
+    color-scheme: dark;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .login-card input::placeholder{
+    color:rgba(200,214,208,0.45);
+    -webkit-text-fill-color:rgba(200,214,208,0.45);
+  }
+  .login-card input:focus{
+    outline:none; border-color:rgba(79,168,148,0.85);
+    box-shadow:0 0 0 3px rgba(47,138,121,0.25);
+    background:#1f3c38 !important;
+  }
+  /* Force autofill to match dark fields (Chrome/Edge/Safari) */
+  .login-card input:-webkit-autofill,
+  .login-card input:-webkit-autofill:hover,
+  .login-card input:-webkit-autofill:focus,
+  .login-card input:-webkit-autofill:active{
+    -webkit-text-fill-color:#f2f7f5 !important;
+    caret-color:#bfe8da !important;
+    border:1px solid rgba(255,255,255,0.18) !important;
+    -webkit-box-shadow:0 0 0 1000px #1a3330 inset !important;
     box-shadow:0 0 0 1000px #1a3330 inset !important;
-    border:1px solid rgba(255,255,255,0.18);
-    transition:background-color 99999s ease-out;
+    background-color:#1a3330 !important;
+    background-image:none !important;
+    transition:background-color 99999s ease-in-out 0s;
   }
   .login-card button#loginBtn, .login-card > button:first-of-type{
     width:100%; margin-top:20px; background:linear-gradient(180deg, #2f8a79, #1a6b5c);
