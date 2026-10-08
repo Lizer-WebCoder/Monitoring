@@ -2617,6 +2617,135 @@
     }
   }
 
+
+  /* ===== Uniform stat chips + UI polish ===== */
+  header .stat-strip,
+  .stat-strip{
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  header .stat,
+  .stat-strip .stat,
+  .stat{
+    flex: 0 0 auto !important;
+    box-sizing: border-box !important;
+    width: 78px !important;
+    min-width: 78px !important;
+    max-width: 78px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    padding: 8px 6px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+  }
+  .stat .num{
+    font-size: 17px !important;
+    line-height: 1.1 !important;
+    color: #fff !important;
+    font-weight: 800 !important;
+  }
+  .stat .lbl{
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    color: rgba(242,237,224,0.8) !important;
+    margin-top: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100%;
+  }
+  .stat.stat-warn{
+    background: rgba(232,171,92,0.28) !important;
+    border-color: rgba(232,171,92,0.55) !important;
+  }
+  .stat.stat-warn .num,
+  .stat.stat-warn .lbl{ color: #f0c878 !important; }
+
+  /* Toolbar polish */
+  .toolbar{
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 12px 16px 8px !important;
+  }
+  .toolbar-row{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .btn{
+    border-radius: 10px !important;
+    font-weight: 650 !important;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease, box-shadow .15s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:active{ transform: translateY(0); }
+  .btn-primary{
+    box-shadow: 0 4px 12px rgba(20,82,74,0.25);
+  }
+  .team-group{
+    margin-top: 14px !important;
+  }
+  .team-head{
+    border-radius: 10px 10px 0 0;
+    padding: 12px 10px !important;
+  }
+  .table-wrap{
+    border-radius: 0 0 12px 12px;
+    border: 1px solid var(--line);
+    overflow: auto;
+  }
+  table{
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  table th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
+  table td{
+    font-size: 12.5px;
+  }
+  tr:hover td{
+    background: var(--row-hover);
+  }
+  .modal, .dash-modal{
+    border-radius: 16px !important;
+    box-shadow: 0 20px 50px rgba(18,49,43,0.18) !important;
+  }
+  .app-footer{
+    text-align: center;
+    opacity: 0.75;
+    padding: 24px 12px 12px;
+    font-size: 12px;
+  }
+  @media (max-width: 900px){
+    header .stat-strip{ flex-wrap: wrap !important; }
+    header .stat, .stat{
+      width: 70px !important;
+      min-width: 70px !important;
+      max-width: 70px !important;
+      height: 52px !important;
+      min-height: 52px !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -4025,17 +4154,17 @@ function renderStats(){
   const all = monthPatients();
   const unsyncedCount = all.filter(p=>pendingIds.has(p.id)).length;
   const stats = [
-    ["Total", all.length, ''],
-    ["Registered", all.filter(p=>p.status==='registered').length, ''],
-    ["Other facility", all.filter(p=>p.status==='registered_other').length, ''],
-    ["Rice", all.filter(p=>p.rice).length, ''],
-    ["Lab", all.filter(p=>p.lab).length, ''],
-    ["Meds", all.filter(p=>p.medicine).length, ''],
-    ["Duplicates", countDuplicateExtras(all), ''],
-    ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : ''],
+    ["Total", all.length, '', 'All patients in this month view'],
+    ["Registered", all.filter(p=>p.status==='registered').length, '', 'Registered at a DR facility'],
+    ["Other", all.filter(p=>p.status==='registered_other').length, '', 'Registered to other DR facility'],
+    ["Rice", all.filter(p=>p.rice).length, '', 'Rice availed'],
+    ["Lab", all.filter(p=>p.lab).length, '', 'Laboratory availed'],
+    ["Meds", all.filter(p=>p.medicine).length, '', 'Medicines availed'],
+    ["Dups", countDuplicateExtras(all), '', 'Duplicate PhilHealth ID records'],
+    ["Sync", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : '', unsyncedCount > 0 ? unsyncedCount + ' change(s) waiting to upload' : 'All changes synced'],
   ];
-  statStrip.innerHTML = stats.map(([lbl,num,extra])=>
-    `<div class="stat ${extra}" title="${lbl === 'Unsynced' && num > 0 ? num + ' change(s) waiting to upload' : ''}">
+  statStrip.innerHTML = stats.map(([lbl,num,extra,tip])=>
+    `<div class="stat ${extra}" title="${tip || lbl}">
       <div class="num">${num}</div><div class="lbl">${lbl}</div>
     </div>`).join('');
 }
