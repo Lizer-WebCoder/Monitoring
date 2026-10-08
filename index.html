@@ -1994,6 +1994,72 @@
     color:var(--ink) !important;
   }
 
+
+  /* ===== FINAL login: neon mesh + objects (wins all prior) ===== */
+  #loginOverlay{
+    position:fixed !important; inset:0 !important; z-index:200 !important;
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    padding:24px !important;
+    background:#061a14 !important;
+    overflow:hidden !important;
+  }
+  #loginOverlay.hidden{ display:none !important; }
+  #loginOverlay .login-canvas{
+    position:absolute !important; inset:0 !important;
+    width:100% !important; height:100% !important;
+    z-index:0 !important; display:block !important; opacity:1 !important;
+    pointer-events:none !important;
+  }
+  #loginOverlay .login-liquid,
+  #loginOverlay .login-orb,
+  #loginOverlay .login-ring,
+  #loginOverlay .login-cross,
+  #loginOverlay .login-particle,
+  #loginOverlay .login-line,
+  #loginOverlay .login-wave,
+  #loginOverlay .login-grid,
+  #loginOverlay .login-bg{ display:none !important; }
+  #loginOverlay .login-card{
+    position:relative !important; z-index:2 !important;
+    background:#ffffff !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    border:1px solid #fff !important;
+    border-radius:18px !important;
+    padding:34px 30px 30px !important;
+    width:100% !important; max-width:400px !important;
+    box-shadow:0 4px 6px rgba(0,0,0,.15), 0 28px 64px rgba(0,0,0,.5) !important;
+    color:#0a0f0d !important;
+  }
+  #loginOverlay .login-brand-mark{
+    width:44px; height:44px; border-radius:12px;
+    background:#0b3c26 !important; color:#fff !important;
+    font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:16px;
+    box-shadow:0 8px 20px rgba(11,60,38,.45);
+  }
+  #loginOverlay .login-card h1{ color:#0a0f0d !important; font-size:20px !important; font-weight:800 !important; margin:0 0 6px !important; }
+  #loginOverlay .login-card p, #loginOverlay #loginSub, #loginOverlay #loginNote{
+    color:#4b5563 !important; font-size:13px !important; opacity:1 !important;
+  }
+  #loginOverlay .login-card label{ color:#1f2937 !important; }
+  #loginOverlay .login-card input{
+    background:#fff !important; color:#0a0f0d !important;
+    border:1.5px solid #e5e7eb !important;
+    -webkit-text-fill-color:#0a0f0d !important;
+  }
+  #loginOverlay #loginBtn{
+    background:#0b3c26 !important; color:#fff !important;
+    box-shadow:0 6px 18px rgba(11,60,38,.4) !important;
+  }
+  #loginOverlay #loginBtn:hover{ background:#072a1b !important; }
+  #loginOverlay #toggleAuthMode{
+    background:#f9fafb !important; color:#0b3c26 !important;
+    border:1px solid #e5e7eb !important; border-radius:10px !important;
+    padding:10px 12px !important; text-decoration:none !important;
+    display:block !important; text-align:center !important; margin-top:14px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -5731,18 +5797,30 @@ async function initApp(){
   if(!canvas) return;
   const ctx = canvas.getContext('2d', { alpha: false });
   let raf = 0, w = 0, h = 0;
-  // Bold neon medical fluid mesh
   const nodes = [
-    { color:{r:173,g:255,b:47},  ampX:0.32, ampY:0.28, speed:1/7,  phase:0.0, radius:0.62 }, // #adff2f neon lime
-    { color:{r:0,g:245,b:212},   ampX:0.30, ampY:0.30, speed:1/8,  phase:1.1, radius:0.58 }, // #00f5d4 electric mint
-    { color:{r:11,g:60,b:38},    ampX:0.28, ampY:0.26, speed:1/9,  phase:2.3, radius:0.70 }, // #0b3c26 forest
-    { color:{r:0,g:180,b:216},   ampX:0.34, ampY:0.24, speed:1/6.5,phase:3.4, radius:0.55 }, // #00b4d8 cyber teal
-    { color:{r:173,g:255,b:47},  ampX:0.26, ampY:0.32, speed:1/7.5,phase:4.2, radius:0.48 },
-    { color:{r:0,g:245,b:212},   ampX:0.22, ampY:0.28, speed:1/8.5,phase:5.0, radius:0.50 }
+    { color:{r:173,g:255,b:47},  ampX:0.34, ampY:0.30, speed:1/6.5, phase:0.0, radius:0.65 },
+    { color:{r:0,g:245,b:212},   ampX:0.32, ampY:0.32, speed:1/7.5, phase:1.1, radius:0.60 },
+    { color:{r:11,g:60,b:38},    ampX:0.28, ampY:0.26, speed:1/9,   phase:2.3, radius:0.72 },
+    { color:{r:0,g:180,b:216},   ampX:0.36, ampY:0.26, speed:1/6,   phase:3.4, radius:0.58 },
+    { color:{r:173,g:255,b:47},  ampX:0.26, ampY:0.34, speed:1/8,   phase:4.2, radius:0.50 },
+    { color:{r:0,g:245,b:212},   ampX:0.24, ampY:0.28, speed:1/7,   phase:5.0, radius:0.52 }
   ];
+  // Floating objects (crosses + dots)
+  const objects = [];
+  for(let i=0;i<14;i++){
+    objects.push({
+      kind: i % 3 === 0 ? 'cross' : 'dot',
+      x: Math.random(), y: Math.random(),
+      s: 0.012 + Math.random()*0.02,
+      sp: 0.08 + Math.random()*0.15,
+      ph: Math.random()*Math.PI*2,
+      rot: Math.random()*Math.PI
+    });
+  }
   function resize(){
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = window.innerWidth; h = window.innerHeight;
+    w = Math.max(window.innerWidth, 1);
+    h = Math.max(window.innerHeight, 1);
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = w + 'px';
@@ -5751,27 +5829,58 @@ async function initApp(){
   }
   function draw(now){
     const t = (now || performance.now()) / 1000;
-    // Deep forest base so neon pops
-    ctx.fillStyle = '#0b3c26';
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#061a14';
     ctx.fillRect(0, 0, w, h);
     for(const n of nodes){
       const x = 0.5 + Math.sin(t * Math.PI * 2 * n.speed + n.phase) * n.ampX
-                    + Math.sin(t * Math.PI * 2 * n.speed * 0.4 + n.phase * 2) * 0.08;
+                    + Math.sin(t * Math.PI * 2 * n.speed * 0.45 + n.phase * 2) * 0.1;
       const y = 0.5 + Math.cos(t * Math.PI * 2 * n.speed * 0.9 + n.phase * 1.4) * n.ampY
-                    + Math.cos(t * Math.PI * 2 * n.speed * 0.35 + n.phase) * 0.07;
+                    + Math.cos(t * Math.PI * 2 * n.speed * 0.4 + n.phase) * 0.08;
       const px = x * w, py = y * h;
       const rad = Math.max(w, h) * n.radius;
       const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
       const { r, g: gg, b } = n.color;
-      g.addColorStop(0, `rgba(${r},${gg},${b},0.85)`);
-      g.addColorStop(0.35, `rgba(${r},${gg},${b},0.45)`);
-      g.addColorStop(0.7, `rgba(${r},${gg},${b},0.12)`);
+      g.addColorStop(0, `rgba(${r},${gg},${b},0.9)`);
+      g.addColorStop(0.35, `rgba(${r},${gg},${b},0.5)`);
+      g.addColorStop(0.7, `rgba(${r},${gg},${b},0.15)`);
       g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
       ctx.globalCompositeOperation = 'screen';
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
     ctx.globalCompositeOperation = 'source-over';
+    // Moving objects
+    for(const o of objects){
+      const ox = ((o.x + Math.sin(t * o.sp + o.ph) * 0.15 + 1) % 1) * w;
+      const oy = ((o.y + Math.cos(t * o.sp * 0.8 + o.ph) * 0.12 + t * 0.02 + 1) % 1) * h;
+      const size = Math.min(w, h) * o.s;
+      ctx.save();
+      ctx.translate(ox, oy);
+      ctx.rotate(o.rot + t * 0.3);
+      if(o.kind === 'cross'){
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillRect(-size, -size*0.22, size*2, size*0.44);
+        ctx.fillRect(-size*0.22, -size, size*0.44, size*2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, size*0.45, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,245,212,0.55)';
+        ctx.shadowColor = 'rgba(0,245,212,0.8)';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      // ring
+      if(o.kind === 'dot' && (o.ph % 1) > 0.5){
+        ctx.beginPath();
+        ctx.arc(0, 0, size*1.8, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(173,255,47,0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     raf = requestAnimationFrame(draw);
   }
   function start(){
@@ -5781,11 +5890,18 @@ async function initApp(){
       ctx.fillRect(0,0,w,h);
       return;
     }
+    cancelAnimationFrame(raf);
     raf = requestAnimationFrame(draw);
   }
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', ()=>{ resize(); });
   start();
-  window.addEventListener('load', ()=>{ resize(); });
+  window.addEventListener('load', start);
+  // Restart if overlay becomes visible later
+  const ov = document.getElementById('loginOverlay');
+  if(ov && typeof MutationObserver !== 'undefined'){
+    new MutationObserver(()=>{ if(!ov.classList.contains('hidden')) start(); })
+      .observe(ov, { attributes:true, attributeFilter:['class'] });
+  }
 })();
 
 (async function boot(){
