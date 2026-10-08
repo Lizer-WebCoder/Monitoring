@@ -3097,7 +3097,6 @@
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
       <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
-      <button class="btn" type="button" id="endOfDayBtn" title="Export end-of-day pack (CSV + summary)">End-of-day pack</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -3194,8 +3193,6 @@
     <button class="btn" type="button" id="bulkRiceYes">Rice ✓</button>
     <button class="btn" type="button" id="bulkLabYes">Lab ✓</button>
     <button class="btn" type="button" id="bulkMedYes">Meds ✓</button>
-    <button class="btn" type="button" id="bulkVitYes">Vits ✓</button>
-    <button class="btn" type="button" id="bulkRefYes">Referral ✓</button>
     <button class="btn" type="button" id="bulkMcaYes">MCA ✓</button>
     <select id="bulkClaim">
       <option value="">Set claim…</option>
@@ -4450,7 +4447,7 @@ function renderLegend(){
     <span><b>Claim:</b> Pending auto-flags to "Missed 24h" once past 12am the day after encoding</span>
     <span><b>Unsynced:</b> amber left border + “unsynced” tag on a row means it was changed on this device and is waiting to upload. The header and top stats show how many are still pending — they sync automatically when online</span>
     <span><b>Duplicates filter:</b> use the “Duplicates only / Unique only” dropdown to isolate records that share a PhilHealth ID</span>
-    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/vits/referral/MCA, or set claim and status for many patients at once</span>
+    <span><b>Bulk actions:</b> tick row checkboxes (or select-all), then use the bottom bar to mark rice/lab/meds/MCA, or set claim and status for many patients at once</span>
     <span><b>Daily report:</b> downloads a per-team summary CSV for the current month filter (totals, benefits, claims, duplicates)</span>
     <span><b>PhilHealth ID:</b> auto-formats to ####-####-####; save warns if the ID is not a full 12 digits</span>
     <span><b>Staff:</b> click the "staff" pill under a mobile's name to see who's managing it</span>
@@ -4603,7 +4600,7 @@ function renderAll(){
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
               <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
-              <th>Rice</th><th>Lab</th><th>Meds</th><th>Vits</th><th>Ref</th><th></th>
+              <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -4703,8 +4700,6 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="vitamins" ${p.vitamins?'checked':''}></td>
-      <td style="text-align:center"><input type="checkbox" data-field="referral" ${p.referral?'checked':''}></td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
@@ -4893,15 +4888,30 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.closest('[data-purge-team]')){
     const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
+    // Only archived rows — never touch active patients or unregister the live site by accident
     const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
+    const activeLeft = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(ids.length === 0){
+      if(activeLeft > 0){
+        alert('This site still has active patients on the main roster. Switch off Archived view to manage it. Nothing was deleted.');
+        return;
+      }
       if(confirm(`Remove empty group "${team}"?`)){
         removeEmptyTeam(team);
       }
       return;
     }
-    if(confirm(`Permanently delete all ${ids.length} archived patient(s) in "${team}"? This cannot be undone.`)){
-      permanentlyDeletePatients(ids).then(()=> removeEmptyTeam(team));
+    if(confirm(`Permanently delete ${ids.length} archived patient(s) in "${team}"?\n\nActive patients and the live site on the main roster will NOT be removed.`)){
+      permanentlyDeletePatients(ids).then(()=>{
+        const stillAny = state.patients.some(p => p.team === team);
+        // Only drop the group shell if nothing remains (no active, no archived)
+        if(!stillAny && activeLeft === 0){
+          // re-check after delete
+          if(!state.patients.some(p => p.team === team)) removeEmptyTeam(team);
+        } else {
+          renderAll();
+        }
+      });
     }
     return;
   }
@@ -4909,6 +4919,14 @@ groupsContainer.addEventListener('click', e=>{
 
 function removeEmptyTeam(team){
   if(!team) return;
+  // Safety: never unregister a site that still has active (non-archived) patients
+  const activeLeft = (state.patients || []).filter(p => p.team === team && !p.deleted).length;
+  if(activeLeft > 0){
+    console.warn('removeEmptyTeam blocked — active patients still on', team);
+    if(typeof softToast === 'function') softToast('Site kept — still has active patients');
+    renderAll();
+    return;
+  }
   pendingEmptyTeams.delete(team);
   unregisterKnownTeam(team);
   try{ delete teamStaff[team]; saveTeamStaffCache(); pushTeamStaff(); }catch(e){}
@@ -5034,10 +5052,10 @@ document.getElementById('bulkLabYes').addEventListener('click', ()=>{
 document.getElementById('bulkMedYes').addEventListener('click', ()=>{
   applyBulkChange(p => { p.medicine = true; });
 });
-document.getElementById('bulkVitYes').addEventListener('click', ()=>{
+document.getElementById('bulkVitYes')?.addEventListener('click', ()=>{
   applyBulkChange(p => { p.vitamins = true; });
 });
-document.getElementById('bulkRefYes').addEventListener('click', ()=>{
+document.getElementById('bulkRefYes')?.addEventListener('click', ()=>{
   applyBulkChange(p => { p.referral = true; });
 });
 document.getElementById('bulkMcaYes').addEventListener('click', ()=>{
@@ -8154,7 +8172,7 @@ function branchHeatmapHtml(){
 
 /* Patch hooks after DOM ready pieces exist */
 document.getElementById('todayMissionBtn')?.addEventListener('click', toggleTodayMission);
-document.getElementById('endOfDayBtn')?.addEventListener('click', endOfDayPack);
+// endOfDay removed — use Daily report
 
 /* Keyboard shortcuts */
 document.addEventListener('keydown', (e)=>{
