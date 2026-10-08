@@ -2884,6 +2884,91 @@
     border-bottom-width: 1px !important;
   }
 
+
+  /* ===== DR CARE unique UX pack ===== */
+  header.mood-morning{ filter: saturate(1.05) brightness(1.03); }
+  header.mood-afternoon{ filter: saturate(1.08); }
+  header.mood-evening{ filter: saturate(0.95) brightness(0.92); }
+  .pulse-badge.live .pulse-line{ animation: pulse-travel 2.2s linear infinite; }
+  .pulse-badge.paused .pulse-line{ animation: none; opacity: 0.45; }
+  .pulse-badge.warn .pulse-line{ stroke: #e0c479; animation: pulse-travel 1.2s linear infinite; }
+
+  .team-group.type-mobile{ border-left: 4px solid var(--blue); }
+  .team-group.type-walkin{ border-left: 4px solid var(--amber); }
+  .team-group.type-profiling{ border-left: 4px solid var(--purple); }
+  .team-group{ border-radius: 12px; }
+
+  .claim-clock{
+    display:inline-block; margin-left:6px; font-size:10px; font-weight:700;
+    padding:2px 6px; border-radius:999px; font-family:inherit;
+  }
+  .claim-clock.ok{ background:var(--green-bg); color:var(--green); }
+  .claim-clock.warn{ background:var(--amber-bg); color:var(--amber); }
+  .claim-clock.late{ background:var(--red-bg); color:var(--red); }
+
+  .phid-dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;
+    vertical-align:middle;
+  }
+  .phid-dot.ok{ background:var(--green); box-shadow:0 0 0 2px var(--green-bg); }
+  .phid-dot.bad{ background:var(--amber); box-shadow:0 0 0 2px var(--amber-bg); }
+  .phid-dot.dup{ background:var(--red); box-shadow:0 0 0 2px var(--red-bg); }
+
+  .qb-strip{ display:inline-flex; gap:3px; flex-wrap:wrap; }
+  .qb-btn{
+    font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px;
+    border:1px solid var(--line); background:var(--table-head); color:var(--muted);
+    cursor:pointer; line-height:1.2;
+  }
+  .qb-btn.on{ background:var(--green-bg); color:var(--green); border-color:var(--green); }
+  .qb-btn:hover{ border-color:var(--teal); color:var(--teal-deep); }
+
+  .handoff-box{
+    width:100%; margin-top:6px; font-size:12px;
+  }
+  .handoff-box input{
+    width:100%; font-size:12px; padding:6px 10px; border-radius:8px;
+    border:1px dashed var(--line); background:var(--table-head); color:var(--ink);
+  }
+  .photo-pct{
+    font-size:11px; font-weight:650; color:var(--muted);
+    background:var(--table-head); border:1px solid var(--line);
+    padding:2px 8px; border-radius:999px; white-space:nowrap;
+  }
+
+  #softToast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(12px);
+    background:var(--teal-deep); color:#f2ede0; padding:10px 16px; border-radius:999px;
+    font-size:13px; font-weight:650; z-index:250; opacity:0; pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    box-shadow:0 8px 28px rgba(11,54,48,.35); max-width:min(420px,92vw); text-align:center;
+  }
+  #softToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #syncStory{
+    font-size:11px; color:#c7dcd5; margin-left:6px; opacity:.9;
+  }
+  .kb-hint{
+    position:fixed; bottom:10px; right:12px; z-index:50;
+    font-size:11px; color:var(--muted); background:var(--card);
+    border:1px solid var(--line); border-radius:8px; padding:6px 10px;
+    opacity:.85; pointer-events:none;
+  }
+  body.dark .kb-hint{ background:var(--card); }
+
+  .btn-mission.on{
+    background:var(--amber) !important; color:#1a1208 !important; border-color:var(--amber) !important;
+  }
+  .heatmap-bar{
+    height:10px; border-radius:6px; background:var(--table-head); overflow:hidden; margin-top:4px;
+  }
+  .heatmap-bar > i{
+    display:block; height:100%; background:linear-gradient(90deg, var(--teal), var(--green));
+    border-radius:6px;
+  }
+  .heatmap-row{ margin-bottom:10px; font-size:12.5px; }
+  .heatmap-row b{ font-weight:700; }
+
 </style>
 </head>
 <body>
@@ -2969,6 +3054,8 @@
     </div>
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
+      <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
+      <button class="btn" type="button" id="endOfDayBtn" title="Export end-of-day pack (CSV + summary)">End-of-day pack</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -3049,6 +3136,8 @@
 </div>
 <div class="photo-queue-badge" id="photoQueueBadge" title="MCA photos stored locally">📷 <span id="photoQueueCount">0</span> photos offline</div>
 
+<div id="softToast" role="status" aria-live="polite"></div>
+<div class="kb-hint" id="kbHint" title="Keyboard shortcuts">/ search · N new patient · Esc close</div>
 <div id="groupsContainer"></div>
 <details class="legend-wrap">
   <summary class="legend-summary">How to use this tracker</summary>
@@ -3797,7 +3886,7 @@ function prunePendingIds(){
 async function flushPending(){
   prunePendingIds();
   if(!navigator.onLine || pendingIds.size === 0){
-    if(navigator.onLine) setSyncStatus('Synced ' + timeNow());
+    if(navigator.onLine) setSyncStatus('Synced ' + timeNow()); softToast('Saved');
     return;
   }
   setSyncStatus('Syncing…', 'busy');
@@ -4360,7 +4449,11 @@ function renderAll(){
   updateOfflineBanner();
   const teams = getTeams();
   const monthList = monthPatients();
-  const list = filteredPatients();
+  let list = filteredPatients();
+  if(window.__todayMission){
+    const td = (typeof isoToday === 'function' ? isoToday() : new Date().toISOString().slice(0,10));
+    list = list.filter(p => (p.dateEncoded || p.dateSubmitted || '').slice(0,10) === td);
+  }
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
@@ -4403,7 +4496,7 @@ function renderAll(){
     const totalInTeam = monthList.filter(p=>p.team===team).length;
     const staffList = (teamStaff[team] || []).map(staffEntryToText).filter(Boolean);
     const wrap = document.createElement('div');
-    wrap.className = 'team-group';
+    wrap.className = 'team-group type-' + (typeof getTeamType==='function' ? getTeamType(team) : 'mobile');
     const collapsed = !expandedTeams.has(team);
 
     const size = getPageSize();
@@ -4441,6 +4534,8 @@ function renderAll(){
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
           <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
+          <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
+          <div class="handoff-box" style="flex:1 1 100%;"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}" onclick="event.stopPropagation()"></div>
         </div>
         <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
         ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
@@ -4551,7 +4646,7 @@ function rowHtml(p){
     <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
       <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
       <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
-      <td class="idcell">${escapeHtml(p.phid)}</td>
+      <td class="idcell"><span class="phid-dot ${phidSoundness(p,dup).cls}" title="${escapeAttr(phidSoundness(p,dup).title)}"></span>${escapeHtml(p.phid)||'—'}</td>
       <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
         ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
@@ -4561,13 +4656,14 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
-      </select></td>
+      </select> ${claimClockHtml(p)}</td>
       <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="vitamins" ${p.vitamins?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="referral" ${p.referral?'checked':''}></td>
+      <td style="text-align:center">${quickBenefitHtml(p)}</td>
       <td class="row-actions">
         <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
         ${canEdit() ? (p.deleted
@@ -5981,6 +6077,7 @@ function renderDashboard(){
 
   if(total === 0){
     dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope. Try another day/week/month or encoder filter.</div>`;
+  try{ if(typeof branchHeatmapHtml==='function') dashBody.innerHTML += branchHeatmapHtml(); }catch(e){}
     return;
   }
 
@@ -7865,6 +7962,257 @@ setTimeout(()=>{
   }
   updatePhotoQueueBadge();
 }, 800);
+
+
+/* ========== DR CARE unique UX features ========== */
+function softToast(msg, ms){
+  const el = document.getElementById('softToast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(softToast._t);
+  softToast._t = setTimeout(()=> el.classList.remove('show'), ms || 2200);
+}
+
+function applyMissionMood(){
+  const h = new Date().getHours();
+  const hdr = document.querySelector('header');
+  if(!hdr) return;
+  hdr.classList.remove('mood-morning','mood-afternoon','mood-evening');
+  if(h < 11) hdr.classList.add('mood-morning');
+  else if(h < 17) hdr.classList.add('mood-afternoon');
+  else hdr.classList.add('mood-evening');
+}
+
+function updatePulseBadge(){
+  const badge = document.querySelector('.pulse-badge');
+  if(!badge) return;
+  badge.classList.remove('live','paused','warn');
+  if(!navigator.onLine){ badge.classList.add('paused'); return; }
+  const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+  if(pending > 0) badge.classList.add('warn');
+  else badge.classList.add('live');
+}
+
+function phidSoundness(p, isDup){
+  const digits = String(p.phid || '').replace(/\D/g,'');
+  if(isDup) return { cls:'dup', title:'Duplicate PhilHealth ID' };
+  if(digits.length === 12) return { cls:'ok', title:'Full 12-digit PhilHealth ID' };
+  return { cls:'bad', title:'Incomplete PhilHealth ID (' + digits.length + ' digits)' };
+}
+
+function claimClockHtml(p){
+  if(!p || p.claim !== 'pending') return '';
+  if(p.within24) return '<span class="claim-clock ok" title="Marked within 24h">OK</span>';
+  const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
+  if(!base) return '<span class="claim-clock warn" title="No date — set Date encoded">?</span>';
+  const deadline = (typeof claimDeadline === 'function') ? claimDeadline(base) : null;
+  if(!deadline) return '';
+  const ms = deadline - new Date();
+  const hrs = ms / 3600000;
+  if(hrs < 0) return '<span class="claim-clock late" title="Past 24h window">Late</span>';
+  if(hrs < 6) return '<span class="claim-clock warn" title="Under 6 hours left">' + Math.max(1, Math.ceil(hrs)) + 'h</span>';
+  return '<span class="claim-clock ok" title="Hours until Missed 24h">' + Math.ceil(hrs) + 'h</span>';
+}
+
+function quickBenefitHtml(p){
+  if(typeof canEdit === 'function' && !canEdit()) return '';
+  const bits = [
+    ['rice','R', !!p.rice],
+    ['lab','L', !!p.lab],
+    ['medicine','M', !!p.medicine]
+  ];
+  return '<div class="qb-strip">' + bits.map(([f,l,on]) =>
+    `<button type="button" class="qb-btn ${on?'on':''}" data-qb="${p.id}" data-qb-field="${f}" title="Toggle ${f}">${l}</button>`
+  ).join('') + '</div>';
+}
+
+function handoffKey(team){ return 'drcare_handoff_' + String(team||'').toLowerCase(); }
+function getHandoff(team){
+  try{ return localStorage.getItem(handoffKey(team)) || ''; }catch(e){ return ''; }
+}
+function setHandoff(team, val){
+  try{ localStorage.setItem(handoffKey(team), val); }catch(e){}
+}
+
+function photoPctForTeam(team, rows){
+  const list = rows || [];
+  if(!list.length) return 'MCA photos: 0/0';
+  let withPhoto = 0;
+  list.forEach(p=>{
+    if(p.mca || p.mcaPhoto || p.mca_photo) withPhoto++;
+  });
+  return 'MCA photos: ' + withPhoto + '/' + list.length;
+}
+
+/* Today's mission mode */
+window.__todayMission = false;
+function isoToday(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+function toggleTodayMission(){
+  window.__todayMission = !window.__todayMission;
+  const btn = document.getElementById('todayMissionBtn');
+  if(btn) btn.classList.toggle('on', window.__todayMission);
+  if(window.__todayMission){
+    const today = isoToday();
+    const month = today.slice(0,7);
+    const mf = document.getElementById('monthFilter');
+    if(mf){ mf.value = month; }
+    softToast("Today's mission — focusing " + today);
+  } else {
+    softToast('Showing full month view');
+  }
+  if(typeof renderAll === 'function') renderAll();
+}
+
+function endOfDayPack(){
+  try{
+    if(typeof downloadDailyReport === 'function') downloadDailyReport();
+    else if(document.getElementById('dailyReportBtn')) document.getElementById('dailyReportBtn').click();
+  }catch(e){}
+  const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+  const all = (typeof monthPatients === 'function') ? monthPatients() : [];
+  const lines = [
+    'DR CARE — End of day',
+    'Time: ' + new Date().toLocaleString(),
+    'Patients (month view): ' + all.length,
+    'Unsynced changes: ' + pending,
+    'Rice: ' + all.filter(p=>p.rice).length,
+    'Lab: ' + all.filter(p=>p.lab).length,
+    'Meds: ' + all.filter(p=>p.medicine).length,
+    '',
+    'Sites:'
+  ];
+  const byTeam = {};
+  all.forEach(p=>{ byTeam[p.team] = (byTeam[p.team]||0)+1; });
+  Object.keys(byTeam).sort().forEach(t=> lines.push('  - ' + t + ': ' + byTeam[t]));
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'DR-CARE-end-of-day-' + isoToday() + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  softToast('End-of-day pack downloaded' + (pending ? ' · ' + pending + ' still unsynced' : ''));
+}
+
+/* Branch heatmap HTML for dashboard injection */
+function branchHeatmapHtml(){
+  const all = (typeof monthPatients === 'function') ? monthPatients() : [];
+  const map = {};
+  all.forEach(p=>{
+    const f = p.facility || '—';
+    map[f] = (map[f]||0) + 1;
+  });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return '<div class="empty-state">No facility data this period.</div>';
+  const max = entries[0][1] || 1;
+  return '<h4 style="margin:18px 0 10px;font-size:13px;">Facility heatmap</h4>' +
+    entries.map(([name,n])=>{
+      const pct = Math.round(n/max*100);
+      return `<div class="heatmap-row"><b>${(typeof escapeHtml==='function'?escapeHtml(name):name)}</b> · ${n}
+        <div class="heatmap-bar"><i style="width:${pct}%"></i></div></div>`;
+    }).join('');
+}
+
+/* Patch hooks after DOM ready pieces exist */
+document.getElementById('todayMissionBtn')?.addEventListener('click', toggleTodayMission);
+document.getElementById('endOfDayBtn')?.addEventListener('click', endOfDayPack);
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown', (e)=>{
+  const tag = (e.target && e.target.tagName) || '';
+  const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable;
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal-backdrop.open, .dash-backdrop.open, .drawer-backdrop.open').forEach(el=> el.classList.remove('open'));
+    document.getElementById('loginOverlay')?.classList.contains('hidden') || true;
+    return;
+  }
+  if(typing) return;
+  if(e.key === '/' && !e.ctrlKey && !e.metaKey){
+    e.preventDefault();
+    document.getElementById('search')?.focus();
+  }
+  if((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey){
+    if(typeof canEdit === 'function' && canEdit()){
+      const firstAdd = document.querySelector('[data-add-patient]');
+      if(firstAdd) firstAdd.click();
+      else softToast('Open a site, then add a patient');
+    }
+  }
+});
+
+/* Quick benefit toggles */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-qb]');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if(typeof canEdit === 'function' && !canEdit()) return;
+  const id = btn.getAttribute('data-qb');
+  const field = btn.getAttribute('data-qb-field');
+  const p = (state.patients || []).find(x => String(x.id) === String(id));
+  if(!p || !field) return;
+  p[field] = !p[field];
+  if(typeof pendingIds !== 'undefined') pendingIds.add(p.id);
+  if(typeof savePending === 'function') savePending();
+  if(typeof saveLocalCache === 'function') saveLocalCache();
+  if(typeof flushPending === 'function') flushPending();
+  softToast((p.name || 'Patient') + ' · ' + field + (p[field] ? ' ✓' : ' cleared'));
+  if(typeof renderAll === 'function') renderAll();
+});
+
+/* Handoff save */
+document.addEventListener('change', (e)=>{
+  const inp = e.target.closest('[data-handoff]');
+  if(!inp) return;
+  setHandoff(inp.getAttribute('data-handoff'), inp.value);
+  softToast('Handoff note saved');
+});
+
+/* Taglish tooltips */
+const TL = {
+  'Add site / group': 'Magdagdag ng site / grupo',
+  "Today's mission": 'Misyon ngayong araw',
+  'End-of-day pack': 'Ulat sa katapusan ng araw',
+  'Search name, PhilHealth ID, notes, or team…': 'Maghanap ng pangalan, PhilHealth ID, notes, o team…'
+};
+document.querySelectorAll('button, input[placeholder]').forEach(el=>{
+  const key = el.getAttribute('title') || el.textContent.trim() || el.getAttribute('placeholder');
+  if(key && TL[key]) el.setAttribute('title', (el.getAttribute('title')||key) + ' · ' + TL[key]);
+});
+
+/* Enhance setSyncStatus */
+(function(){
+  const _set = window.setSyncStatus || setSyncStatus;
+  window.setSyncStatus = function(text, mode){
+    _set(text, mode);
+    updatePulseBadge();
+    let story = document.getElementById('syncStory');
+    if(!story){
+      const pill = document.getElementById('syncPill');
+      if(pill && pill.parentElement){
+        story = document.createElement('span');
+        story.id = 'syncStory';
+        pill.parentElement.appendChild(story);
+      }
+    }
+    if(story){
+      const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+      if(!navigator.onLine) story.textContent = '· offline · saved on device';
+      else if(mode === 'busy') story.textContent = '· uploading…';
+      else if(pending > 0) story.textContent = '· ' + pending + ' waiting to upload';
+      else story.textContent = '· all clear';
+    }
+  };
+})();
+
+applyMissionMood();
+updatePulseBadge();
+setInterval(applyMissionMood, 30*60*1000);
 
 /* DR CARE — boot: service worker toast, final init hooks */
 
