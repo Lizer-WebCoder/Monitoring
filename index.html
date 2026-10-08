@@ -7,7 +7,7 @@
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14524a">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-<link rel="icon" href="./favicon.svg" sizes="any">
+<link rel="icon" href="./favicon.svgA sizes="any">
 <link rel="apple-touch-icon" href="./favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&display=swap" rel="stylesheet">
@@ -2565,6 +2565,58 @@
     header .hdr-iso, header .hdr-shine, header .hdr-glow{ animation: none !important; }
   }
 
+
+  /* ===== Header layout: brand left, stats right ===== */
+  header .header-row{
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    padding: 0 4px !important;
+  }
+  header .header-row > div:first-child{
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 42%;
+  }
+  header .stat-strip{
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    margin-left: auto !important;
+  }
+  header .stat-strip .stat,
+  header .stat{
+    flex: 0 0 auto !important;
+    min-width: 72px !important;
+    max-width: 96px;
+  }
+  @media (max-width: 1100px){
+    header .header-row{
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+    }
+    header .header-row > div:first-child{
+      max-width: 100%;
+      width: 100%;
+    }
+    header .stat-strip{
+      width: 100% !important;
+      justify-content: flex-start !important;
+      margin-top: 12px !important;
+      margin-left: 0 !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -2676,10 +2728,6 @@
       <option value="lab-no">Lab not yet availed</option>
       <option value="med-yes">Medicines availed</option>
       <option value="med-no">Medicines not yet</option>
-      <option value="vit-yes">Vitamins availed</option>
-      <option value="vit-no">Vitamins not yet</option>
-      <option value="ref-yes">Referral done</option>
-      <option value="ref-no">Referral not yet</option>
     </select>
     <select id="filterType" title="Mobile / walk-in / profiling">
       <option value="">All types</option>
