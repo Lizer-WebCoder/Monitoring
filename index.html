@@ -4214,6 +4214,12 @@ function saveRemovedTeams(){
 }
 loadRemovedTeams();
 
+function clearRemovedTeam(name){
+  if(!name) return;
+  loadRemovedTeams();
+  removedTeams = new Set([...removedTeams].filter(x => String(x).toLowerCase() !== String(name).toLowerCase()));
+  saveRemovedTeams();
+}
 function unregisterKnownTeam(name){
   if(!name) return;
   knownTeams = knownTeams.filter(t => t !== name && t.toLowerCase() !== String(name).toLowerCase());
@@ -4833,6 +4839,18 @@ groupsContainer.addEventListener('click', e=>{
           pendingIds.add(p.id);
         }
       });
+      // Keep site on Active roster as an empty shell
+      if(team && !knownTeams.some(t => String(t).toLowerCase() === String(team).toLowerCase())){
+        knownTeams.push(team);
+        saveKnownTeams();
+        try{ pushKnownTeams(); }catch(e){}
+      }
+      // If it was on removedTeams from an old bug, clear it
+      try{
+        loadRemovedTeams();
+        removedTeams = new Set([...removedTeams].filter(x => String(x).toLowerCase() !== String(team).toLowerCase()));
+        saveRemovedTeams();
+      }catch(e){}
       savePending(); saveLocalCache(); renderAll(); flushPending();
     }
     return;
@@ -4888,29 +4906,23 @@ groupsContainer.addEventListener('click', e=>{
   }
   if(e.target.closest('[data-purge-team]')){
     const team = e.target.closest('[data-purge-team]').dataset.purgeTeam;
-    // Only archived rows — never touch active patients or unregister the live site by accident
-    const ids = state.patients.filter(p=>p.team===team && p.deleted).map(p=>p.id);
-    const activeLeft = state.patients.filter(p=>p.team===team && !p.deleted).length;
+    // CRITICAL: only archived patient rows. Never unregister the site from active roster.
+    const ids = state.patients.filter(p => p.team === team && p.deleted).map(p => p.id);
     if(ids.length === 0){
-      if(activeLeft > 0){
-        alert('This site still has active patients on the main roster. Switch off Archived view to manage it. Nothing was deleted.');
-        return;
-      }
-      if(confirm(`Remove empty group "${team}"?`)){
-        removeEmptyTeam(team);
-      }
+      alert('No archived patients left in this group. The live site on the main roster was not changed.');
       return;
     }
-    if(confirm(`Permanently delete ${ids.length} archived patient(s) in "${team}"?\n\nActive patients and the live site on the main roster will NOT be removed.`)){
-      permanentlyDeletePatients(ids).then(()=>{
-        const stillAny = state.patients.some(p => p.team === team);
-        // Only drop the group shell if nothing remains (no active, no archived)
-        if(!stillAny && activeLeft === 0){
-          // re-check after delete
-          if(!state.patients.some(p => p.team === team)) removeEmptyTeam(team);
-        } else {
-          renderAll();
+    if(confirm('Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.')){
+      permanentlyDeletePatients(ids).then(() => {
+        // Keep site on Active roster
+        if(team && !knownTeams.some(t => String(t).toLowerCase() === String(team).toLowerCase())){
+          knownTeams.push(team);
+          saveKnownTeams();
+          try{ pushKnownTeams(); }catch(e){}
         }
+        if(typeof clearRemovedTeam === 'function') clearRemovedTeam(team);
+        renderAll();
+        if(typeof softToast === 'function') softToast('Archived patients deleted · site kept on Active');
       });
     }
     return;
