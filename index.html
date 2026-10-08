@@ -3724,6 +3724,22 @@
   </div>
 </div>
 
+
+<!-- App confirm dialog -->
+<div class="dash-backdrop" id="appConfirmBackdrop" style="z-index:400;">
+  <div class="dash-modal app-confirm-modal" style="max-width:420px;padding:0;overflow:hidden;">
+    <div class="app-confirm-icon" id="appConfirmIcon" aria-hidden="true">!</div>
+    <div class="app-confirm-body">
+      <h3 id="appConfirmTitle">Confirm</h3>
+      <p id="appConfirmMessage" class="modal-sub" style="margin:8px 0 0;line-height:1.5;"></p>
+    </div>
+    <div class="app-confirm-actions">
+      <button type="button" class="btn btn-ghost" id="appConfirmCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="appConfirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- Recent Activity (admin only) -->
 <div class="dash-backdrop" id="activityBackdrop">
   <div class="dash-modal" style="max-width:720px;">
@@ -5013,12 +5029,21 @@ groupsContainer.addEventListener('click', e=>{
     const team = e.target.closest('[data-delete-team]').dataset.deleteTeam;
     const count = state.patients.filter(p=>p.team===team && !p.deleted).length;
     if(count === 0){
-      if(confirm(`Remove empty group "${team}"?`)){
-        removeEmptyTeam(team);
-      }
+      showAppConfirm({
+        title: 'Remove empty site?',
+        message: '"' + team + '" has no patients. Remove this site/group from the roster?',
+        confirmLabel: 'Remove site',
+        danger: true
+      }).then(ok => { if(ok) removeEmptyTeam(team); });
       return;
     }
-    if(confirm(`Archive team "${team}" and its ${count} patient record(s)? You can restore them later from Archived view.`)){
+    showAppConfirm({
+      title: 'Archive this site?',
+      message: 'Archive "' + team + '" and its ' + count + ' patient record(s)? You can restore them later from Archived view.',
+      confirmLabel: 'Archive',
+      info: true
+    }).then(ok => {
+      if(!ok) return;
       const uid = currentUser ? currentUser.id : null;
       const now = new Date().toISOString();
       state.patients.forEach(p=>{
@@ -5030,13 +5055,11 @@ groupsContainer.addEventListener('click', e=>{
           pendingIds.add(p.id);
         }
       });
-      // Keep site on Active roster as an empty shell
       if(team && !knownTeams.some(t => String(t).toLowerCase() === String(team).toLowerCase())){
         knownTeams.push(team);
         saveKnownTeams();
         try{ pushKnownTeams(); }catch(e){}
       }
-      // If it was on removedTeams from an old bug, clear it
       try{
         loadRemovedTeams();
         removedTeams = new Set([...removedTeams].filter(x => String(x).toLowerCase() !== String(team).toLowerCase()));
@@ -5044,20 +5067,28 @@ groupsContainer.addEventListener('click', e=>{
       }catch(e){}
       if(typeof logActivity==='function') logActivity('Archived team', {name:team, team:team, extra: count + ' patient(s)'});
       savePending(); saveLocalCache(); renderAll(); flushPending();
-    }
+    });
     return;
   }
   if(e.target.closest('[data-restore-team]')){
     const team = e.target.closest('[data-restore-team]').dataset.restoreTeam;
     const count = state.patients.filter(p=>p.team===team && p.deleted).length;
     if(count === 0){
-      // Empty shell left in archived view — just remove it
-      if(confirm(`Remove empty group "${team}"?`)){
-        removeEmptyTeam(team);
-      }
+      showAppConfirm({
+        title: 'Remove empty site?',
+        message: '"' + team + '" has no archived patients. Remove this empty group?',
+        confirmLabel: 'Remove site',
+        danger: true
+      }).then(ok => { if(ok) removeEmptyTeam(team); });
       return;
     }
-    if(confirm(`Restore all ${count} archived patient(s) in "${team}"?`)){
+    showAppConfirm({
+      title: 'Restore patients?',
+      message: 'Restore all ' + count + ' archived patient(s) in "' + team + '" back to the active roster?',
+      confirmLabel: 'Restore',
+      info: true
+    }).then(ok => {
+      if(!ok) return;
       const uid = currentUser ? currentUser.id : null;
       const now = new Date().toISOString();
       state.patients.forEach(p=>{
@@ -5069,33 +5100,52 @@ groupsContainer.addEventListener('click', e=>{
         }
       });
       savePending(); saveLocalCache(); renderAll(); flushPending();
-    }
+    });
     return;
   }
   if(e.target.closest('[data-edit]')){ openModal(e.target.closest('[data-edit]').dataset.edit); return; }
   if(e.target.closest('[data-remove]')){
-    if(confirm("Archive this patient record? You can restore it later from the Archived view.")){
-      const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
-      if(p){ p.deleted = true; persistChange(p); if(typeof logActivity==='function') logActivity('Archived', {name:p.name, team:p.team}); }
-    }
+    const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
+    showAppConfirm({
+      title: 'Archive patient?',
+      message: p ? ('Move "' + (p.name||'this patient') + '" to Archived? You can restore them later.') : 'Archive this patient record?',
+      confirmLabel: 'Archive',
+      info: true
+    }).then(ok => {
+      if(!ok || !p) return;
+      p.deleted = true; persistChange(p);
+      if(typeof logActivity==='function') logActivity('Archived', {name:p.name, team:p.team});
+    });
     return;
   }
   if(e.target.closest('[data-restore]')){
     const p = state.patients.find(p=>p.id===e.target.closest('[data-restore]').dataset.restore);
-    if(p && confirm("Restore this patient record?")){
+    showAppConfirm({
+      title: 'Restore patient?',
+      message: p ? ('Restore "' + (p.name||'this patient') + '" to the active roster?') : 'Restore this patient?',
+      confirmLabel: 'Restore',
+      info: true
+    }).then(ok => {
+      if(!ok || !p) return;
       p.deleted = false;
       persistChange(p);
       if(typeof logActivity==='function') logActivity('Restored', {name:p.name, team:p.team});
-    }
+    });
     return;
   }
   if(e.target.closest('[data-purge]')){
     const id = e.target.closest('[data-purge]').dataset.purge;
     const p = state.patients.find(x=>x.id===id);
-    if(p && confirm("Permanently delete this patient? This cannot be undone.")){
+    showAppConfirm({
+      title: 'Delete permanently?',
+      message: p ? ('Permanently delete "' + (p.name||'this patient') + '"? This cannot be undone.') : 'Permanently delete this patient?',
+      confirmLabel: 'Delete',
+      danger: true
+    }).then(ok => {
+      if(!ok || !p) return;
       if(typeof logActivity==='function') logActivity('Deleted', {name:p.name, team:p.team});
       permanentlyDeletePatients([p.id]);
-    }
+    });
     return;
   }
   if(e.target.closest('[data-purge-team]')){
@@ -6216,6 +6266,42 @@ function closeEncoderPanel(){
     if(typeof renderDashboard === 'function') renderDashboard();
   });
 })();
+
+
+/* Styled confirm — replaces window.confirm for in-app dialogs */
+function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, info }){
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('appConfirmBackdrop');
+    const titleEl = document.getElementById('appConfirmTitle');
+    const msgEl = document.getElementById('appConfirmMessage');
+    const okBtn = document.getElementById('appConfirmOk');
+    const cancelBtn = document.getElementById('appConfirmCancel');
+    const icon = document.getElementById('appConfirmIcon');
+    if(!backdrop || !okBtn){
+      resolve(window.confirm(message || title || 'Continue?'));
+      return;
+    }
+    titleEl.textContent = title || 'Confirm';
+    msgEl.textContent = message || '';
+    okBtn.textContent = confirmLabel || 'Confirm';
+    cancelBtn.textContent = cancelLabel || 'Cancel';
+    icon.className = 'app-confirm-icon' + (danger ? ' danger' : (info ? ' info' : ''));
+    icon.textContent = danger ? '!' : (info ? 'i' : '?');
+    okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+
+    const finish = (val) => {
+      backdrop.classList.remove('open');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      backdrop.onclick = null;
+      resolve(val);
+    };
+    okBtn.onclick = () => finish(true);
+    cancelBtn.onclick = () => finish(false);
+    backdrop.onclick = (e) => { if(e.target === backdrop) finish(false); };
+    backdrop.classList.add('open');
+  });
+}
 
 /* ---------------- Dashboard ---------------- */
 const dashBackdrop = document.getElementById('dashBackdrop');
