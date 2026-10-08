@@ -3550,17 +3550,34 @@
   </div>
 </div>
 
-<!-- Recent Activity -->
+<!-- Recent Activity (admin only) -->
 <div class="dash-backdrop" id="activityBackdrop">
-  <div class="dash-modal" style="max-width:640px;">
+  <div class="dash-modal" style="max-width:720px;">
     <div class="dash-head">
       <div>
         <h3>Recent Activity</h3>
-        <div class="modal-sub">Latest adds, edits, and archives across the roster (from this device + synced data).</div>
+        <div class="modal-sub">Admin-only log of adds, edits, archives, and deletes on this device.</div>
       </div>
       <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
     </div>
-    <div id="activityBody" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="activity-toolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px;padding:0 2px;">
+      <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+        Show
+        <select id="activityPageSize" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-ghost btn-sm" id="activityClearAll" title="Clear entire activity log">Clear all</button>
+      <span id="activityPageInfo" style="font-size:12px;color:var(--muted);margin-left:auto;"></span>
+    </div>
+    <div id="activityBody" style="max-height:55vh;overflow-y:auto;"></div>
+    <div class="activity-pager" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);">
+      <button type="button" class="btn btn-ghost btn-sm" id="activityPrev">← Previous</button>
+      <span id="activityPageLabel" style="font-size:12.5px;color:var(--muted);"></span>
+      <button type="button" class="btn btn-ghost btn-sm" id="activityNext">Next →</button>
+    </div>
   </div>
 </div>
 
@@ -4851,6 +4868,7 @@ groupsContainer.addEventListener('click', e=>{
         removedTeams = new Set([...removedTeams].filter(x => String(x).toLowerCase() !== String(team).toLowerCase()));
         saveRemovedTeams();
       }catch(e){}
+      if(typeof logActivity==='function') logActivity('Archived team', {name:team, team:team, extra: count + ' patient(s)'});
       savePending(); saveLocalCache(); renderAll(); flushPending();
     }
     return;
@@ -4884,7 +4902,7 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-remove]')){
     if(confirm("Archive this patient record? You can restore it later from the Archived view.")){
       const p = state.patients.find(p=>p.id===e.target.closest('[data-remove]').dataset.remove);
-      if(p){ p.deleted = true; persistChange(p); }
+      if(p){ p.deleted = true; persistChange(p); if(typeof logActivity==='function') logActivity('Archived', {name:p.name, team:p.team}); }
     }
     return;
   }
@@ -4893,6 +4911,7 @@ groupsContainer.addEventListener('click', e=>{
     if(p && confirm("Restore this patient record?")){
       p.deleted = false;
       persistChange(p);
+      if(typeof logActivity==='function') logActivity('Restored', {name:p.name, team:p.team});
     }
     return;
   }
@@ -4900,6 +4919,7 @@ groupsContainer.addEventListener('click', e=>{
     const id = e.target.closest('[data-purge]').dataset.purge;
     const p = state.patients.find(x=>x.id===id);
     if(p && confirm("Permanently delete this patient? This cannot be undone.")){
+      if(typeof logActivity==='function') logActivity('Deleted', {name:p.name, team:p.team});
       permanentlyDeletePatients([p.id]);
     }
     return;
@@ -5263,11 +5283,13 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
     deleted: false
   };
   let p;
+  const isNew = !editingId;
   if(editingId){ p = state.patients.find(p=>p.id===editingId); Object.assign(p, data); }
   else { p = Object.assign({id:cryptoId(), createdAt: new Date().toISOString()}, data); state.patients.push(p); }
   p.updatedAt = new Date().toISOString();
   pendingEmptyTeams.delete(data.team);
   persistChange(p);
+  if(typeof logActivity==='function') logActivity(isNew ? 'Added' : 'Edited', {name:p.name, team:p.team});
   closeModal();
 });
 
@@ -6372,89 +6394,166 @@ document.getElementById('dashDayInput')?.addEventListener('change', renderDashbo
 document.getElementById('dashWeekInput')?.addEventListener('change', renderDashboard);
 document.getElementById('dashEncoderSelect')?.addEventListener('change', renderDashboard);
 
-/* ---------------- Recent Activity ---------------- */
+/* ---------------- Recent Activity (admin-only log) ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
-document.getElementById('activityCloseBtn').innerHTML = icon('x', 15);
+if(document.getElementById('activityCloseBtn')) document.getElementById('activityCloseBtn').innerHTML = icon('x', 15);
 
-function formatActivityTime(iso){
+const ACTIVITY_KEY = 'drcare_activity_v1';
+let activityLog = [];
+let activityPage = 0;
+let activityPageSize = 20;
+
+function loadActivityLog(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '[]');
+    activityLog = Array.isArray(raw) ? raw : [];
+  }catch(e){ activityLog = []; }
+}
+function saveActivityLog(){
+  try{ localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityLog.slice(0, 500))); }catch(e){}
+}
+loadActivityLog();
+
+function logActivity(action, detail){
+  try{
+    const entry = {
+      id: (typeof cryptoId === 'function' ? cryptoId() : ('a_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8))),
+      at: new Date().toISOString(),
+      who: currentUser ? (currentUser.id || null) : null,
+      whoName: currentUser ? (currentUser.fullName || currentUser.email || currentUser.role || 'User') : 'Someone',
+      action: action || 'Updated',
+      name: (detail && detail.name) || '',
+      team: (detail && detail.team) || '',
+      extra: (detail && detail.extra) || ''
+    };
+    activityLog.unshift(entry);
+    if(activityLog.length > 500) activityLog = activityLog.slice(0, 500);
+    saveActivityLog();
+  }catch(e){ console.warn('logActivity', e); }
+}
+
+function formatActivityDate(iso){
   if(!iso) return '—';
   try{
     const d = new Date(iso);
     if(isNaN(d.getTime())) return '—';
-    const now = new Date();
-    const sameDay = d.toDateString() === now.toDateString();
-    if(sameDay) return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    return d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    return d.toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   }catch(_){ return '—'; }
 }
 
-function buildActivityFeed(limit=40){
-  const events = [];
-  state.patients.forEach(p=>{
+function isAdminUser(){
+  return !!(currentUser && currentUser.role === 'admin');
+}
+
+function updateActivityButtonVisibility(){
+  const btn = document.getElementById('activityBtn');
+  if(btn) btn.style.display = isAdminUser() ? '' : 'none';
+}
+
+function buildActivityFeed(){
+  const events = activityLog.map(e => ({
+    id: e.id, at: e.at, who: e.who, whoName: e.whoName,
+    action: e.action, name: e.name, team: e.team, extra: e.extra,
+    kind: /add/i.test(e.action) ? 'add' : (/archiv|delet/i.test(e.action) ? 'archive' : 'edit'),
+    deletable: true
+  }));
+  if(events.length) return events;
+  (state.patients || []).forEach(p => {
     const name = p.name || '(unnamed)';
     const team = p.team || '—';
     if(p.createdAt){
-      events.push({
-        at: p.createdAt,
-        who: p.createdBy,
-        action: 'Added',
-        name, team,
-        kind: 'add'
-      });
+      events.push({ id:null, at:p.createdAt, who:p.createdBy, action:'Added', name, team, kind:'add', deletable:false });
     }
-    // Only show a separate "Edited" if updated meaningfully after create
     if(p.updatedAt && p.updatedAt !== p.createdAt){
       events.push({
-        at: p.updatedAt,
-        who: p.updatedBy || p.createdBy,
-        action: p.deleted ? 'Archived' : 'Edited',
-        name, team,
-        kind: p.deleted ? 'archive' : 'edit'
-      });
-    } else if(p.deleted && p.updatedAt){
-      events.push({
-        at: p.updatedAt,
-        who: p.updatedBy || p.createdBy,
-        action: 'Archived',
-        name, team,
-        kind: 'archive'
+        id:null, at:p.updatedAt, who:p.updatedBy || p.createdBy,
+        action: p.deleted ? 'Archived' : 'Edited', name, team,
+        kind: p.deleted ? 'archive' : 'edit', deletable:false
       });
     }
   });
-  events.sort((a,b)=> (b.at||'').localeCompare(a.at||''));
-  return events.slice(0, limit);
+  events.sort((a,b) => String(b.at||'').localeCompare(String(a.at||'')));
+  return events;
+}
+
+function renderActivityPage(){
+  const body = document.getElementById('activityBody');
+  if(!body) return;
+  const all = buildActivityFeed();
+  const sizeSel = document.getElementById('activityPageSize');
+  activityPageSize = parseInt(sizeSel && sizeSel.value ? sizeSel.value : '20', 10) || 20;
+  const total = all.length;
+  const totalPages = Math.max(1, Math.ceil(total / activityPageSize) || 1);
+  if(activityPage > totalPages - 1) activityPage = totalPages - 1;
+  if(activityPage < 0) activityPage = 0;
+  const start = activityPage * activityPageSize;
+  const slice = all.slice(start, start + activityPageSize);
+  const info = document.getElementById('activityPageInfo');
+  if(info) info.textContent = total ? ((start + 1) + '–' + Math.min(start + slice.length, total) + ' of ' + total) : '0 events';
+  const label = document.getElementById('activityPageLabel');
+  if(label) label.textContent = total ? ('Page ' + (activityPage + 1) + ' / ' + totalPages) : 'No pages';
+  const prev = document.getElementById('activityPrev');
+  const next = document.getElementById('activityNext');
+  if(prev) prev.disabled = activityPage <= 0 || total === 0;
+  if(next) next.disabled = activityPage >= totalPages - 1 || total === 0;
+  if(!slice.length){
+    body.innerHTML = '<div class="dash-empty" style="padding:28px 12px;">No activity yet. Adds, edits, and archives will appear here for admins.</div>';
+    return;
+  }
+  body.innerHTML = slice.map(ev => {
+    const who = ev.whoName || (typeof displayNameFor === 'function' ? displayNameFor(ev.who) : '') || 'Someone';
+    const color = ev.kind === 'add' ? 'var(--green)' : (ev.kind === 'archive' ? 'var(--amber)' : 'var(--blue)');
+    const delBtn = (ev.deletable && ev.id)
+      ? ('<button type="button" class="btn btn-ghost btn-sm" data-del-activity="' + escapeAttr(ev.id) + '" title="Delete this log entry" style="color:var(--red);">Delete</button>')
+      : '';
+    return '<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-bottom:1px solid var(--line);font-size:13px;">' +
+      '<div style="min-width:140px;color:var(--muted);font-size:11.5px;padding-top:2px;line-height:1.35;">' + escapeHtml(formatActivityDate(ev.at)) + '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:600;color:var(--ink);"><span style="color:' + color + ';">' + escapeHtml(ev.action) + '</span> · ' + escapeHtml(ev.name || '—') + '</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:2px;">by ' + escapeHtml(who) + ' · ' + escapeHtml(ev.team || '—') +
+          (ev.extra ? (' · ' + escapeHtml(ev.extra)) : '') + '</div>' +
+      '</div>' + delBtn +
+    '</div>';
+  }).join('');
 }
 
 function openActivity(){
-  const body = document.getElementById('activityBody');
-  const events = buildActivityFeed(50);
-  if(!events.length){
-    body.innerHTML = `<div class="dash-empty" style="padding:28px 12px;">No activity yet. Add or edit patients to see a feed here.</div>`;
-  } else {
-    body.innerHTML = events.map(ev=>{
-      const who = displayNameFor(ev.who) || 'Someone';
-      const color = ev.kind === 'add' ? 'var(--green)' : (ev.kind === 'archive' ? 'var(--amber)' : 'var(--blue)');
-      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13px;">
-        <div style="min-width:72px;color:var(--muted);font-size:11.5px;padding-top:2px;">${escapeHtml(formatActivityTime(ev.at))}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;color:var(--ink);">
-            <span style="color:${color};">${escapeHtml(ev.action)}</span>
-            · ${escapeHtml(ev.name)}
-          </div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;">
-            by ${escapeHtml(who)} · ${escapeHtml(ev.team)}
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+  if(!isAdminUser()){
+    alert('Recent Activity is available to admins only.');
+    return;
   }
+  activityPage = 0;
+  renderActivityPage();
   activityBackdrop.classList.add('open');
 }
 function closeActivity(){ activityBackdrop.classList.remove('open'); }
-document.getElementById('activityBtn').addEventListener('click', openActivity);
-document.getElementById('activityCloseBtn').addEventListener('click', closeActivity);
-activityBackdrop.addEventListener('click', e=>{ if(e.target===activityBackdrop) closeActivity(); });
 
+document.getElementById('activityBtn')?.addEventListener('click', openActivity);
+document.getElementById('activityCloseBtn')?.addEventListener('click', closeActivity);
+activityBackdrop?.addEventListener('click', e => { if(e.target === activityBackdrop) closeActivity(); });
+document.getElementById('activityPageSize')?.addEventListener('change', () => { activityPage = 0; renderActivityPage(); });
+document.getElementById('activityPrev')?.addEventListener('click', () => { activityPage--; renderActivityPage(); });
+document.getElementById('activityNext')?.addEventListener('click', () => { activityPage++; renderActivityPage(); });
+document.getElementById('activityClearAll')?.addEventListener('click', () => {
+  if(!isAdminUser()) return;
+  if(!activityLog.length){ alert('Log is already empty.'); return; }
+  if(confirm('Clear the entire activity log on this device? This cannot be undone.')){
+    activityLog = [];
+    saveActivityLog();
+    activityPage = 0;
+    renderActivityPage();
+  }
+});
+document.getElementById('activityBody')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-del-activity]');
+  if(!btn || !isAdminUser()) return;
+  const id = btn.getAttribute('data-del-activity');
+  activityLog = activityLog.filter(x => x.id !== id);
+  saveActivityLog();
+  renderActivityPage();
+});
+
+/* ---------------- Admin panel ---------------- */
 /* ---------------- Admin panel ---------------- */
 const adminBackdrop = document.getElementById('adminBackdrop');
 document.getElementById('adminCloseBtn').innerHTML = icon('x', 15);
@@ -8275,6 +8374,7 @@ document.querySelectorAll('button, input[placeholder]').forEach(el=>{
 })();
 
 applyMissionMood();
+if(typeof updateActivityButtonVisibility==='function') updateActivityButtonVisibility();
 updatePulseBadge();
 setInterval(applyMissionMood, 30*60*1000);
 
