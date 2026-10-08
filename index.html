@@ -1,28 +1,35 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DR CARE — Loading…</title><link rel="manifest" href="./manifest.json"></head>
-<body style="font-family:system-ui;background:#0b3c26;color:#e8f0ed;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
-<div style="text-align:center"><div style="font-weight:800;font-size:18px;margin-bottom:8px">DR CARE</div><div id="st" style="opacity:.8">Loading app…</div></div>
-<script>
-(async function(){
-  const st = document.getElementById('st');
-  try {
-    const n = 2;
-    let b64 = '';
-    for (let i = 0; i < n; i++) {
-      st.textContent = 'Loading ' + (i+1) + '/' + n + '…';
-      const r = await fetch('./app.part' + i + '.b64?v=2');
-      if (!r.ok) throw new Error('Missing part ' + i);
-      b64 += (await r.text()).trim();
-    }
-    st.textContent = 'Decoding…';
-    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const ds = new DecompressionStream('gzip');
-    const stream = new Blob([bin]).stream().pipeThrough(ds);
-    const html = await new Response(stream).text();
-    document.open(); document.write(html); document.close();
-  } catch (e) {
-    st.innerHTML = '<b>Load failed</b><br>' + (e.message||e) + '<br><small>Hard refresh (Ctrl+Shift+R)</small>';
-  }
-})();
-</script></body></html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DR CARE — Restore needed</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,sans-serif;background:#0b3c26;color:#e8f0ed;padding:24px;}
+  .card{max-width:520px;background:#fff;color:#12312b;border-radius:16px;padding:28px 24px;
+    box-shadow:0 20px 50px rgba(0,0,0,.35);}
+  h1{margin:0 0 10px;font-size:20px;}
+  p{margin:0 0 12px;line-height:1.5;font-size:14px;color:#334155;}
+  ol{margin:0;padding-left:20px;color:#334155;font-size:14px;line-height:1.55;}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:6px;font-size:12px;}
+  a{color:#0b3c26;font-weight:700;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>DR CARE — one-time restore</h1>
+    <p>A large update could not be pushed in one step from the assistant (file ~300KB). Your live site needs the full <code>index.html</code> restored once.</p>
+    <p><b>Fastest fix (about 1 minute):</b></p>
+    <ol>
+      <li>Open GitHub → <b>Monitoring</b> → <b>Commits</b></li>
+      <li>Open commit <code>29e1060</code> (“Update index.html”) — last full working build before this attempt</li>
+      <li>Open <code>index.html</code> → copy all → paste over current <code>index.html</code> on <b>main</b> → Commit</li>
+      <li>Or in Commits, use that commit’s <b>Browse files</b> and restore <code>index.html</code></li>
+      <li>Wait for Vercel, then hard refresh (<code>Ctrl+Shift+R</code>)</li>
+    </ol>
+    <p style="margin-top:16px">After that works again, paste the <b>latest full</b> <code>index.html</code> from the project artifacts (all features) the same way.</p>
+    <p><a href="https://github.com/Lizer-WebCoder/Monitoring/commits/main">Open commits on GitHub →</a></p>
+  </div>
+</body>
+</html>
