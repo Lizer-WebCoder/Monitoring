@@ -368,8 +368,8 @@
   /* Outer edge frame around the page content */
   html{ background:var(--teal-deep); }
   body{
-    border-left:3px solid var(--teal);
-    border-right:3px solid var(--teal);
+    border-left:2px solid var(--teal);
+    border-right:2px solid var(--teal);
     box-sizing:border-box;
   }
   header::before{
@@ -477,16 +477,18 @@
   .team-group-card{
     background:var(--card);
     border:1px solid var(--line);
-    border-radius:16px;
-    box-shadow:var(--shadow);
+    border-radius:10px;
     overflow:hidden;
-    border-left:4px solid var(--teal);
+  }
+  .team-group-card + .team-group .team-group-card,
+  .team-group + .team-group .team-group-card{
+    /* spacing handled by team-group margin */
   }
   .team-head{
     display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;
     cursor:pointer; user-select:none;
-    padding:14px 16px 12px;
-    background:linear-gradient(180deg, var(--table-head) 0%, var(--card) 100%);
+    padding:12px 14px 10px;
+    background:var(--card);
     border-bottom:1px solid var(--line);
   }
   .team-head .chev{
@@ -547,9 +549,9 @@
   .team-head{ flex-wrap:wrap; gap:8px 10px; }
   .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
   .table-wrap{ max-width:100%; padding:0; }
-  .team-group-card .table-wrap{ border-top:1px solid var(--line); }
+  .team-group-card .table-wrap{ border-top:none; }
   .team-group-card .pager, .team-group-card .team-pager{
-    padding:10px 14px; border-top:1px solid var(--line); background:var(--table-head);
+    padding:8px 14px; border-top:1px solid var(--line); background:transparent;
   }
   table{ min-width:960px; }
   @media (max-width: 900px){
@@ -1258,22 +1260,15 @@
   .toolbar{ gap: 12px; margin-top: 14px; margin-bottom: 14px; }
   .toolbar-row{ gap: 8px; }
   .team-group{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-    padding: 12px 14px 10px;
-    margin-bottom: 14px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 18px;
   }
-  .team-head{
-    border-bottom: 1px solid var(--line);
-    padding: 6px 2px 12px;
-    margin-bottom: 8px;
-  }
-  .team-head h2{ font-size: 15px; font-weight: 700; }
   .table-wrap{
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line);
+    border-radius: 0;
+    border: none;
     overflow: auto;
   }
   table th{
@@ -2845,12 +2840,10 @@
     margin-top: 14px !important;
   }
   .team-head{
-    border-radius: 10px 10px 0 0;
-    padding: 12px 10px !important;
+    border-radius: 0;
   }
   .table-wrap{
-    border-radius: 0 0 12px 12px;
-    border: 1px solid var(--line);
+    border: none;
     overflow: auto;
   }
   table{
