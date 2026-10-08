@@ -1877,6 +1877,123 @@
     padding: 8px 14px;
   }
 
+
+  /* ===== Dark mode readability (high contrast) ===== */
+  body.dark{
+    --ink:#eef5f2 !important;
+    --paper:#0c1412 !important;
+    --card:#15201d !important;
+    --line:#3a4a45 !important;
+    --muted:#b7c4bf !important;
+    --table-head:#1a2824 !important;
+    --row-hover:#1c2b27 !important;
+    --label-accent:#8fd9c4 !important;
+    --teal:#3db89a !important;
+  }
+  body.dark header,
+  body.dark .header-row{
+    color:#eef5f2 !important;
+  }
+  body.dark .brand-title,
+  body.dark .brand-eyebrow,
+  body.dark .org-input{
+    color:#f2f7f5 !important;
+  }
+  body.dark .org-input{
+    background:rgba(255,255,255,0.08) !important;
+    border-color:rgba(255,255,255,0.2) !important;
+  }
+  body.dark .stat-chip,
+  body.dark .stat-strip .stat-chip{
+    background:rgba(255,255,255,0.1) !important;
+    color:#eef5f2 !important;
+    border-color:rgba(255,255,255,0.18) !important;
+  }
+  body.dark .sync-pill,
+  body.dark #whoAmI,
+  body.dark .who-row,
+  body.dark .who-row a,
+  body.dark .who-row button{
+    color:#d5e8e2 !important;
+  }
+  body.dark input,
+  body.dark select,
+  body.dark textarea{
+    background:var(--card) !important;
+    color:var(--ink) !important;
+    border-color:var(--line) !important;
+    -webkit-text-fill-color:var(--ink);
+  }
+  body.dark input::placeholder{
+    color:#8a9b95 !important;
+    -webkit-text-fill-color:#8a9b95;
+  }
+  body.dark label,
+  body.dark .field-hint,
+  body.dark .modal-sub,
+  body.dark .muted,
+  body.dark #loginNote{
+    color:var(--muted) !important;
+  }
+  body.dark .btn{
+    color:var(--ink);
+    border-color:var(--line);
+  }
+  body.dark .btn-ghost{
+    color:#d5e8e2 !important;
+  }
+  body.dark .btn-primary{
+    background:var(--teal) !important;
+    color:#04120f !important;
+    border-color:transparent !important;
+  }
+  body.dark table th{
+    background:var(--table-head) !important;
+    color:#eef5f2 !important;
+  }
+  body.dark table td{
+    color:var(--ink) !important;
+    border-color:var(--line) !important;
+  }
+  body.dark .team-head,
+  body.dark .team-block{
+    color:var(--ink) !important;
+  }
+  body.dark .modal,
+  body.dark .dash-modal,
+  body.dark .drawer,
+  body.dark .staff-popup,
+  body.dark .login-card{
+    background:var(--card) !important;
+    color:var(--ink) !important;
+    border-color:var(--line) !important;
+  }
+  body.dark .modal h3,
+  body.dark .dash-modal h3,
+  body.dark .drawer h3{
+    color:#f2f7f5 !important;
+  }
+  body.dark .dash-close,
+  body.dark .dash-head button{
+    color:#eef5f2 !important;
+  }
+  body.dark .empty-state,
+  body.dark .legend,
+  body.dark .app-footer{
+    color:var(--muted) !important;
+  }
+  body.dark .toolbar{
+    background:transparent;
+  }
+  body.dark .badge-select,
+  body.dark .fac-select{
+    color:inherit;
+  }
+  body.dark #search{
+    background:var(--card) !important;
+    color:var(--ink) !important;
+  }
+
 </style>
 </head>
 <body>
@@ -1950,8 +2067,7 @@
     </div>
     <div class="tb-group tb-group-end">
       <button class="btn btn-ghost btn-sm" id="themeToggle"></button>
-      <button class="btn btn-ghost btn-sm" id="langToggle" title="Toggle English / Tagalog">EN</button>
-      <button class="btn btn-ghost btn-sm" id="recycleBtn" title="Recycle bin — recently deleted"></button>
+<button class="btn btn-ghost btn-sm" id="recycleBtn" title="Recycle bin — recently deleted"></button>
     </div>
   </div>
   <!-- Row 2: search + filters -->
@@ -5737,7 +5853,7 @@ const I18N = {
   }
 };
 
-function currentLang(){ return localStorage.getItem(LANG_KEY) === 'tl' ? 'tl' : 'en'; }
+function currentLang(){ return 'en'; /* Tagalog removed — English only */ }
 function t(key){ const L = I18N[currentLang()] || I18N.en; return L[key] || I18N.en[key] || key; }
 
 function applyLanguage(){
@@ -5775,10 +5891,9 @@ function applyLanguage(){
   }
 }
 
-document.getElementById('langToggle')?.addEventListener('click', ()=>{
-  localStorage.setItem(LANG_KEY, currentLang() === 'tl' ? 'en' : 'tl');
-  applyLanguage();
-});
+/* langToggle removed — English only */
+try{ localStorage.removeItem(LANG_KEY); }catch(e){}
+
 
 /* ---------- Custom benefits ---------- */
 function loadCustomBenefits(){
