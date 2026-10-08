@@ -1,13 +1,7 @@
-const CACHE_NAME = 'dr-care-v7';
+const CACHE_NAME = 'dr-care-v8';
 const APP_SHELL = [
   './',
   './index.html',
-  './css/app.css',
-  './js/core.js',
-  './js/ui.js',
-  './js/screens.js',
-  './js/features.js',
-  './js/boot.js',
   './supabase.js',
   './xlsx.full.min.js',
   './manifest.json',
@@ -44,6 +38,7 @@ self.addEventListener('fetch', event => {
     url.pathname.endsWith('.html') ||
     url.pathname.endsWith('/');
 
+  // Always try network first for HTML so new publishes show up
   if (isHtml) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
@@ -63,8 +58,7 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request)
+      const network = fetch(event.request)
         .then(response => {
           if (response && response.ok) {
             const copy = response.clone();
@@ -73,6 +67,7 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => cached || Response.error());
+      return cached || network;
     })
   );
 });
