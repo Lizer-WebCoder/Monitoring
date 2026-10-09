@@ -93,67 +93,6 @@
   body > header{ /* keep header full-bleed */ }
   .mono{ font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace; }
 
-
-  /* ---------- App confirm dialog ---------- */
-  #appConfirmBackdrop{
-    display:none; position:fixed; inset:0; z-index:320;
-    background:rgba(4,18,16,0.72); backdrop-filter:blur(6px);
-    align-items:center; justify-content:center; padding:20px;
-  }
-  #appConfirmBackdrop.open{ display:flex !important; }
-  #appConfirmBackdrop .app-confirm-modal{
-    background:linear-gradient(165deg, #1c3632 0%, #122824 100%);
-    border:1px solid rgba(191,232,218,0.2);
-    border-radius:16px; width:100%; max-width:420px;
-    box-shadow:0 24px 60px rgba(0,0,0,0.5);
-    color:#eef6f3; overflow:hidden;
-    animation: appConfirmIn 0.25s cubic-bezier(0.22,1,0.36,1);
-  }
-  @keyframes appConfirmIn{
-    from{ opacity:0; transform:translateY(12px) scale(0.97); }
-    to{ opacity:1; transform:translateY(0) scale(1); }
-  }
-  #appConfirmBackdrop .app-confirm-icon{
-    width:48px; height:48px; border-radius:14px;
-    margin:22px auto 0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:22px; font-weight:800; color:#fff;
-    background:linear-gradient(145deg, #2f8a79, #1a6b5c);
-  }
-  #appConfirmBackdrop .app-confirm-icon.danger{
-    background:linear-gradient(145deg, #c45c4a, #8a3028);
-  }
-  #appConfirmBackdrop .app-confirm-body{ padding:14px 22px 8px; text-align:center; }
-  #appConfirmBackdrop .app-confirm-body h3{
-    margin:0; font-size:17px; font-weight:800; color:#fff; text-align:center;
-  }
-  #appConfirmBackdrop .app-confirm-body p,
-  #appConfirmBackdrop .app-confirm-body .modal-sub{
-    margin:8px 0 0; font-size:13.5px; line-height:1.55;
-    color:rgba(220,235,228,0.8); text-align:center;
-  }
-  #appConfirmBackdrop .app-confirm-actions{
-    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-    padding:16px 22px 20px;
-    border-top:1px solid rgba(255,255,255,0.08);
-  }
-  #appConfirmBackdrop .app-confirm-actions .btn{
-    min-width:100px; padding:10px 16px; border-radius:10px; font-weight:700;
-  }
-  #appConfirmBackdrop .app-confirm-actions .btn-primary{
-    background:linear-gradient(180deg, #2f8a79, #1a6b5c); color:#fff; border:none;
-  }
-  #appConfirmBackdrop .app-confirm-actions .btn-danger,
-  #appConfirmBackdrop .app-confirm-actions .btn-primary.danger-btn,
-  #appConfirmBackdrop .app-confirm-actions .btn.danger{
-    background:linear-gradient(180deg, #c45c4a, #8a3028) !important;
-    color:#fff !important; border:none;
-  }
-  #appConfirmBackdrop .app-confirm-actions .btn-ghost{
-    background:rgba(255,255,255,0.08); color:#eef6f3;
-    border:1px solid rgba(255,255,255,0.14);
-  }
-
   /* ---------- Offline banner ---------- */
   #offlineBanner{
     display:none; position:sticky; top:0; z-index:40; background:var(--amber-bg); color:var(--amber);
@@ -369,8 +308,8 @@
   /* Outer edge frame around the page content */
   html{ background:var(--teal-deep); }
   body{
-    border-left:2px solid var(--teal);
-    border-right:2px solid var(--teal);
+    border-left:3px solid var(--teal);
+    border-right:3px solid var(--teal);
     box-sizing:border-box;
   }
   header::before{
@@ -387,87 +326,6 @@
   }
   .header-row{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; max-width:1400px; margin:0 auto; }
   .brand-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#a9c9bf; margin-bottom:4px; font-weight:600; }
-
-  /* ---- Pure CSS ECG (always animates) ---- */
-  .brand-title-row .pulse-badge,
-  #ecgBadge.pulse-badge{
-    flex:none !important;
-    width:52px !important;
-    height:36px !important;
-    border-radius:10px !important;
-    display:inline-flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    background:rgba(0,0,0,0.25) !important;
-    box-shadow:inset 0 0 0 1px rgba(191,232,218,0.35) !important;
-    overflow:hidden !important;
-    position:relative !important;
-  }
-  .ecg-track{
-    position:relative !important;
-    display:block !important;
-    width:44px !important;
-    height:24px !important;
-    overflow:hidden !important;
-  }
-  .ecg-baseline{
-    position:absolute !important;
-    left:0; right:0; top:50%;
-    height:2px !important;
-    margin-top:-1px;
-    background:rgba(191,232,218,0.35) !important;
-  }
-  .ecg-wave{
-    position:absolute !important;
-    left:0; top:0;
-    width:88px !important;
-    height:24px !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='24' viewBox='0 0 44 24'%3E%3Cpath d='M0 12 H8 L11 5 L14 19 L17 3 L20 15 L23 12 H44' fill='none' stroke='%23bfe8da' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
-    background-size: 44px 24px !important;
-    background-repeat: repeat-x !important;
-    animation: ecgScroll 0.9s linear infinite !important;
-    opacity:1 !important;
-  }
-  .ecg-dot{
-    position:absolute !important;
-    top:50%;
-    left:0;
-    width:7px !important;
-    height:7px !important;
-    margin-top:-3.5px;
-    border-radius:50% !important;
-    background:#fff !important;
-    box-shadow:0 0 0 2px #5ee0a0, 0 0 10px 2px rgba(94,224,160,0.8) !important;
-    animation: ecgDotMove 0.85s linear infinite !important;
-    z-index:2 !important;
-  }
-  @keyframes ecgScroll{
-    0%{ transform: translateX(0); }
-    100%{ transform: translateX(-44px); }
-  }
-  @keyframes ecgDotMove{
-    0%{ left:0; transform: scale(1); }
-    25%{ left:10px; transform: scale(1.15) translateY(-6px); }
-    40%{ left:16px; transform: scale(1.2) translateY(7px); }
-    55%{ left:22px; transform: scale(1.15) translateY(-8px); }
-    70%{ left:28px; transform: scale(1) translateY(0); }
-    100%{ left:44px; transform: scale(1) translateY(0); }
-  }
-  #ecgBadge.paused .ecg-wave,
-  #ecgBadge.paused .ecg-dot{
-    animation-play-state: paused !important;
-    opacity:0.4 !important;
-  }
-  #ecgBadge.warn .ecg-dot{
-    box-shadow:0 0 0 2px #f0c878, 0 0 10px 2px rgba(240,200,120,0.8) !important;
-  }
-  #ecgBadge.warn .ecg-wave{
-    filter: sepia(0.6) saturate(2) hue-rotate(-10deg);
-  }
-
-  .brand-title-row{
-    display:flex; align-items:center; gap:10px; min-width:0;
-  }
   .brand-title{
     font-family:'Sora', 'Inter', sans-serif; font-size:28px; font-weight:800; letter-spacing:.01em; margin:0;
     display:flex; align-items:center; gap:10px;
@@ -475,90 +333,24 @@
     -webkit-background-clip:text; background-clip:text; color:transparent;
     text-shadow:0 2px 18px rgba(0,0,0,0.15);
   }
-  /* Pulse sits outside gradient text clip so SVG animation is not frozen */
-  .brand-title-row .pulse-badge{
-    flex:none;
-    width:44px; height:34px; border-radius:10px;
-    display:inline-flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,0.18);
-    box-shadow:inset 0 0 0 1px rgba(191,232,218,0.3);
-    overflow:visible;
-    color:#bfe8da;
-  }
-  .brand-title-row .pulse-line{
-    stroke:#bfe8da;
-    stroke-width:2.8;
-    fill:none;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-    /* animated by JS startEcgAnimation — not CSS */
-  }
-  .brand-title-row .pulse-badge.paused .pulse-line{
-    animation:none;
-    opacity:0.4;
-  }
-  .brand-title-row .pulse-badge.warn .pulse-line{
-    stroke:#f0c878;
-    animation:ecgDraw 0.7s linear infinite;
-  }
   .pulse-badge{
     flex:none; width:38px; height:30px; border-radius:9px; overflow:hidden;
     display:flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,0.14); color:#bfe8da;
   }
-  .pulse-line{
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-dasharray: 20 80;
-    stroke-dashoffset: 0;
-    animation: ecgDraw 1s linear infinite;
-  }
-  @keyframes pulse-travel{
-    0%{ stroke-dashoffset: 100; }
-    100%{ stroke-dashoffset: 0; }
-  }
-  @keyframes ecgDraw{
-    0%{ stroke-dashoffset: 100; }
-    100%{ stroke-dashoffset: 0; }
-  }
-  .pulse-badge svg{ overflow: visible; }
+  .pulse-line{ stroke-dasharray:100; stroke-dashoffset:0; animation:pulse-travel 2.2s linear infinite; }
+  @keyframes pulse-travel{ 0%{ stroke-dashoffset:100; } 100%{ stroke-dashoffset:0; } }
   .brand-title .tag{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:rgba(255,255,255,0.14); padding:3px 8px; border-radius:20px; color:#f2ede0; }
   .org-input{ background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.35); color:#f2ede0; font-size:13px; padding:2px 0; width:260px; margin-top:6px; font-family:inherit; }
   .org-input::placeholder{ color:rgba(242,237,224,0.55); }
   .org-input:focus{ outline:none; border-bottom-color:#f2ede0; }
   .sync-row{ display:flex; align-items:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
-  .sync-pill{
-    display:inline-flex; align-items:center; gap:8px;
-    font-size:12px; font-weight:600; color:#f0faf6;
-    background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.14);
-    padding:5px 12px 5px 10px; border-radius:999px;
-  }
-  .sync-pill::before{
-    content:''; width:8px; height:8px; border-radius:50%; background:#5ee0a0; flex:none;
-    box-shadow:0 0 0 3px rgba(94,224,160,0.28);
-    animation: syncDotPulse 2s ease-in-out infinite;
-  }
-  .sync-pill.err::before{ background:#f0a090; box-shadow:0 0 0 3px rgba(240,160,144,0.28); animation:none; }
-  .sync-pill.busy::before{ background:#e8c86a; box-shadow:0 0 0 3px rgba(232,200,106,0.28); animation: syncDotPulse 0.7s ease-in-out infinite; }
-  @keyframes syncDotPulse{
-    0%, 100%{ transform:scale(1); opacity:1; }
-    50%{ transform:scale(1.2); opacity:0.7; }
-  }
-  .who-row{
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    font-size:12px; color:#e8f5f0;
-  }
-  .who-row #whoAmI, .who-row #syncStory{
-    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14);
-    padding:4px 10px; border-radius:999px; font-weight:600; font-size:11.5px; color:#fff;
-  }
-  .who-row button{
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);
-    color:#fff; text-decoration:none; cursor:pointer;
-    font-size:11.5px; font-weight:600; padding:4px 12px; border-radius:999px;
-  }
-  .who-row button:hover{ background:rgba(255,255,255,0.16); }
+  .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#c7dcd5; }
+  .sync-pill::before{ content:''; width:7px; height:7px; border-radius:50%; background:#7fd6a0; flex:none; }
+  .sync-pill.err::before{ background:#e2897a; }
+  .sync-pill.busy::before{ background:#e0c479; }
+  .who-row{ font-size:11px; color:#c7dcd5; display:flex; align-items:center; gap:8px; }
+  .who-row button{ background:none; border:none; color:#f2ede0; text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
 
   .stat-strip{ position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
   .stat{ background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; min-width:92px; text-align:center; }
@@ -586,26 +378,8 @@
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
   /* ---------- Groups ---------- */
-  .team-group{
-    max-width:1400px; margin:20px auto; padding:0 16px;
-  }
-  .team-group-card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:10px;
-    overflow:hidden;
-  }
-  .team-group-card + .team-group .team-group-card,
-  .team-group + .team-group .team-group-card{
-    /* spacing handled by team-group margin */
-  }
-  .team-head{
-    display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;
-    cursor:pointer; user-select:none;
-    padding:12px 14px 10px;
-    background:var(--card);
-    border-bottom:1px solid var(--line);
-  }
+  .team-group{ max-width:1400px; margin:18px auto; padding:0 26px; }
+  .team-head{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; padding:10px 4px; border-bottom:2px solid var(--ink); }
   .team-head .chev{
     flex:none; width:28px; height:28px; border-radius:8px;
     display:inline-flex; align-items:center; justify-content:center;
@@ -615,40 +389,16 @@
   }
   .team-head:hover .chev{ background:var(--line); border-color:var(--teal); }
   .team-head.collapsed .chev{ transform:rotate(-90deg); }
-  .team-head h2{
-    font-size:16px; font-weight:800; margin:0; letter-spacing:-0.01em;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(480px, 55vw);
-    color:var(--ink);
-  }
-  .team-title-block{
-    display:flex; flex-direction:column; align-items:flex-start; gap:8px;
-    min-width:0; flex:1 1 220px;
-  }
-  .team-title-row{
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; width:100%;
-  }
-  .team-sub-row{
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;
-  }
-  .team-site-label{
-    font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--muted); margin:0;
-  }
+  .team-head h2{ font-size:15px; margin:0; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(420px, 40vw); }
+  .team-title-block{ display:flex; flex-direction:row; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; }
   .staff-toggle{ background:var(--table-head); border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; width:fit-content; flex:none; }
   .staff-toggle:hover{ color:var(--teal-deep); border-color:var(--teal); }
   .staff-row{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
   .form-grid .staff-row input{ flex:1 1 auto; width:auto; min-width:0; }
   .form-grid .staff-row select{ flex:0 0 130px; width:130px; text-align:center; text-align-last:center; }
   .form-grid .staff-row .icon-btn{ flex:none; width:auto; }
-  .team-head .count{
-    font-size:11.5px; font-weight:700; color:var(--teal-deep);
-    font-family:'IBM Plex Mono',monospace;
-    background:rgba(20,82,74,0.1); border:1px solid rgba(20,82,74,0.15);
-    padding:4px 10px; border-radius:20px; flex:none; white-space:nowrap;
-  }
-  body.dark .count{ color:#bfe8da; background:rgba(47,138,121,0.2); border-color:rgba(143,217,196,0.25); }
-  
-  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:flex-start; padding-top:2px; }
+  .team-head .count{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; background:var(--line); padding:2px 8px; border-radius:20px; flex:none; white-space:nowrap; }
+  .team-head .team-tools{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
   .team-head .team-tools .tt-btn{
     display:inline-flex; align-items:center; gap:5px;
     border:1px solid var(--line); background:var(--card); color:var(--ink);
@@ -663,11 +413,7 @@
   .team-head .team-tools .tt-btn.tt-danger:hover{ border-color:var(--red); background:var(--red-bg); }
   .team-head{ flex-wrap:wrap; gap:8px 10px; }
   .toolbar, .team-group, .legend, .app-footer{ max-width:1600px; }
-  .table-wrap{ max-width:100%; padding:0; }
-  .team-group-card .table-wrap{ border-top:none; }
-  .team-group-card .pager, .team-group-card .team-pager{
-    padding:8px 14px; border-top:1px solid var(--line); background:transparent;
-  }
+  .table-wrap{ max-width:100%; }
   table{ min-width:960px; }
   @media (max-width: 900px){
     .team-head h2{ max-width:100%; }
@@ -1270,19 +1016,11 @@
   tbody td{ padding:5px 6px !important; }
   .empty-state-cta{ margin-top:10px; }
   .team-checklist{
-    display:flex; flex-wrap:wrap; gap:6px; font-size:11px;
+    display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; font-size:11px;
   }
   .team-checklist label{
-    display:inline-flex; align-items:center; gap:5px;
-    background:var(--card); border:1px solid var(--line);
-    border-radius:999px; padding:4px 10px; cursor:pointer;
-    color:var(--muted); font-weight:600;
-  }
-  .team-checklist label:has(input:checked){
-    background:rgba(20,82,74,0.12); border-color:rgba(20,82,74,0.35); color:var(--teal-deep);
-  }
-  body.dark .team-checklist label:has(input:checked){
-    background:rgba(47,138,121,0.22); border-color:rgba(143,217,196,0.4); color:#bfe8da;
+    display:inline-flex; align-items:center; gap:3px; background:var(--table-head);
+    border:1px solid var(--line); border-radius:12px; padding:2px 8px; cursor:pointer; color:var(--muted);
   }
   .team-checklist input{ margin:0; }
   .merge-banner{
@@ -1341,14 +1079,7 @@
   .admin-user-info{ flex:1 1 140px; min-width:0; }
   .admin-user-info .nm{ font-weight:700; font-size:14px; }
   .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
-  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .admin-decline-btn{
-    font-size:11px !important; font-weight:700 !important;
-    padding:5px 12px !important; border-radius:8px !important;
-    background:transparent !important; color:var(--red) !important;
-    border:1px solid var(--red) !important; cursor:pointer;
-  }
-  .admin-decline-btn:hover{ background:var(--red-bg) !important; }
+  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
   .presence-dot{
     width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
     background:#94a3b8;
@@ -1382,15 +1113,22 @@
   .toolbar{ gap: 12px; margin-top: 14px; margin-bottom: 14px; }
   .toolbar-row{ gap: 8px; }
   .team-group{
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    margin-bottom: 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    padding: 12px 14px 10px;
+    margin-bottom: 14px;
   }
+  .team-head{
+    border-bottom: 1px solid var(--line);
+    padding: 6px 2px 12px;
+    margin-bottom: 8px;
+  }
+  .team-head h2{ font-size: 15px; font-weight: 700; }
   .table-wrap{
-    border-radius: 0;
-    border: none;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
     overflow: auto;
   }
   table th{
@@ -2962,10 +2700,12 @@
     margin-top: 14px !important;
   }
   .team-head{
-    border-radius: 0;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 10px !important;
   }
   .table-wrap{
-    border: none;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid var(--line);
     overflow: auto;
   }
   table{
@@ -3184,15 +2924,11 @@
   .qb-btn:hover{ border-color:var(--teal); color:var(--teal-deep); }
 
   .handoff-box{
-    flex:1 1 180px; min-width:140px; max-width:360px; font-size:12px;
+    width:100%; margin-top:6px; font-size:12px;
   }
   .handoff-box input{
-    width:100%; font-size:12px; padding:7px 12px; border-radius:9px;
-    border:1px solid var(--line); background:var(--card); color:var(--ink);
-  }
-  .handoff-box input:focus{
-    outline:none; border-color:var(--teal);
-    box-shadow:0 0 0 3px rgba(20,82,74,0.1);
+    width:100%; font-size:12px; padding:6px 10px; border-radius:8px;
+    border:1px dashed var(--line); background:var(--table-head); color:var(--ink);
   }
   .photo-pct{
     font-size:11px; font-weight:650; color:var(--muted);
@@ -3235,7 +2971,7 @@
 
 
   /* ECG pulse — force visible over gradient title */
-  .brand-title-row .pulse-badge{
+  .brand-title .pulse-badge{
     flex: none !important;
     width: 42px !important;
     height: 32px !important;
@@ -3248,13 +2984,13 @@
     -webkit-text-fill-color: #bfe8da !important;
     box-shadow: inset 0 0 0 1px rgba(191,232,218,0.25);
   }
-  .brand-title-row .pulse-badge svg{
+  .brand-title .pulse-badge svg{
     display: block !important;
     width: 34px !important;
     height: 18px !important;
     overflow: visible !important;
   }
-  .brand-title-row .pulse-line{
+  .brand-title .pulse-line{
     stroke: #bfe8da !important;
     stroke-width: 2.5 !important;
     fill: none !important;
@@ -3262,11 +2998,11 @@
     stroke-dashoffset: 0 !important;
     animation: pulse-travel 1.8s linear infinite !important;
   }
-  .brand-title-row .pulse-badge.paused .pulse-line{
+  .brand-title .pulse-badge.paused .pulse-line{
     animation: none !important;
     opacity: 0.4 !important;
   }
-  .brand-title-row .pulse-badge.warn .pulse-line{
+  .brand-title .pulse-badge.warn .pulse-line{
     stroke: #f0c878 !important;
     animation: pulse-travel 1s linear infinite !important;
   }
@@ -3276,8 +3012,8 @@
   }
 
 
-  /* ECG heartbeat animation — always running unless offline (.paused) */
-  .brand-title-row .pulse-badge{
+  /* ECG forced motion */
+  .brand-title .pulse-badge{
     flex:none !important;
     width:44px !important;
     height:34px !important;
@@ -3286,46 +3022,39 @@
     align-items:center !important;
     justify-content:center !important;
     background:rgba(255,255,255,0.18) !important;
-    overflow:visible !important;
+    color:#bfe8da !important;
+    -webkit-text-fill-color:#bfe8da !important;
+    overflow:hidden !important;
     box-shadow:inset 0 0 0 1px rgba(191,232,218,0.3);
   }
-  .brand-title-row .pulse-badge svg{
+  .brand-title .pulse-badge svg{
     display:block !important;
     width:36px !important;
     height:18px !important;
-    overflow:visible !important;
   }
-  .brand-title-row .pulse-line,
-  .brand-title-row .pulse-badge .pulse-line,
-  .brand-title-row .pulse-badge.live .pulse-line{
+  .brand-title .pulse-line{
     stroke:#bfe8da !important;
     stroke-width:2.6 !important;
     fill:none !important;
-    stroke-linecap:round !important;
-    stroke-linejoin:round !important;
-    stroke-dasharray:20 80 !important;
+    stroke-dasharray:40 60 !important;
     stroke-dashoffset:0 !important;
-    animation:ecgDraw 1s linear infinite !important;
+    animation:ecgDraw 1.4s linear infinite !important;
   }
-  .brand-title-row .pulse-badge.paused .pulse-line{
+  .brand-title .pulse-badge.paused .pulse-line{
     animation:none !important;
-    opacity:0.4 !important;
+    opacity:0.35 !important;
+    stroke-dasharray:none !important;
   }
-  .brand-title-row .pulse-badge.warn .pulse-line{
+  .brand-title .pulse-badge.warn .pulse-line{
     stroke:#f0c878 !important;
-    animation:ecgDraw 0.7s linear infinite !important;
+    animation:ecgDraw 0.85s linear infinite !important;
   }
   @keyframes ecgDraw{
     0%{ stroke-dashoffset:100; }
     100%{ stroke-dashoffset:0; }
   }
-  @keyframes pulse-travel{
-    0%{ stroke-dashoffset:100; }
-    100%{ stroke-dashoffset:0; }
-  }
-  }
   @media (prefers-reduced-motion: reduce){
-    .brand-title-row .pulse-line{ animation-duration:2.8s !important; }
+    .brand-title .pulse-line{ animation-duration:2.8s !important; }
   }
 
 
@@ -3453,10 +3182,65 @@
   }
 
 
-  /* FINAL ECG override — always animate */
-  #ecgBadge .ecg-wave{ animation: ecgScroll 0.9s linear infinite !important; }
-  #ecgBadge .ecg-dot{ animation: ecgDotMove 0.9s linear infinite !important; }
-  #ecgBadge.paused .ecg-wave, #ecgBadge.paused .ecg-dot{ animation-play-state: paused !important; }
+  /* ECG orb — slower, path-accurate */
+  .brand-title .pulse-badge{
+    flex: none !important;
+    width: 46px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255,255,255,0.16) !important;
+    overflow: hidden !important;
+    box-shadow: inset 0 0 0 1px rgba(191,232,218,0.28);
+  }
+  .brand-title .pulse-badge svg{
+    display: block !important;
+    width: 40px !important;
+    height: 20px !important;
+    overflow: visible !important;
+  }
+  .brand-title .pulse-track{
+    opacity: 1;
+  }
+  .brand-title .pulse-line{
+    stroke: #bfe8da !important;
+    stroke-width: 2.4 !important;
+    fill: none !important;
+    stroke-dasharray: 28 72 !important;
+    stroke-dashoffset: 0 !important;
+    animation: ecgDrawSlow 4.2s linear infinite !important;
+  }
+  .brand-title .ecg-orb{
+    filter: drop-shadow(0 0 4px rgba(62,207,154,0.95)) drop-shadow(0 0 8px rgba(62,207,154,0.45));
+  }
+  .brand-title .pulse-badge.paused .pulse-line,
+  .brand-title .pulse-badge.paused .ecg-orb{
+    animation: none !important;
+  }
+  .brand-title .pulse-badge.paused .ecg-orb{
+    opacity: 0.35;
+  }
+  .brand-title .pulse-badge.paused animateMotion{
+    /* SMIL pause via opacity only; path still static */
+  }
+  .brand-title .pulse-badge.warn .pulse-line{
+    stroke: #f0c878 !important;
+    animation-duration: 3s !important;
+  }
+  .brand-title .pulse-badge.warn .ecg-orb{
+    fill: #f0c878;
+    filter: drop-shadow(0 0 4px rgba(240,200,120,0.9));
+  }
+  @keyframes ecgDrawSlow{
+    0%{ stroke-dashoffset: 100; }
+    100%{ stroke-dashoffset: 0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .brand-title .pulse-line{ animation-duration: 6s !important; }
+    .brand-title .ecg-orb animateMotion{ /* browsers may ignore */ }
+  }
 
 </style>
 </head>
@@ -3516,16 +3300,21 @@
   <div class="header-row">
     <div>
       <div class="brand-eyebrow">Divine Rays · Patient Care Tracker</div>
-      <div class="brand-title-row">
-        <span class="pulse-badge live" id="ecgBadge" aria-hidden="true" title="Live">
-          <span class="ecg-track">
-            <span class="ecg-baseline"></span>
-            <span class="ecg-wave"></span>
-            <span class="ecg-dot"></span>
-          </span>
+      <h1 class="brand-title">
+        <span class="pulse-badge live" aria-hidden="true">
+          <svg viewBox="0 0 60 24" width="40" height="20" fill="none" overflow="visible">
+            <!-- full ECG track -->
+            <path class="pulse-track" d="M0 12 H14 L18 4 L22 20 L26 8 L30 12 H60" stroke="rgba(191,232,218,0.35)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <!-- active pulse draw -->
+            <path class="pulse-line" pathLength="100" d="M0 12 H14 L18 4 L22 20 L26 8 L30 12 H60" stroke="#bfe8da" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <!-- green orb rides the ECG path -->
+            <circle class="ecg-orb" r="3.2" fill="#3ecf9a" stroke="#e8fff6" stroke-width="1">
+              <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" path="M0 12 H14 L18 4 L22 20 L26 8 L30 12 H60"/>
+            </circle>
+          </svg>
         </span>
-        <h1 class="brand-title">DR CARE <span class="tag">Patient Tracker</span></h1>
-      </div>
+        DR CARE <span class="tag">Patient Tracker</span>
+      </h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
@@ -3545,6 +3334,7 @@
     </div>
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
+      <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
@@ -3983,7 +3773,7 @@
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve or decline logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them. Decline removes their profile.</div>
+        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
@@ -4980,6 +4770,10 @@ function renderAll(){
   const teams = getTeams();
   const monthList = monthPatients();
   let list = filteredPatients();
+  if(window.__todayMission){
+    const td = (typeof isoToday === 'function' ? isoToday() : new Date().toISOString().slice(0,10));
+    list = list.filter(p => (p.dateEncoded || p.dateSubmitted || '').slice(0,10) === td);
+  }
   populateTeamSelect(teams);
 
   const monthVal = document.getElementById('monthFilter').value;
@@ -5056,22 +4850,15 @@ function renderAll(){
       </div>`;
 
     wrap.innerHTML = `
-      <div class="team-group-card">
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <span class="chev" aria-hidden="true">▾</span>
         <div class="team-title-block">
-          <div class="team-site-label">Site / group</div>
-          <div class="team-title-row">
-            <h2 title="${escapeAttr(team)}">${escapeHtml(team)}</h2>
-            <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span>
-            <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
-            <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
-            ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
-          </div>
-          <div class="team-sub-row" onclick="event.stopPropagation()">
-            <div class="handoff-box"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}"></div>
-          </div>
+          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
+          <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
+          <div class="handoff-box" style="flex:1 1 100%;"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}" onclick="event.stopPropagation()"></div>
         </div>
+        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+        ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
         <div class="team-tools">
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
@@ -5103,7 +4890,6 @@ function renderAll(){
         </table>
       </div>
       ${pagerHtml}`}
-      </div>
     `;
     groupsContainer.appendChild(wrap);
   });
@@ -5566,7 +5352,7 @@ async function applyBulkChange(mutator){
   if(!ids.length) return;
   let changed = 0;
   for(const id of ids){
-    const p = state.patients.find(x => String(x.id) === String(id) && !x.deleted);
+    const p = state.patients.find(x => x.id === id && !x.deleted);
     if(!p) continue;
     mutator(p);
     pendingIds.add(p.id);
@@ -5689,7 +5475,7 @@ function openModal(id, presetTeam){
     return;
   }
   editingId = id || null;
-  const p = id ? state.patients.find(p => String(p.id) === String(id) && !p.deleted) : null;
+  const p = id ? state.patients.find(p=>p.id===id) : null;
   document.getElementById('modalTitle').textContent = p ? (canEdit() ? "Edit Patient" : "View Patient") : "Add Patient";
   populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
   document.getElementById('f_name').value = p ? p.name : '';
@@ -5762,21 +5548,14 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   }
 });
 
-document.getElementById('saveBtn').addEventListener('click', async ()=>{
+document.getElementById('saveBtn').addEventListener('click', ()=>{
   if(saveBtnEl.disabled) return;
   const name = document.getElementById('f_name').value.trim();
   const phid = normalizePhilHealthId(document.getElementById('f_phid').value);
   if(!name || !phid){ return; }
   const digits = String(phid).replace(/\D/g, '');
   if(digits.length > 0 && digits.length !== 12){
-    const ok = await showAppConfirm({
-      title: 'PhilHealth ID length',
-      message: 'PhilHealth ID should have 12 digits (got ' + digits.length + '). Save anyway?',
-      confirmLabel: 'Save anyway',
-      cancelLabel: 'Go back',
-      danger: true
-    });
-    if(!ok) return;
+    if(!confirm('PhilHealth ID does not have 12 digits (got '+digits.length+'). Save anyway?')) return;
   }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
@@ -6634,7 +6413,6 @@ function populateDashboardControls(){
     if(typeof isAdmin === 'function' && isAdmin()){
       encWrap.style.display = '';
       const encoders = {};
-      // From patient records
       state.patients.forEach(p=>{
         if(p.deleted) return;
         const uid = p.createdBy || p.updatedBy;
@@ -6642,17 +6420,13 @@ function populateDashboardControls(){
         const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid);
         encoders[uid] = name;
       });
-      // From profile cache (all accounts)
-      if(typeof profileCache === 'object' && profileCache){
-        Object.keys(profileCache).forEach(id=>{
-          const u = profileCache[id];
-          if(!u) return;
+      if(typeof allProfiles !== 'undefined' && Array.isArray(allProfiles)){
+        allProfiles.forEach(u=>{
+          if(!u || !u.id) return;
           if(u.role === 'viewer') return;
-          if(u.full_name && String(u.full_name).startsWith('[DECLINED]')) return;
-          encoders[u.id] = u.full_name || u.fullName || u.email || id;
+          encoders[u.id] = u.fullName || u.email || u.id;
         });
       }
-      // Always include signed-in user
       if(currentUser) encoders[currentUser.id] = currentUser.fullName || currentUser.email || 'You';
       if(!window.__dashEncSelected) window.__dashEncSelected = new Set();
       const prev = window.__dashEncSelected;
@@ -6999,10 +6773,10 @@ function renderTrendChart(mode){
   wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
-async function openDashboard(){
+function openDashboard(){
+  
   dashMonthSelect.value = '';
   dashTeamSelect.value = '';
-  try{ await loadAllProfiles(); }catch(e){ console.warn('loadAllProfiles', e); }
   populateDashboardControls();
   renderDashboard();
   dashBackdrop.classList.add('open');
@@ -7190,8 +6964,7 @@ adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeA
 async function renderAdminUsers(){
   const body = document.getElementById('adminUsersBody');
   body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
-  let users = await loadAllProfiles();
-  users = (users || []).filter(u => !String(u.full_name || '').startsWith('[DECLINED]'));
+  const users = await loadAllProfiles();
   if(!users.length){
     body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
     return;
@@ -7266,7 +7039,6 @@ async function renderAdminUsers(){
               title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
             Approve login
           </label>
-          ${(!approved && !isSelf && !isUserAdmin) ? `<button type="button" class="btn admin-decline-btn" data-uid="${u.id}" data-label="${escapeAttr(u.full_name || u.email || 'this user')}" title="Decline signup and remove this account">Decline</button>` : ''}
           <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
             ${roleOptions(u.role || 'encoder')}
           </select>
@@ -7319,69 +7091,6 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }finally{
         cb.disabled = false;
-      }
-    });
-  });
-
-  body.querySelectorAll('.admin-decline-btn').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const uid = btn.dataset.uid;
-      const label = btn.dataset.label || 'this user';
-      if(!uid) return;
-      const ok = await showAppConfirm({
-        title: 'Decline signup?',
-        message: 'Decline "' + label + '"? Their access will be removed and they will not appear in this list. They cannot use the system until they sign up again and are approved.',
-        confirmLabel: 'Decline & delete',
-        cancelLabel: 'Cancel',
-        danger: true
-      });
-      if(!ok) return;
-      btn.disabled = true;
-      try{
-        // 1) Prefer hard delete
-        let removed = false;
-        const del = await sb.from('profiles').delete().eq('id', uid).select('id');
-        if(!del.error && del.data && del.data.length){
-          removed = true;
-        } else if(del.error){
-          console.warn('Profile DELETE blocked (often RLS):', del.error.message || del.error);
-          // 2) Soft-decline — works when admins can UPDATE but not DELETE
-          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
-          const up = await sb.from('profiles').update({
-            approved: false,
-            full_name: '[DECLINED] ' + clean,
-            updated_at: new Date().toISOString()
-          }).eq('id', uid).select('id');
-          if(up.error) throw up.error;
-          if(!up.data || !up.data.length){
-            throw new Error('No profile row updated. Check Supabase RLS: allow admins to UPDATE/DELETE profiles.');
-          }
-          removed = true;
-        } else {
-          // delete returned no error but no rows — try soft decline
-          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
-          const up = await sb.from('profiles').update({
-            approved: false,
-            full_name: '[DECLINED] ' + clean,
-            updated_at: new Date().toISOString()
-          }).eq('id', uid).select('id');
-          if(up.error) throw up.error;
-          removed = !!(up.data && up.data.length);
-          if(!removed) throw new Error('Profile not found or RLS blocked the change.');
-        }
-        if(typeof profileCache !== 'undefined' && profileCache[uid]) delete profileCache[uid];
-        setSyncStatus('Signup declined — removed from list', '');
-        await renderAdminUsers();
-      }catch(e){
-        console.error('Decline failed:', e);
-        const msg = (e && e.message) ? e.message : String(e);
-        await showAppConfirm({
-          title: 'Could not decline',
-          message: msg + '\n\nIn Supabase → Authentication/policies for "profiles", allow admin DELETE or UPDATE.',
-          confirmLabel: 'OK',
-          info: true
-        });
-        btn.disabled = false;
       }
     });
   });
@@ -7718,7 +7427,7 @@ async function initApp(){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=10').then(reg=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
       // New version waiting → show a small update toast
       if(reg.waiting){
         showSwUpdateToast(reg);
@@ -8523,10 +8232,7 @@ document.getElementById('drawerBackdrop')?.addEventListener('click', e=>{
   if(e.target.id === 'drawerBackdrop') closeDrawer();
 });
 document.getElementById('drawerEdit')?.addEventListener('click', ()=>{
-  const id = drawerPatientId;
-  if(!id) return;
-  closeDrawer();
-  openModal(id);
+  if(drawerPatientId){ closeDrawer(); openModal(drawerPatientId); }
 });
 document.getElementById('drawerRemind')?.addEventListener('click', ()=>{
   if(drawerPatientId) sendClaimReminder(drawerPatientId);
@@ -8685,9 +8391,8 @@ if(typeof renderAll === 'function'){
         const team = h2.textContent.trim();
         const div = document.createElement('div');
         div.innerHTML = teamChecklistHtml(team);
-        const sub = head.querySelector('.team-sub-row');
         const block = head.querySelector('.team-title-block') || h2.parentElement;
-        (sub || block).appendChild(div.firstChild);
+        block.appendChild(div.firstChild);
       });
       // zebra rows
       document.querySelectorAll('tbody tr[data-id]').forEach((tr,i)=>{
@@ -8847,33 +8552,35 @@ function applyMissionMood(){
 }
 
 function updatePulseBadge(){
-  const badge = document.getElementById('ecgBadge') || document.querySelector('.pulse-badge');
+  const badge = document.querySelector('.pulse-badge');
   if(!badge) return;
   badge.classList.remove('live','paused','warn');
-  if(!navigator.onLine) badge.classList.add('paused');
+  if(!navigator.onLine){ badge.classList.add('paused'); }
   else {
     const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
     if(pending > 0) badge.classList.add('warn');
     else badge.classList.add('live');
   }
-  if(!window.__ecgRunning) startEcgAnimation();
-}
-
-function startEcgAnimation(){
-  /* CSS-driven ECG — nothing to start in JS */
-  window.__ecgRunning = true;
-}
-(function bootEcg(){
-  function go(){
-    window.__ecgRunning = true;
-    try{ if(typeof updatePulseBadge === 'function') updatePulseBadge(); }catch(e){}
+  const line = badge.querySelector('.pulse-line');
+  if(line){
+    line.setAttribute('stroke', badge.classList.contains('warn') ? '#f0c878' : '#bfe8da');
   }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
-  else go();
-})();
-
-
-
+  const orb = badge.querySelector('.ecg-orb');
+  const motion = badge.querySelector('animateMotion');
+  if(orb){
+    orb.setAttribute('fill', badge.classList.contains('warn') ? '#f0c878' : '#3ecf9a');
+  }
+  if(motion){
+    try{
+      if(badge.classList.contains('paused')) motion.setAttribute('repeatCount', '0');
+      else {
+        motion.setAttribute('repeatCount', 'indefinite');
+        // restart for clean loop after unpause
+        if(typeof motion.beginElement === 'function') motion.beginElement();
+      }
+    }catch(e){}
+  }
+}
 
 function phidSoundness(p, isDup){
   const digits = String(p.phid || '').replace(/\D/g,'');
@@ -8916,11 +8623,28 @@ function photoPctForTeam(team, rows){
   return 'MCA photos: ' + withPhoto + '/' + list.length;
 }
 
+/* Today's mission mode */
+window.__todayMission = false;
 function isoToday(){
   const d = new Date();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return d.getFullYear() + '-' + m + '-' + day;
+}
+function toggleTodayMission(){
+  window.__todayMission = !window.__todayMission;
+  const btn = document.getElementById('todayMissionBtn');
+  if(btn) btn.classList.toggle('on', window.__todayMission);
+  if(window.__todayMission){
+    const today = isoToday();
+    const month = today.slice(0,7);
+    const mf = document.getElementById('monthFilter');
+    if(mf){ mf.value = month; }
+    softToast("Today's mission — focusing " + today);
+  } else {
+    softToast('Showing full month view');
+  }
+  if(typeof renderAll === 'function') renderAll();
 }
 
 function endOfDayPack(){
@@ -8973,6 +8697,7 @@ function branchHeatmapHtml(){
 }
 
 /* Patch hooks after DOM ready pieces exist */
+document.getElementById('todayMissionBtn')?.addEventListener('click', toggleTodayMission);
 // endOfDay removed — use Daily report
 
 /* Keyboard shortcuts */
@@ -9029,6 +8754,7 @@ document.addEventListener('change', (e)=>{
 /* Taglish tooltips */
 const TL = {
   'Add site / group': 'Magdagdag ng site / grupo',
+  "Today's mission": 'Misyon ngayong araw',
   'End-of-day pack': 'Ulat sa katapusan ng araw',
   'Search name, PhilHealth ID, notes, or team…': 'Maghanap ng pangalan, PhilHealth ID, notes, o team…'
 };
@@ -9057,7 +8783,7 @@ document.querySelectorAll('button, input[placeholder]').forEach(el=>{
       if(!navigator.onLine) story.textContent = '· offline · saved on device';
       else if(mode === 'busy') story.textContent = '· uploading…';
       else if(pending > 0) story.textContent = '· ' + pending + ' waiting to upload';
-      else story.textContent = '· Up to date';
+      else story.textContent = '· all clear';
     }
   };
 })();
