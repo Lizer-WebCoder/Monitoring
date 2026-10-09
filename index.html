@@ -5541,13 +5541,13 @@ function renderAll(){
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th>
+              <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th><th>T2 date<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="16" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="17" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -5635,6 +5635,7 @@ function rowHtml(p){
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
       <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
+      <td class="datecell"><input type="date" data-field="dateT2" value="${p.dateT2||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;" title="T2 submitted date"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
       <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
         ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
@@ -5986,18 +5987,23 @@ groupsContainer.addEventListener('change', e=>{
 
   const row = e.target.closest('tr[data-id]');
   if(!row) return;
-  const p = state.patients.find(p=>p.id===row.dataset.id);
+  const p = state.patients.find(x => String(x.id) === String(row.dataset.id));
   if(!p) return;
   const field = e.target.dataset.field;
   if(!field) return;
   if(!canEdit()){
-    // Revert visual change for viewers
     renderAll();
     return;
   }
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
+  // Keep dateSubmitted in sync with T1 for older code paths
+  if(field === 'dateT1') p.dateSubmitted = p.dateT1;
+  if(field === 'claim' && p.claim === 't2' && !p.dateT2){
+    p.dateT2 = new Date().toISOString().slice(0,10);
+  }
   persistChange(p);
+  if(field === 'claim' || field === 'dateT2') renderAll();
 });
 
 function updateBulkBar(){
@@ -6092,6 +6098,17 @@ function updateFacilityField(preferredValue){
   }
 }
 document.getElementById('f_status').addEventListener('change', ()=> updateFacilityField());
+document.getElementById('f_claim')?.addEventListener('change', ()=>{
+  const claim = document.getElementById('f_claim').value;
+  const t2 = document.getElementById('f_dateT2');
+  if(claim === 't2' && t2 && !t2.value){
+    t2.value = new Date().toISOString().slice(0,10);
+  }
+  if(claim === 't1'){
+    const t1 = document.getElementById('f_dateT1');
+    if(t1 && !t1.value) t1.value = new Date().toISOString().slice(0,10);
+  }
+});
 
 /* Format PhilHealth ID as 1234-5678-9012 (keeps typing smooth for scanners too) */
 function formatPhilHealthId(raw){
@@ -6131,37 +6148,65 @@ document.getElementById('f_phid').addEventListener('input', e=>{
 });
 
 /* DR CARE — screens: patient/team modals, dashboard, admin, activity */
+function toDateInputValue(v){
+  if(v == null || v === '') return '';
+  const s = String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  // US-style or other
+  const d = new Date(s);
+  if(!isNaN(d.getTime())){
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
+  }
+  return '';
+}
 function openModal(id, presetTeam){
   if(!id && !canEdit()){
     alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
     return;
   }
-  editingId = id || null;
-  const p = id ? state.patients.find(p=>p.id===id) : null;
+  editingId = id ? String(id) : null;
+  // Always resolve by id string (drawer / table may pass different types)
+  const p = editingId ? state.patients.find(x => String(x.id) === editingId) : null;
   document.getElementById('modalTitle').textContent = p ? (canEdit() ? "Edit Patient" : "View Patient") : "Add Patient";
   populateTeamSelect(getTeams().length ? getTeams() : ["Mobile Staff — Site A"]);
-  document.getElementById('f_name').value = p ? p.name : '';
-  document.getElementById('f_phid').value = p ? p.phid : '';
-  document.getElementById('f_team').value = p ? p.team : (presetTeam || getTeams()[0] || '');
-  document.getElementById('f_status').value = p ? p.status : 'registered';
-  updateFacilityField(p ? p.facility : HOME_FACILITY);
-  document.getElementById('f_claim').value = p ? p.claim : 'pending';
-  document.getElementById('f_dateEncoded').value = p ? p.dateEncoded : defaultEncodedDate();
-  document.getElementById('f_dateT1').value = p ? (p.dateT1 || p.dateSubmitted || '') : '';
-  document.getElementById('f_dateT2').value = p ? (p.dateT2 || '') : '';
-  document.getElementById('f_mca').checked = p ? p.mca : false;
-  document.getElementById('f_within24').checked = p ? p.within24 : false;
-  document.getElementById('f_rice').checked = p ? p.rice : false;
-  document.getElementById('f_lab').checked = p ? p.lab : false;
+  document.getElementById('f_name').value = p ? (p.name || '') : '';
+  document.getElementById('f_phid').value = p ? (p.phid || '') : '';
+  const teamVal = p ? (p.team || '') : (presetTeam || getTeams()[0] || '');
+  const teamSel = document.getElementById('f_team');
+  if(teamSel){
+    if(teamVal && ![...teamSel.options].some(o => o.value === teamVal)){
+      const opt = document.createElement('option');
+      opt.value = teamVal; opt.textContent = teamVal;
+      teamSel.appendChild(opt);
+    }
+    teamSel.value = teamVal;
+  }
+  const st = p ? (p.status || 'registered') : 'registered';
+  document.getElementById('f_status').value = ['registered','registered_other'].includes(st) ? st : 'registered';
+  updateFacilityField(p ? (p.facility || HOME_FACILITY) : HOME_FACILITY);
+  const claim = p ? (p.claim || 'pending') : 'pending';
+  const claimEl = document.getElementById('f_claim');
+  if(claimEl){
+    const allowed = ['pending','t1','t2','missed24'];
+    claimEl.value = allowed.includes(claim) ? claim : 'pending';
+  }
+  document.getElementById('f_dateEncoded').value = p ? toDateInputValue(p.dateEncoded) || defaultEncodedDate() : defaultEncodedDate();
+  document.getElementById('f_dateT1').value = p ? toDateInputValue(p.dateT1 || p.dateSubmitted) : '';
+  document.getElementById('f_dateT2').value = p ? toDateInputValue(p.dateT2) : '';
+  document.getElementById('f_mca').checked = !!(p && p.mca);
+  document.getElementById('f_within24').checked = !!(p && p.within24);
+  document.getElementById('f_rice').checked = !!(p && p.rice);
+  document.getElementById('f_lab').checked = !!(p && p.lab);
   const labHidden = document.getElementById('f_labTests');
   const labs = (p && typeof normalizeLabTests === 'function') ? normalizeLabTests(p) : (p && Array.isArray(p.labTests) ? p.labTests : []);
   if(labHidden) labHidden.value = JSON.stringify(labs || []);
-  if(p && labs && labs.length && document.getElementById('f_lab')) document.getElementById('f_lab').checked = true;
+  if(p && labs && labs.length) document.getElementById('f_lab').checked = true;
   if(typeof updateFormLabChips === 'function') updateFormLabChips();
-  document.getElementById('f_medicine').checked = p ? !!p.medicine : false;
-  document.getElementById('f_vitamins').checked = p ? !!p.vitamins : false;
-  document.getElementById('f_referral').checked = p ? !!p.referral : false;
-  document.getElementById('f_notes').value = p ? (p.notes||'') : '';
+  document.getElementById('f_medicine').checked = !!(p && p.medicine);
+  document.getElementById('f_vitamins').checked = !!(p && p.vitamins);
+  document.getElementById('f_referral').checked = !!(p && p.referral);
+  document.getElementById('f_notes').value = p ? (p.notes || '') : '';
   document.getElementById('dupWarning').style.display = 'none';
 
   // Audit trail
@@ -6215,14 +6260,21 @@ document.getElementById('f_phid').addEventListener('input', e=>{
   }
 });
 
-document.getElementById('saveBtn').addEventListener('click', ()=>{
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
   if(saveBtnEl.disabled) return;
   const name = document.getElementById('f_name').value.trim();
   const phid = normalizePhilHealthId(document.getElementById('f_phid').value);
   if(!name || !phid){ return; }
   const digits = String(phid).replace(/\D/g, '');
   if(digits.length > 0 && digits.length !== 12){
-    if(!confirm('PhilHealth ID does not have 12 digits (got '+digits.length+'). Save anyway?')) return;
+    const ok = await showAppConfirm({
+      title: 'Incomplete PhilHealth ID',
+      message: 'This PhilHealth ID has ' + digits.length + ' digits (expected 12). Save anyway?',
+      confirmLabel: 'Save anyway',
+      cancelLabel: 'Go back',
+      danger: true
+    });
+    if(!ok) return;
   }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
@@ -9104,6 +9156,8 @@ function openDrawer(id){
     ['Facility', p.facility || '—'],
     ['Claim', p.claim || 'pending'],
     ['Date encoded', p.dateEncoded || '—'],
+    ['T1 submitted', p.dateT1 || p.dateSubmitted || '—'],
+    ['T2 submitted', p.dateT2 || '—'],
     ['MCA', p.mca ? 'Yes' : 'No'],
     ['Rice / Lab / Meds', [p.rice&&'Rice', p.lab&&'Lab', p.medicine&&'Meds'].filter(Boolean).join(', ') || 'None'],
     ['YAKAP labs', (typeof labTestsSummary === 'function' ? labTestsSummary(p) : (p.lab ? 'Lab' : '—'))],
@@ -9124,7 +9178,11 @@ document.getElementById('drawerBackdrop')?.addEventListener('click', e=>{
   if(e.target.id === 'drawerBackdrop') closeDrawer();
 });
 document.getElementById('drawerEdit')?.addEventListener('click', ()=>{
-  if(drawerPatientId){ closeDrawer(); openModal(drawerPatientId); }
+  const id = drawerPatientId;
+  if(!id) return;
+  closeDrawer();
+  // Defer so drawer close doesn't race form open
+  setTimeout(() => openModal(id), 30);
 });
 document.getElementById('drawerRemind')?.addEventListener('click', ()=>{
   if(drawerPatientId) sendClaimReminder(drawerPatientId);
