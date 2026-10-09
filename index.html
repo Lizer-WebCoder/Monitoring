@@ -4683,6 +4683,12 @@ function toRemote(p, mode){
   const labs = Array.isArray(p.labTests) ? p.labTests.filter(Boolean) : [];
   const custom = Object.assign({}, (p.customBenefits && typeof p.customBenefits === 'object') ? p.customBenefits : {});
   custom.labTests = labs; // always mirror so labs survive without a lab_tests column
+  // Attribution survives even without dedicated DB columns
+  if(p.encodedBy) custom.encodedBy = p.encodedBy;
+  if(p.t1By) custom.t1By = p.t1By;
+  if(p.t2By) custom.t2By = p.t2By;
+  if(p.t1At) custom.t1At = p.t1At;
+  if(p.t2At) custom.t2At = p.t2At;
   return Object.assign({}, core, {
     date_t1: emptyToNull(p.dateT1 || p.dateSubmitted),
     date_t2: emptyToNull(p.dateT2),
@@ -4717,7 +4723,12 @@ function fromRemote(r){
     createdBy: r.created_by || null,
     updatedBy: r.updated_by || null,
     createdAt: r.created_at || null,
-    updatedAt: r.updated_at || null
+    updatedAt: r.updated_at || null,
+    encodedBy: (r.custom_benefits && r.custom_benefits.encodedBy) || r.created_by || null,
+    t1By: (r.custom_benefits && r.custom_benefits.t1By) || null,
+    t2By: (r.custom_benefits && r.custom_benefits.t2By) || null,
+    t1At: (r.custom_benefits && r.custom_benefits.t1At) || null,
+    t2At: (r.custom_benefits && r.custom_benefits.t2At) || null
   };
 }
 
@@ -5540,14 +5551,14 @@ function renderAll(){
           <thead>
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
-              <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
+              <th>Patient name</th><th>Encoded by</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
               <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th><th>T2 date<br>&amp; submitted</th>
               <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="17" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="18" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -5628,6 +5639,7 @@ function rowHtml(p){
     <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
       <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
       <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap;" title="Who encoded this patient">${escapeHtml(typeof encoderLabel==='function' ? encoderLabel(p) : '—')}</td>
       <td class="idcell"><span class="phid-dot ${phidSoundness(p,dup).cls}" title="${escapeAttr(phidSoundness(p,dup).title)}"></span>${escapeHtml(p.phid)||'—'}</td>
       <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
         ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
@@ -5997,13 +6009,28 @@ groupsContainer.addEventListener('change', e=>{
   }
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
-  // Keep dateSubmitted in sync with T1 for older code paths
-  if(field === 'dateT1') p.dateSubmitted = p.dateT1;
-  if(field === 'claim' && p.claim === 't2' && !p.dateT2){
-    p.dateT2 = new Date().toISOString().slice(0,10);
+  if(field === 'dateT1'){
+    p.dateSubmitted = p.dateT1;
+    if(typeof stampAttribution === 'function') stampAttribution(p, 't1');
   }
+  if(field === 'dateT2'){
+    if(typeof stampAttribution === 'function') stampAttribution(p, 't2');
+  }
+  if(field === 'claim'){
+    if(p.claim === 't1'){
+      if(!p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
+      p.dateSubmitted = p.dateT1;
+      if(typeof stampAttribution === 'function') stampAttribution(p, 't1');
+    }
+    if(p.claim === 't2'){
+      if(!p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
+      if(typeof stampAttribution === 'function') stampAttribution(p, 't2');
+    }
+    if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
+  }
+  if(typeof stampAttribution === 'function' && field !== 'claim') stampAttribution(p, 'edit');
   persistChange(p);
-  if(field === 'claim' || field === 'dateT2') renderAll();
+  if(field === 'claim' || field === 'dateT2' || field === 'dateT1') renderAll();
 });
 
 function updateBulkBar(){
@@ -6148,6 +6175,42 @@ document.getElementById('f_phid').addEventListener('input', e=>{
 });
 
 /* DR CARE — screens: patient/team modals, dashboard, admin, activity */
+function currentUid(){ return (currentUser && currentUser.id) || null; }
+function stampAttribution(p, kind){
+  // kind: 'encode' | 't1' | 't2' | 'edit'
+  if(!p) return;
+  const uid = currentUid();
+  const now = new Date().toISOString();
+  if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+  if(kind === 'encode'){
+    if(!p.createdBy && uid) p.createdBy = uid;
+    if(!p.encodedBy && uid) p.encodedBy = uid;
+    if(!p.createdAt) p.createdAt = now;
+    p.customBenefits.encodedBy = p.encodedBy || uid;
+  }
+  if(kind === 't1'){
+    if(uid) p.t1By = uid;
+    p.t1At = now;
+    p.customBenefits.t1By = uid;
+    p.customBenefits.t1At = now;
+  }
+  if(kind === 't2'){
+    if(uid) p.t2By = uid;
+    p.t2At = now;
+    p.customBenefits.t2By = uid;
+    p.customBenefits.t2At = now;
+  }
+  if(kind === 'edit' || kind === 'encode' || kind === 't1' || kind === 't2'){
+    if(uid) p.updatedBy = uid;
+    p.updatedAt = now;
+  }
+}
+function encoderLabel(p){
+  if(!p) return '—';
+  const id = p.encodedBy || p.createdBy;
+  if(!id) return '—';
+  return (typeof displayNameFor === 'function' ? displayNameFor(id) : id) || '—';
+}
 function toDateInputValue(v){
   if(v == null || v === '') return '';
   const s = String(v).trim();
@@ -6224,8 +6287,15 @@ function openModal(id, presetTeam){
     };
     const addedAt = fmt(p.createdAt);
     const editedAt = fmt(p.updatedAt);
-    auditEl.innerHTML = `<b>Added by:</b> ${escapeHtml(added)}${addedAt ? ' <span style="opacity:.75">('+escapeHtml(addedAt)+')</span>' : ''}
-      &nbsp;·&nbsp; <b>Last edited by:</b> ${escapeHtml(edited)}${editedAt ? ' <span style="opacity:.75">('+escapeHtml(editedAt)+')</span>' : ''}`;
+    const enc = p.encodedBy ? displayNameFor(p.encodedBy) : added;
+    const t1n = p.t1By ? displayNameFor(p.t1By) : '—';
+    const t2n = p.t2By ? displayNameFor(p.t2By) : '—';
+    auditEl.innerHTML = `<div style="display:grid;gap:4px;">
+      <div><b>Encoded by:</b> ${escapeHtml(enc)}${addedAt ? ' <span style="opacity:.75">('+escapeHtml(addedAt)+')</span>' : ''}</div>
+      <div><b>T1 submitted by:</b> ${escapeHtml(t1n)}${p.t1At ? ' <span style="opacity:.75">('+escapeHtml(fmt(p.t1At))+')</span>' : ''}</div>
+      <div><b>T2 submitted by:</b> ${escapeHtml(t2n)}${p.t2At ? ' <span style="opacity:.75">('+escapeHtml(fmt(p.t2At))+')</span>' : ''}</div>
+      <div><b>Last edited by:</b> ${escapeHtml(edited)}${editedAt ? ' <span style="opacity:.75">('+escapeHtml(editedAt)+')</span>' : ''}</div>
+    </div>`;
     auditEl.style.display = 'block';
   } else {
     auditEl.style.display = 'none';
@@ -6302,6 +6372,18 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   p.lab = !!data.lab || p.labTests.length > 0;
   if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
   p.customBenefits.labTests = p.labTests.slice();
+  if(isNew){
+    if(typeof stampAttribution === 'function') stampAttribution(p, 'encode');
+  } else {
+    if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
+  }
+  // T1 / T2 submitter when claim or dates set
+  if(data.claim === 't1' || data.dateT1){
+    if(!p.t1By || data.claim === 't1') stampAttribution(p, 't1');
+  }
+  if(data.claim === 't2' || data.dateT2){
+    if(!p.t2By || data.claim === 't2') stampAttribution(p, 't2');
+  }
   p.updatedAt = new Date().toISOString();
   pendingEmptyTeams.delete(data.team);
   persistChange(p);
@@ -9162,7 +9244,10 @@ function openDrawer(id){
     ['Rice / Lab / Meds', [p.rice&&'Rice', p.lab&&'Lab', p.medicine&&'Meds'].filter(Boolean).join(', ') || 'None'],
     ['YAKAP labs', (typeof labTestsSummary === 'function' ? labTestsSummary(p) : (p.lab ? 'Lab' : '—'))],
     ['Notes', p.notes || '—'],
-    ['Added by', p.createdBy ? (typeof displayNameFor==='function' ? displayNameFor(p.createdBy) : p.createdBy) : '—'],
+    ['Encoded by', (typeof encoderLabel === 'function' ? encoderLabel(p) : (p.encodedBy || p.createdBy ? displayNameFor(p.encodedBy || p.createdBy) : '—'))],
+    ['T1 submitted by', p.t1By ? (typeof displayNameFor==='function' ? displayNameFor(p.t1By) : p.t1By) : '—'],
+    ['T2 submitted by', p.t2By ? (typeof displayNameFor==='function' ? displayNameFor(p.t2By) : p.t2By) : '—'],
+    ['Last edited by', p.updatedBy ? (typeof displayNameFor==='function' ? displayNameFor(p.updatedBy) : p.updatedBy) : '—'],
   ];
   body.innerHTML = rows.map(([k,v]) =>
     `<div class="dv-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(String(v))}</span></div>`
