@@ -3242,6 +3242,180 @@
     .brand-title .ecg-orb animateMotion{ /* browsers may ignore */ }
   }
 
+
+  /* Compact site header — less empty space */
+  .team-group .team-head{
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  .team-head-top{
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    min-width: 0;
+  }
+  .team-head-top .chev{ flex: none; }
+  .team-head-top .team-title-block{
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  .team-head-top .team-title-block h2{
+    margin: 0 !important;
+    max-width: none !important;
+    font-size: 14px !important;
+  }
+  .team-head-top .team-tools{
+    margin-left: auto !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    justify-content: flex-end !important;
+  }
+  .team-head-bottom{
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    padding-left: 38px; /* align under title, past chevron */
+  }
+  .team-head-bottom .handoff-box{
+    flex: 1 1 200px !important;
+    max-width: 420px !important;
+    margin: 0 !important;
+  }
+  .team-head-bottom .handoff-box input{
+    width: 100% !important;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+  }
+  .team-head-bottom .team-checklist{
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+  .team-head .team-checklist{
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: auto !important;
+    flex: none !important;
+  }
+  .team-checklist label{
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--line) !important;
+    background: var(--table-head) !important;
+    font-size: 11px !important;
+    font-weight: 650 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    color: var(--muted) !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+  }
+  .team-checklist input{ margin: 0 !important; accent-color: var(--teal); }
+  .photo-pct, .team-head .count{
+    flex: none !important;
+  }
+  @media (max-width: 720px){
+    .team-head-bottom{ padding-left: 0; }
+    .team-head-top .team-tools{ margin-left: 0 !important; width: 100%; }
+  }
+
+
+  /* Confirm dialog polish (light + dark) */
+  #appConfirmBackdrop{
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    background: rgba(8, 28, 24, 0.58) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 500 !important;
+  }
+  #appConfirmBackdrop.open{ display: flex !important; }
+  .app-confirm-modal{
+    width: min(420px, 100%) !important;
+    max-width: 420px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.28) !important;
+    overflow: hidden !important;
+    text-align: left !important;
+  }
+  .app-confirm-icon{
+    width: 44px !important; height: 44px !important;
+    margin: 22px 22px 0 !important;
+    border-radius: 12px !important;
+    font-size: 20px !important;
+    font-weight: 800 !important;
+  }
+  .app-confirm-body{
+    padding: 12px 22px 6px !important;
+  }
+  .app-confirm-body h3{
+    margin: 0 !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: var(--ink) !important;
+    line-height: 1.3 !important;
+  }
+  #appConfirmMessage, .app-confirm-body p{
+    margin: 8px 0 0 !important;
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+    color: var(--muted) !important;
+    white-space: pre-wrap !important;
+  }
+  .app-confirm-actions{
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    justify-content: flex-end !important;
+    padding: 16px 22px 20px !important;
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+  }
+  .app-confirm-actions .btn{
+    min-width: 96px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+  }
+  body.dark .app-confirm-modal{
+    background: #15201d !important;
+    border-color: #2a3a35 !important;
+  }
+  body.dark .app-confirm-body h3{ color: #eef5f2 !important; }
+  body.dark #appConfirmMessage{ color: #b7c4bf !important; }
+  body.dark .app-confirm-actions{ border-color: #2a3a35; }
+  #appConfirmExtra{
+    display: none;
+    padding: 0 22px;
+    gap: 8px;
+    flex-direction: column;
+  }
+  #appConfirmExtra.show{ display: flex; }
+  #appConfirmExtra .btn{ width: 100%; justify-content: center; }
+
 </style>
 </head>
 <body>
@@ -3801,6 +3975,7 @@
       <h3 id="appConfirmTitle">Confirm</h3>
       <p id="appConfirmMessage" class="modal-sub" style="margin:8px 0 0;line-height:1.5;"></p>
     </div>
+    <div id="appConfirmExtra"></div>
     <div class="app-confirm-actions">
       <button type="button" class="btn btn-ghost" id="appConfirmCancel">Cancel</button>
       <button type="button" class="btn btn-primary" id="appConfirmOk">Confirm</button>
@@ -4851,15 +5026,15 @@ function renderAll(){
 
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
-        <span class="chev" aria-hidden="true">▾</span>
-        <div class="team-title-block">
-          <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
-          <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
-          <div class="handoff-box" style="flex:1 1 100%;"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}" onclick="event.stopPropagation()"></div>
-        </div>
-        <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
-        ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
-        <div class="team-tools">
+        <div class="team-head-top">
+          <span class="chev" aria-hidden="true">▾</span>
+          <div class="team-title-block">
+            <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
+            <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
+            <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+            ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
+          </div>
+          <div class="team-tools">
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
           <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
           <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
@@ -4870,6 +5045,10 @@ function renderAll(){
             ? `<button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
             : `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
           <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>`) : ''}
+          </div>
+        </div>
+        <div class="team-head-bottom" onclick="event.stopPropagation()">
+          <div class="handoff-box"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}"></div>
         </div>
       </div>
       ${collapsed ? '' : `
@@ -5221,7 +5400,7 @@ groupsContainer.addEventListener('click', e=>{
     // CRITICAL: only archived patient rows. Never unregister the site from active roster.
     const ids = state.patients.filter(p => p.team === team && p.deleted).map(p => p.id);
     if(ids.length === 0){
-      alert('No archived patients left in this group. The live site on the main roster was not changed.');
+      showAppAlert('Nothing to delete', 'No archived patients left in this group. The live site on the main roster was not changed.');
       return;
     }
     if(confirm('Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.')){
@@ -6336,8 +6515,8 @@ function closeEncoderPanel(){
 })();
 
 
-/* Styled confirm — replaces window.confirm for in-app dialogs */
-function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, info }){
+/* Styled dialogs */
+function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, info, hideCancel }){
   return new Promise((resolve) => {
     const backdrop = document.getElementById('appConfirmBackdrop');
     const titleEl = document.getElementById('appConfirmTitle');
@@ -6345,14 +6524,18 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
     const okBtn = document.getElementById('appConfirmOk');
     const cancelBtn = document.getElementById('appConfirmCancel');
     const icon = document.getElementById('appConfirmIcon');
+    const extra = document.getElementById('appConfirmExtra');
     if(!backdrop || !okBtn){
       resolve(window.confirm(message || title || 'Continue?'));
       return;
     }
+    if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
     titleEl.textContent = title || 'Confirm';
     msgEl.textContent = message || '';
     okBtn.textContent = confirmLabel || 'Confirm';
+    okBtn.style.display = '';
     cancelBtn.textContent = cancelLabel || 'Cancel';
+    cancelBtn.style.display = hideCancel ? 'none' : '';
     icon.className = 'app-confirm-icon' + (danger ? ' danger' : (info ? ' info' : ''));
     icon.textContent = danger ? '!' : (info ? 'i' : '?');
     okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
@@ -6368,8 +6551,53 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
     cancelBtn.onclick = () => finish(false);
     backdrop.onclick = (e) => { if(e.target === backdrop) finish(false); };
     backdrop.classList.add('open');
+    setTimeout(() => okBtn.focus(), 30);
   });
 }
+function showAppAlert(title, message){
+  return showAppConfirm({ title: title || 'Notice', message: message || '', confirmLabel: 'OK', hideCancel: true, info: true });
+}
+function showAppChoice({ title, message, choices }){
+  // choices: [{ id, label, primary?, danger? }]
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('appConfirmBackdrop');
+    const titleEl = document.getElementById('appConfirmTitle');
+    const msgEl = document.getElementById('appConfirmMessage');
+    const okBtn = document.getElementById('appConfirmOk');
+    const cancelBtn = document.getElementById('appConfirmCancel');
+    const icon = document.getElementById('appConfirmIcon');
+    const extra = document.getElementById('appConfirmExtra');
+    if(!backdrop){ resolve(null); return; }
+    titleEl.textContent = title || 'Choose';
+    msgEl.textContent = message || '';
+    icon.className = 'app-confirm-icon info';
+    icon.textContent = 'i';
+    okBtn.style.display = 'none';
+    cancelBtn.style.display = '';
+    cancelBtn.textContent = 'Cancel';
+    if(extra){
+      extra.innerHTML = (choices || []).map(c =>
+        '<button type="button" class="btn ' + (c.danger ? 'btn-danger' : (c.primary ? 'btn-primary' : 'btn-ghost')) + '" data-choice="' + c.id + '">' + c.label + '</button>'
+      ).join('');
+      extra.classList.add('show');
+    }
+    const finish = (val) => {
+      backdrop.classList.remove('open');
+      if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
+      okBtn.style.display = '';
+      cancelBtn.onclick = null;
+      backdrop.onclick = null;
+      resolve(val);
+    };
+    cancelBtn.onclick = () => finish(null);
+    backdrop.onclick = (e) => { if(e.target === backdrop) finish(null); };
+    extra?.querySelectorAll('[data-choice]').forEach(btn => {
+      btn.onclick = () => finish(btn.getAttribute('data-choice'));
+    });
+    backdrop.classList.add('open');
+  });
+}
+
 
 /* ---------------- Dashboard ---------------- */
 const dashBackdrop = document.getElementById('dashBackdrop');
@@ -6925,14 +7153,20 @@ document.getElementById('activityPrev')?.addEventListener('click', () => { activ
 document.getElementById('activityNext')?.addEventListener('click', () => { activityPage++; renderActivityPage(); });
 document.getElementById('activityClearAll')?.addEventListener('click', () => {
   if(!isAdminUser()) return;
-  if(!activityLog.length){ alert('Log is already empty.'); return; }
-  if(confirm('Clear the entire activity log on this device? This cannot be undone.')){
+  if(!activityLog.length){ showAppAlert('Activity log', 'The log is already empty.'); return; }
+  showAppConfirm({
+    title: 'Clear activity log?',
+    message: 'Clear the entire activity log on this device? This cannot be undone.',
+    confirmLabel: 'Clear all',
+    danger: true
+  }).then(ok => {
+    if(!ok) return;
     activityLog = [];
     saveActivityLog();
     try{ localStorage.removeItem(ACTIVITY_KEY); }catch(e){}
     activityPage = 0;
     renderActivityPage();
-  }
+  });
 });
 document.getElementById('activityBody')?.addEventListener('click', e => {
   const btn = e.target.closest('[data-del-activity]');
@@ -8336,16 +8570,23 @@ document.addEventListener('change', e=>{
 function sendClaimReminder(id){
   const p = state.patients.find(x => x.id === id);
   if(!p) return;
-  const subject = encodeURIComponent(`DR CARE claim follow-up — ${p.name || 'patient'}`);
+  const subject = encodeURIComponent('DR CARE claim follow-up — ' + (p.name || 'patient'));
   const body = encodeURIComponent(
-    `Patient: ${p.name || ''}\nPhilHealth: ${p.phid || ''}\nMobile: ${p.team || ''}\nFacility: ${p.facility || ''}\nClaim status: ${p.claim || 'pending'}\nDate encoded: ${p.dateEncoded || ''}\n\nPlease follow up on this claim.`
+    'Patient: ' + (p.name || '') + '\nPhilHealth: ' + (p.phid || '') + '\nMobile: ' + (p.team || '') +
+    '\nFacility: ' + (p.facility || '') + '\nClaim status: ' + (p.claim || 'pending') +
+    '\nDate encoded: ' + (p.dateEncoded || '') + '\n\nPlease follow up on this claim.'
   );
-  const choice = confirm('OK = open email draft\nCancel = try SMS (mobile devices)');
-  if(choice){
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  } else {
-    window.location.href = `sms:?&body=${body}`;
-  }
+  showAppChoice({
+    title: 'Send claim reminder',
+    message: 'How do you want to contact about ' + (p.name || 'this patient') + '?',
+    choices: [
+      { id: 'email', label: 'Open email draft', primary: true },
+      { id: 'sms', label: 'Try SMS (mobile)' }
+    ]
+  }).then(choice => {
+    if(choice === 'email') window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+    else if(choice === 'sms') window.location.href = 'sms:?&body=' + body;
+  });
 }
 
 /* ---- Mobile site checklist ---- */
@@ -8388,11 +8629,13 @@ if(typeof renderAll === 'function'){
         if(head.querySelector('.team-checklist')) return;
         const h2 = head.querySelector('h2');
         if(!h2) return;
-        const team = h2.textContent.trim();
+        // Use data-team for accurate name (h2 includes badge text)
+        const team = head.getAttribute('data-team') || h2.childNodes[0]?.textContent?.trim() || h2.textContent.trim();
         const div = document.createElement('div');
         div.innerHTML = teamChecklistHtml(team);
-        const block = head.querySelector('.team-title-block') || h2.parentElement;
-        block.appendChild(div.firstChild);
+        const bottom = head.querySelector('.team-head-bottom');
+        const target = bottom || head.querySelector('.team-title-block') || h2.parentElement;
+        target.appendChild(div.firstChild);
       });
       // zebra rows
       document.querySelectorAll('tbody tr[data-id]').forEach((tr,i)=>{
