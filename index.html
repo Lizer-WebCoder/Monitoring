@@ -3849,6 +3849,63 @@
     letter-spacing: 0.03em !important;
   }
 
+
+  /* Column dividers + clearer field sizes */
+  .table-wrap table{
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    min-width: 1480px !important;
+  }
+  .table-wrap thead th{
+    border-right: 1px solid var(--line) !important;
+    border-bottom: 2px solid var(--line) !important;
+    padding: 10px 12px !important;
+    vertical-align: middle !important;
+  }
+  .table-wrap thead th:last-child{ border-right: none !important; }
+  .table-wrap tbody td{
+    border-right: 1px solid var(--line) !important;
+    border-bottom: 1px solid var(--line) !important;
+    padding: 8px 12px !important;
+    vertical-align: middle !important;
+  }
+  .table-wrap tbody td:last-child{ border-right: none !important; }
+  body.dark .table-wrap thead th,
+  body.dark .table-wrap tbody td{
+    border-right-color: rgba(143, 217, 196, 0.14) !important;
+    border-bottom-color: rgba(143, 217, 196, 0.12) !important;
+  }
+  /* Fixed-ish column widths so fields stay readable */
+  .table-wrap th.col-select,
+  .table-wrap td.col-select{ width: 40px; min-width: 40px; max-width: 44px; text-align: center !important; }
+  .table-wrap td.name{ min-width: 140px; max-width: 200px; }
+  .table-wrap td.idcell{ min-width: 128px; }
+  .table-wrap td.datecell{ min-width: 132px; }
+  .table-wrap .badge-select,
+  .table-wrap .fac-select{
+    max-width: 100%;
+    min-width: 0;
+  }
+  .table-wrap input[type="date"]{
+    max-width: 128px;
+  }
+  .table-wrap tbody tr:hover td{
+    background: var(--row-hover);
+  }
+
+
+  .table-wrap select.enc-select{
+    min-width: 110px;
+    max-width: 160px;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+    padding: 5px 22px 5px 8px !important;
+    background: var(--table-head) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 999px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -3945,7 +4002,8 @@
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
-      <button class="btn" id="adminBtn" style="display:none;"></button>
+      <button type="button" class="btn btn-ghost btn-sm" id="manageEncodersBtn" title="Manage encoder names" style="display:none;">Encoders</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="adminBtn" style="display:none;"></button>
     </div>
     <div class="tb-group tb-group-end">
       <button class="btn btn-ghost btn-sm" id="themeToggle"></button>
@@ -4085,6 +4143,11 @@
         <label>Facility</label>
         <select id="f_facility"></select>
         <div class="field-hint" id="facilityHint"></div>
+      </div>
+      <div>
+        <label>Encoded by</label>
+        <select id="f_encodedBy"></select>
+        <div class="field-hint">Who encoded this patient. Manage extra names via <b>Encoders</b> (admin).</div>
       </div>
       <div>
         <label>Status of claim</label>
@@ -4427,6 +4490,28 @@
   </div>
 </div>
 
+
+<!-- Manage encoder names (extra options beyond signed-up users) -->
+<div class="dash-backdrop" id="encoderListBackdrop" style="z-index:460;">
+  <div class="dash-modal" style="max-width:440px;">
+    <div class="dash-head">
+      <div>
+        <h3>Encoder list</h3>
+        <div class="modal-sub">Signed-up users appear automatically. Add extra names for staff who encode without an account. Remove only removes extras — not account users.</div>
+      </div>
+      <button type="button" class="dash-close" id="encoderListClose" title="Close">✕</button>
+    </div>
+    <div id="encoderListBody" style="max-height:40vh;overflow:auto;"></div>
+    <div class="benefit-admin-row" style="margin-top:12px;display:flex;gap:8px;">
+      <input type="text" id="newEncoderName" placeholder="Full name (e.g. Maria Santos)" style="flex:1;">
+      <button type="button" class="btn btn-primary" id="addEncoderNameBtn">Add</button>
+    </div>
+    <div class="modal-foot" style="margin-top:12px;">
+      <button type="button" class="btn btn-primary" id="encoderListDone">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- App confirm dialog -->
 <div class="dash-backdrop" id="appConfirmBackdrop">
   <div class="app-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
@@ -4742,6 +4827,7 @@ function isViewer(){ return currentUser && currentUser.role === 'viewer'; }
 
 function displayNameFor(uid){
   if(!uid) return '—';
+  if(String(uid).startsWith('name:')) return String(uid).slice(5);
   if(currentUser && uid === currentUser.id) return currentUser.fullName || currentUser.email || 'You';
   const p = profileCache[uid];
   if(p) return p.full_name || p.email || uid.slice(0,8);
@@ -5639,7 +5725,7 @@ function rowHtml(p){
     <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
       <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
       <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
-      <td style="font-size:12px;color:var(--muted);white-space:nowrap;" title="Who encoded this patient">${escapeHtml(typeof encoderLabel==='function' ? encoderLabel(p) : '—')}</td>
+      <td style="min-width:120px;text-align:center;">${typeof encoderSelectHtml==='function' ? encoderSelectHtml(p,'encodedBy') : escapeHtml(typeof encoderLabel==='function' ? encoderLabel(p) : '—')}</td>
       <td class="idcell"><span class="phid-dot ${phidSoundness(p,dup).cls}" title="${escapeAttr(phidSoundness(p,dup).title)}"></span>${escapeHtml(p.phid)||'—'}</td>
       <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
         ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
@@ -6205,6 +6291,143 @@ function stampAttribution(p, kind){
     p.updatedAt = now;
   }
 }
+
+/* ---- Encoder dropdown options (users + extras) ---- */
+const EXTRA_ENCODERS_KEY = 'drcare_extra_encoders_v1';
+function loadExtraEncoders(){
+  try{
+    const raw = localStorage.getItem(EXTRA_ENCODERS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(s => String(s).trim()).filter(Boolean) : [];
+  }catch(e){ return []; }
+}
+function saveExtraEncoders(list){
+  try{ localStorage.setItem(EXTRA_ENCODERS_KEY, JSON.stringify(list || [])); }catch(e){}
+  try{
+    if(typeof sb !== 'undefined' && sb && navigator.onLine){
+      sb.from('settings').upsert({ key: 'extraEncoders', value: JSON.stringify(list || []) }).then(()=>{}).catch(()=>{});
+    }
+  }catch(e){}
+}
+async function pullExtraEncoders(){
+  try{
+    if(!navigator.onLine || !sb) return;
+    const { data } = await sb.from('settings').select('value').eq('key','extraEncoders').maybeSingle();
+    if(data && data.value){
+      const parsed = JSON.parse(data.value);
+      if(Array.isArray(parsed)) saveExtraEncoders(parsed);
+    }
+  }catch(e){}
+}
+function getEncoderOptions(){
+  // [{ id, label }]
+  const map = new Map();
+  // Signed-up profiles
+  Object.keys(profileCache || {}).forEach(id => {
+    const p = profileCache[id];
+    if(!p) return;
+    if(p.role === 'viewer') return;
+    const label = p.full_name || p.email || id;
+    map.set(id, label);
+  });
+  if(typeof allProfiles !== 'undefined' && Array.isArray(allProfiles)){
+    allProfiles.forEach(u => {
+      if(!u || !u.id) return;
+      if(u.role === 'viewer') return;
+      map.set(u.id, u.full_name || u.email || u.id);
+    });
+  }
+  if(currentUser && currentUser.id){
+    map.set(currentUser.id, currentUser.fullName || currentUser.email || 'You');
+  }
+  // Extra manual names
+  loadExtraEncoders().forEach(name => {
+    const id = 'name:' + name;
+    if(![...map.values()].some(v => String(v).toLowerCase() === name.toLowerCase())){
+      map.set(id, name);
+    }
+  });
+  // Any already used on patients
+  (state.patients || []).forEach(p => {
+    const id = p.encodedBy || p.createdBy;
+    if(!id) return;
+    if(!map.has(id)){
+      const label = id.startsWith('name:') ? id.slice(5) : (typeof displayNameFor === 'function' ? displayNameFor(id) : id);
+      map.set(id, label);
+    }
+  });
+  return [...map.entries()]
+    .map(([id, label]) => ({ id, label: String(label) }))
+    .sort((a,b) => a.label.localeCompare(b.label));
+}
+function encoderSelectHtml(p, field){
+  field = field || 'encodedBy';
+  const cur = p ? (p[field] || p.encodedBy || p.createdBy || '') : '';
+  const opts = getEncoderOptions();
+  // ensure current value is in list
+  if(cur && !opts.some(o => o.id === cur)){
+    opts.unshift({ id: cur, label: cur.startsWith('name:') ? cur.slice(5) : (typeof displayNameFor==='function' ? displayNameFor(cur) : cur) });
+  }
+  const disabled = (typeof canEdit === 'function' && !canEdit()) ? 'disabled' : '';
+  return `<select class="badge-select enc-select" data-field="${field}" ${disabled} title="Who encoded this patient">
+    <option value="">—</option>
+    ${opts.map(o => `<option value="${escapeAttr(o.id)}" ${o.id===cur?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}
+  </select>`;
+}
+function renderEncoderListAdmin(){
+  const body = document.getElementById('encoderListBody');
+  if(!body) return;
+  const extras = loadExtraEncoders();
+  const users = getEncoderOptions().filter(o => !String(o.id).startsWith('name:'));
+  body.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">Account users (from sign-up)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+      ${users.map(u => `<span class="lab-chip">${escapeHtml(u.label)}</span>`).join('') || '<span style="color:var(--muted);font-size:12px;">None loaded yet</span>'}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">Extra names (you can add / remove)</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      ${extras.length ? extras.map(n => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--table-head);">
+          <span style="font-weight:650;">${escapeHtml(n)}</span>
+          <button type="button" class="btn btn-ghost btn-sm" data-del-encoder="${escapeAttr(n)}">Remove</button>
+        </div>`).join('') : '<div style="font-size:12px;color:var(--muted);padding:6px 0;">No extra names yet.</div>'}
+    </div>`;
+  body.querySelectorAll('[data-del-encoder]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-del-encoder');
+      saveExtraEncoders(loadExtraEncoders().filter(x => x !== name));
+      renderEncoderListAdmin();
+      if(typeof renderAll === 'function') renderAll();
+    });
+  });
+}
+function openEncoderList(){
+  renderEncoderListAdmin();
+  document.getElementById('encoderListBackdrop')?.classList.add('open');
+}
+function closeEncoderList(){
+  document.getElementById('encoderListBackdrop')?.classList.remove('open');
+}
+document.getElementById('encoderListClose')?.addEventListener('click', closeEncoderList);
+document.getElementById('encoderListDone')?.addEventListener('click', closeEncoderList);
+document.getElementById('encoderListBackdrop')?.addEventListener('click', e => {
+  if(e.target.id === 'encoderListBackdrop') closeEncoderList();
+});
+document.getElementById('addEncoderNameBtn')?.addEventListener('click', () => {
+  const inp = document.getElementById('newEncoderName');
+  const name = (inp && inp.value || '').trim();
+  if(!name) return;
+  const list = loadExtraEncoders();
+  if(!list.some(x => x.toLowerCase() === name.toLowerCase())){
+    list.push(name);
+    saveExtraEncoders(list);
+  }
+  if(inp) inp.value = '';
+  renderEncoderListAdmin();
+  if(typeof renderAll === 'function') renderAll();
+});
+
+
 function encoderLabel(p){
   if(!p) return '—';
   const id = p.encodedBy || p.createdBy;
@@ -6248,6 +6471,17 @@ function openModal(id, presetTeam){
   const st = p ? (p.status || 'registered') : 'registered';
   document.getElementById('f_status').value = ['registered','registered_other'].includes(st) ? st : 'registered';
   updateFacilityField(p ? (p.facility || HOME_FACILITY) : HOME_FACILITY);
+  const encSel = document.getElementById('f_encodedBy');
+  if(encSel && typeof getEncoderOptions === 'function'){
+    const cur = p ? (p.encodedBy || p.createdBy || '') : (currentUser && currentUser.id ? currentUser.id : '');
+    const opts = getEncoderOptions();
+    if(cur && !opts.some(o => o.id === cur)){
+      opts.unshift({ id: cur, label: typeof displayNameFor==='function' ? displayNameFor(cur) : cur });
+    }
+    encSel.innerHTML = '<option value="">—</option>' + opts.map(o =>
+      '<option value="'+escapeAttr(o.id)+'" '+(o.id===cur?'selected':'')+'>'+escapeHtml(o.label)+'</option>'
+    ).join('');
+  }
   const claim = p ? (p.claim || 'pending') : 'pending';
   const claimEl = document.getElementById('f_claim');
   if(claimEl){
@@ -6348,6 +6582,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
+    encodedBy: (document.getElementById('f_encodedBy') && document.getElementById('f_encodedBy').value) || null,
     status: document.getElementById('f_status').value,
     facility: document.getElementById('f_facility').value,
     claim: document.getElementById('f_claim').value || 'pending',
@@ -6372,8 +6607,15 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   p.lab = !!data.lab || p.labTests.length > 0;
   if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
   p.customBenefits.labTests = p.labTests.slice();
+  if(data.encodedBy){
+    p.encodedBy = data.encodedBy;
+    if(!p.createdBy) p.createdBy = data.encodedBy.startsWith('name:') ? p.createdBy : data.encodedBy;
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.encodedBy = data.encodedBy;
+  }
   if(isNew){
     if(typeof stampAttribution === 'function') stampAttribution(p, 'encode');
+    if(data.encodedBy) p.encodedBy = data.encodedBy;
   } else {
     if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
   }
@@ -8137,7 +8379,7 @@ async function onSignedIn(session){
   applyRoleUI();
   try{
     await initApp();
-    if(navigator.onLine) await loadAllProfiles();
+    if(navigator.onLine){ await loadAllProfiles(); if(typeof pullExtraEncoders==='function') await pullExtraEncoders(); }
     if(typeof startPresence === 'function') startPresence();
   }catch(e){
     console.error('initApp failed after login', e);
@@ -8145,7 +8387,16 @@ async function onSignedIn(session){
   }
 }
 
+
+document.getElementById('manageEncodersBtn')?.addEventListener('click', openEncoderList);
+function updateEncoderManageBtn(){
+  const b = document.getElementById('manageEncodersBtn');
+  if(!b) return;
+  b.style.display = (typeof isAdmin === 'function' && isAdmin()) ? '' : 'none';
+}
+
 function applyRoleUI(){
+  if(typeof updateEncoderManageBtn === 'function') updateEncoderManageBtn();
   const editable = canEdit();
   // Disable primary write controls for viewers
   ['addTeamBtn','importBtn','csvTemplateBtn','xlsxTemplateBtn'].forEach(id=>{
