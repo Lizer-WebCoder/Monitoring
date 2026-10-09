@@ -4787,33 +4787,37 @@ function toRemote(p, mode){
   });
 }
 function fromRemote(r){
+  let cb = r.custom_benefits;
+  if(typeof cb === 'string'){
+    try{ cb = JSON.parse(cb); }catch(e){ cb = {}; }
+  }
+  if(!cb || typeof cb !== 'object') cb = {};
+  let labTests = [];
+  if(Array.isArray(r.lab_tests)) labTests = r.lab_tests.filter(Boolean);
+  else if(r.lab_tests) labTests = String(r.lab_tests).split('|').map(s=>s.trim()).filter(Boolean);
+  else if(Array.isArray(cb.labTests)) labTests = cb.labTests.filter(Boolean);
+
   return {
     id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
-    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '', dateT1: r.date_t1 || r.date_submitted || '', dateT2: r.date_t2 || '',
+    mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
+    dateT1: r.date_t1 || r.date_submitted || '', dateT2: r.date_t2 || '',
     within24: !!r.within24, claim: r.claim, rice: !!r.rice, lab: !!r.lab,
-    labTests: (function(){
-      if(Array.isArray(r.lab_tests)) return r.lab_tests.filter(Boolean);
-      if(r.lab_tests) return String(r.lab_tests).split('|').map(s=>s.trim()).filter(Boolean);
-      const cb = r.custom_benefits;
-      if(cb && Array.isArray(cb.labTests)) return cb.labTests.filter(Boolean);
-      if(cb && typeof cb.labTests === 'string' && cb.labTests) return cb.labTests.split('|').filter(Boolean);
-      return [];
-    })(),
+    labTests: labTests,
     medicine: !!r.medicine, vitamins: !!r.vitamins, referral: !!r.referral,
     notes: r.notes || '',
     mcaPhoto: r.mca_photo || null,
-    customBenefits: r.custom_benefits || {},
+    customBenefits: cb,
     history: Array.isArray(r.history) ? r.history : [],
     deleted: !!r.deleted,
     createdBy: r.created_by || null,
     updatedBy: r.updated_by || null,
     createdAt: r.created_at || null,
     updatedAt: r.updated_at || null,
-    encodedBy: (r.custom_benefits && r.custom_benefits.encodedBy) || r.created_by || null,
-    t1By: (r.custom_benefits && r.custom_benefits.t1By) || null,
-    t2By: (r.custom_benefits && r.custom_benefits.t2By) || null,
-    t1At: (r.custom_benefits && r.custom_benefits.t1At) || null,
-    t2At: (r.custom_benefits && r.custom_benefits.t2At) || null
+    encodedBy: cb.encodedBy || r.created_by || null,
+    t1By: cb.t1By || null,
+    t2By: cb.t2By || null,
+    t1At: cb.t1At || null,
+    t2At: cb.t2At || null
   };
 }
 
@@ -4996,12 +5000,28 @@ async function pullRemote(){
       const local = state.patients.find(p => p.id === r.id);
       if(local){
         const keepLabs = Array.isArray(local.labTests) ? local.labTests.slice() : [];
+        const keepEnc = local.encodedBy || null;
+        const keepT1 = local.t1By || null;
+        const keepT2 = local.t2By || null;
+        const keepT1At = local.t1At || null;
+        const keepT2At = local.t2At || null;
+        const keepCb = (local.customBenefits && typeof local.customBenefits === 'object') ? Object.assign({}, local.customBenefits) : {};
         Object.assign(local, remote);
-        // Don't wipe local labs if server has none yet (column missing / not synced)
         if((!local.labTests || !local.labTests.length) && keepLabs.length){
           local.labTests = keepLabs;
           if(local.lab == null) local.lab = true;
         }
+        // Never wipe local attribution when server has none
+        if(!local.encodedBy && keepEnc) local.encodedBy = keepEnc;
+        if(!local.t1By && keepT1) local.t1By = keepT1;
+        if(!local.t2By && keepT2) local.t2By = keepT2;
+        if(!local.t1At && keepT1At) local.t1At = keepT1At;
+        if(!local.t2At && keepT2At) local.t2At = keepT2At;
+        if(!local.customBenefits || typeof local.customBenefits !== 'object') local.customBenefits = {};
+        if(keepCb.labTests && !local.customBenefits.labTests) local.customBenefits.labTests = keepCb.labTests;
+        if(keepEnc) local.customBenefits.encodedBy = local.encodedBy || keepEnc;
+        if(local.t1By) local.customBenefits.t1By = local.t1By;
+        if(local.t2By) local.customBenefits.t2By = local.t2By;
       } else state.patients.push(remote);
     });
     // Drop any local copies of purged IDs
@@ -6101,20 +6121,43 @@ groupsContainer.addEventListener('change', e=>{
     if(p.dateT2){ p.claim = 't2'; if(typeof stampAttribution === 'function') stampAttribution(p, 't2'); }
   }
   if(field === 't1By'){
+    p.t1By = e.target.value || null;
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
     p.customBenefits.t1By = p.t1By;
-    if(p.t1By && !p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
-    if(p.t1By) p.claim = 't1';
+    if(p.t1By){
+      p.t1At = new Date().toISOString();
+      p.customBenefits.t1At = p.t1At;
+      if(!p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
+      p.dateSubmitted = p.dateT1;
+      p.claim = 't1';
+    }
   }
   if(field === 't2By'){
+    p.t2By = e.target.value || null;
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
     p.customBenefits.t2By = p.t2By;
-    if(p.t2By && !p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
-    if(p.t2By) p.claim = 't2';
+    if(p.t2By){
+      p.t2At = new Date().toISOString();
+      p.customBenefits.t2At = p.t2At;
+      if(!p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
+      p.claim = 't2';
+    }
   }
-  if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
+  if(field === 'encodedBy'){
+    p.encodedBy = e.target.value || null;
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.encodedBy = p.encodedBy;
+  }
+  // Do NOT stampAttribution(t1/t2) here — that would overwrite the chosen person with current user
+  if(currentUser && currentUser.id){
+    p.updatedBy = currentUser.id;
+    p.updatedAt = new Date().toISOString();
+  }
   persistChange(p);
-  if(field === 'dateT2' || field === 'dateT1' || field === 't1By' || field === 't2By') renderAll();
+  // Re-render after local cache is written so dropdown keeps selection
+  if(field === 'dateT2' || field === 'dateT1' || field === 't1By' || field === 't2By' || field === 'encodedBy'){
+    Promise.resolve(saveLocalCache()).then(() => renderAll());
+  }
 });
 
 function updateBulkBar(){
@@ -6347,12 +6390,12 @@ function getEncoderOptions(){
   });
   // Any already used on patients
   (state.patients || []).forEach(p => {
-    const id = p.encodedBy || p.createdBy;
-    if(!id) return;
-    if(!map.has(id)){
-      const label = id.startsWith('name:') ? id.slice(5) : (typeof displayNameFor === 'function' ? displayNameFor(id) : id);
-      map.set(id, label);
-    }
+    [p.encodedBy, p.createdBy, p.t1By, p.t2By].filter(Boolean).forEach(id => {
+      if(!map.has(id)){
+        const label = String(id).startsWith('name:') ? String(id).slice(5) : (typeof displayNameFor === 'function' ? displayNameFor(id) : id);
+        map.set(id, label);
+      }
+    });
   });
   return [...map.entries()]
     .map(([id, label]) => ({ id, label: String(label) }))
@@ -6372,9 +6415,14 @@ function encoderSelectHtml(p, field){
     opts.unshift({ id: cur, label: cur.startsWith('name:') ? cur.slice(5) : (typeof displayNameFor==='function' ? displayNameFor(cur) : cur) });
   }
   const disabled = (typeof canEdit === 'function' && !canEdit()) ? 'disabled' : '';
-  return `<select class="badge-select enc-select" data-field="${field}" ${disabled} title="Who encoded this patient">
+  const curS = cur == null ? '' : String(cur);
+  return `<select class="badge-select enc-select" data-field="${escapeAttr(field)}" ${disabled} title="${field === 't1By' ? 'T1 submitted by' : field === 't2By' ? 'T2 submitted by' : 'Encoded by'}">
     <option value="">—</option>
-    ${opts.map(o => `<option value="${escapeAttr(o.id)}" ${o.id===cur?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}
+    ${opts.map(o => {
+      const idS = String(o.id);
+      const sel = idS === curS ? 'selected' : '';
+      return '<option value="'+escapeAttr(idS)+'" '+sel+'>'+escapeHtml(o.label)+'</option>';
+    }).join('')}
   </select>`;
 }
 function renderEncoderListAdmin(){
