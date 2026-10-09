@@ -3416,6 +3416,117 @@
   #appConfirmExtra.show{ display: flex; }
   #appConfirmExtra .btn{ width: 100%; justify-content: center; }
 
+
+  /* Confirm / choice dialog — centered, balanced */
+  #appConfirmBackdrop{
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+    background: rgba(8, 28, 24, 0.6) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 500 !important;
+  }
+  #appConfirmBackdrop.open{ display: flex !important; }
+  .app-confirm-modal{
+    width: min(400px, calc(100vw - 32px)) !important;
+    max-width: 400px !important;
+    margin: 0 auto !important;
+    padding: 28px 24px 20px !important;
+    border-radius: 20px !important;
+    background: var(--card) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.32) !important;
+    overflow: hidden !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .app-confirm-icon{
+    width: 52px !important;
+    height: 52px !important;
+    margin: 0 auto 16px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    flex: none !important;
+  }
+  .app-confirm-body{
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+  .app-confirm-body h3{
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: var(--ink) !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+  }
+  #appConfirmMessage, .app-confirm-body p{
+    margin: 10px 0 0 !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+    color: var(--muted) !important;
+    white-space: pre-wrap !important;
+    text-align: center !important;
+  }
+  #appConfirmExtra{
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 0 !important;
+  }
+  #appConfirmExtra.show{ display: flex !important; }
+  #appConfirmExtra .btn{
+    width: 100% !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+  }
+  .app-confirm-actions{
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 18px 0 0 !important;
+    margin-top: 8px !important;
+    border-top: none !important;
+  }
+  .app-confirm-actions .btn{
+    min-width: 120px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    padding: 10px 18px !important;
+  }
+  /* When choice buttons are shown, Cancel sits centered below */
+  #appConfirmBackdrop.has-choices .app-confirm-actions{
+    margin-top: 14px !important;
+    padding-top: 4px !important;
+  }
+  #appConfirmBackdrop.has-choices #appConfirmOk{
+    display: none !important;
+  }
+  body.dark .app-confirm-modal{
+    background: #15201d !important;
+    border-color: #2a3a35 !important;
+  }
+  body.dark .app-confirm-body h3{ color: #eef5f2 !important; }
+  body.dark #appConfirmMessage{ color: #b7c4bf !important; }
+
 </style>
 </head>
 <body>
@@ -6540,8 +6651,9 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
     icon.textContent = danger ? '!' : (info ? 'i' : '?');
     okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
 
+    backdrop.classList.remove('has-choices');
     const finish = (val) => {
-      backdrop.classList.remove('open');
+      backdrop.classList.remove('open', 'has-choices');
       okBtn.onclick = null;
       cancelBtn.onclick = null;
       backdrop.onclick = null;
@@ -6575,6 +6687,7 @@ function showAppChoice({ title, message, choices }){
     okBtn.style.display = 'none';
     cancelBtn.style.display = '';
     cancelBtn.textContent = 'Cancel';
+    backdrop.classList.add('has-choices');
     if(extra){
       extra.innerHTML = (choices || []).map(c =>
         '<button type="button" class="btn ' + (c.danger ? 'btn-danger' : (c.primary ? 'btn-primary' : 'btn-ghost')) + '" data-choice="' + c.id + '">' + c.label + '</button>'
@@ -6582,7 +6695,7 @@ function showAppChoice({ title, message, choices }){
       extra.classList.add('show');
     }
     const finish = (val) => {
-      backdrop.classList.remove('open');
+      backdrop.classList.remove('open', 'has-choices');
       if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
       okBtn.style.display = '';
       cancelBtn.onclick = null;
@@ -8578,7 +8691,7 @@ function sendClaimReminder(id){
   );
   showAppChoice({
     title: 'Send claim reminder',
-    message: 'How do you want to contact about ' + (p.name || 'this patient') + '?',
+    message: 'How do you want to reach ' + (p.name || 'this patient') + '?',
     choices: [
       { id: 'email', label: 'Open email draft', primary: true },
       { id: 'sms', label: 'Try SMS (mobile)' }
