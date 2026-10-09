@@ -5637,9 +5637,9 @@ function renderAll(){
           <thead>
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
-              <th>Patient name</th><th>Encoded by</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>T1 date<br>&amp; submitted</th><th>T2 date<br>&amp; submitted</th>
-              <th>Within 24h</th><th>Status of claim</th><th>Duplicate tracker</th>
+              <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
+              <th>Digital MCA</th><th>T1 submitted date</th><th>T2 submitted date</th>
+              <th>Within 24h</th><th>T1 submitted by</th><th>T2 submitted by</th><th>Duplicate tracker</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
           </thead>
@@ -5725,19 +5725,17 @@ function rowHtml(p){
     <tr class="${dup?'dup-row':''} ${pend?'pending-row':''} ${sel?'selected-row':''}" data-id="${p.id}">
       <td class="col-select"><input type="checkbox" class="row-select" data-id="${p.id}" ${sel?'checked':''} aria-label="Select patient"></td>
       <td class="name">${escapeHtml(p.name)}${pend?'<span class="sync-tag">unsynced</span>':''}</td>
-      <td style="min-width:120px;text-align:center;">${typeof encoderSelectHtml==='function' ? encoderSelectHtml(p,'encodedBy') : escapeHtml(typeof encoderLabel==='function' ? encoderLabel(p) : '—')}</td>
       <td class="idcell"><span class="phid-dot ${phidSoundness(p,dup).cls}" title="${escapeAttr(phidSoundness(p,dup).title)}"></span>${escapeHtml(p.phid)||'—'}</td>
       <td style="text-align:center"><select class="badge-select ${statusClass[p.status]}" data-field="status">
         ${Object.entries(statusLabel).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
-      <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;"></td>
+      <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;" title="T1 submitted date"></td>
       <td class="datecell"><input type="date" data-field="dateT2" value="${p.dateT2||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;" title="T2 submitted date"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
-      <td style="text-align:center"><select class="badge-select ${claimClass[p.claim]}" data-field="claim">
-        ${Object.entries(claimLabel).map(([k,v])=>`<option value="${k}" ${p.claim===k?'selected':''}>${v}</option>`).join('')}
-      </select> ${claimClockHtml(p)}</td>
+      <td style="min-width:120px;text-align:center;">${typeof encoderSelectHtml==='function' ? encoderSelectHtml(p,'t1By') : '—'}</td>
+      <td style="min-width:120px;text-align:center;">${typeof encoderSelectHtml==='function' ? encoderSelectHtml(p,'t2By') : '—'}</td>
       <td style="text-align:center">${dup ? `<span class="dup-tag dup-flag" title="Also registered under ${escapeAttr(dupTeam)}">Duplicate at ${escapeHtml(dupTeam)}</span>` : `<span class="dup-tag dup-new">${icon('check',12)} New record</span>`}</td>
       <td style="text-align:center"><input type="checkbox" data-field="rice" ${p.rice?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
@@ -6097,26 +6095,26 @@ groupsContainer.addEventListener('change', e=>{
   if(field === 'status') normalizeFacility(p);
   if(field === 'dateT1'){
     p.dateSubmitted = p.dateT1;
-    if(typeof stampAttribution === 'function') stampAttribution(p, 't1');
+    if(p.dateT1){ p.claim = 't1'; if(typeof stampAttribution === 'function') stampAttribution(p, 't1'); }
   }
   if(field === 'dateT2'){
-    if(typeof stampAttribution === 'function') stampAttribution(p, 't2');
+    if(p.dateT2){ p.claim = 't2'; if(typeof stampAttribution === 'function') stampAttribution(p, 't2'); }
   }
-  if(field === 'claim'){
-    if(p.claim === 't1'){
-      if(!p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
-      p.dateSubmitted = p.dateT1;
-      if(typeof stampAttribution === 'function') stampAttribution(p, 't1');
-    }
-    if(p.claim === 't2'){
-      if(!p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
-      if(typeof stampAttribution === 'function') stampAttribution(p, 't2');
-    }
-    if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
+  if(field === 't1By'){
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.t1By = p.t1By;
+    if(p.t1By && !p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
+    if(p.t1By) p.claim = 't1';
   }
-  if(typeof stampAttribution === 'function' && field !== 'claim') stampAttribution(p, 'edit');
+  if(field === 't2By'){
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.t2By = p.t2By;
+    if(p.t2By && !p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
+    if(p.t2By) p.claim = 't2';
+  }
+  if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
   persistChange(p);
-  if(field === 'claim' || field === 'dateT2' || field === 'dateT1') renderAll();
+  if(field === 'dateT2' || field === 'dateT1' || field === 't1By' || field === 't2By') renderAll();
 });
 
 function updateBulkBar(){
@@ -6362,7 +6360,12 @@ function getEncoderOptions(){
 }
 function encoderSelectHtml(p, field){
   field = field || 'encodedBy';
-  const cur = p ? (p[field] || p.encodedBy || p.createdBy || '') : '';
+  let cur = '';
+  if(p){
+    if(field === 't1By') cur = p.t1By || '';
+    else if(field === 't2By') cur = p.t2By || '';
+    else cur = p[field] || p.encodedBy || p.createdBy || '';
+  }
   const opts = getEncoderOptions();
   // ensure current value is in list
   if(cur && !opts.some(o => o.id === cur)){
