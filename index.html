@@ -3527,6 +3527,188 @@
   body.dark .app-confirm-body h3{ color: #eef5f2 !important; }
   body.dark #appConfirmMessage{ color: #b7c4bf !important; }
 
+
+  /* DR CARE confirm — premium medical dialog */
+  #appConfirmBackdrop{
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 520 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(20,120,100,0.22), transparent 55%),
+      radial-gradient(ellipse at 70% 80%, rgba(0,80,70,0.18), transparent 50%),
+      rgba(6, 22, 18, 0.72) !important;
+    backdrop-filter: blur(10px) saturate(1.1);
+    -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  }
+  #appConfirmBackdrop.open{ display: flex !important; }
+
+  .app-confirm-modal{
+    position: relative !important;
+    width: min(400px, calc(100vw - 36px)) !important;
+    margin: 0 !important;
+    padding: 0 0 22px !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+    text-align: center !important;
+    background: linear-gradient(165deg, #1a2e29 0%, #12201c 48%, #0e1a17 100%) !important;
+    border: 1px solid rgba(143, 217, 196, 0.22) !important;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04) inset,
+      0 28px 80px rgba(0,0,0,0.45),
+      0 0 40px rgba(16, 120, 95, 0.12) !important;
+    color: #eef5f2 !important;
+    animation: confirmIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes confirmIn{
+    from{ opacity:0; transform: translateY(12px) scale(0.96); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+  .app-confirm-glow{
+    position: absolute;
+    top: -40%; left: 20%; right: 20%;
+    height: 90px;
+    background: radial-gradient(ellipse, rgba(62, 207, 154, 0.22), transparent 70%);
+    pointer-events: none;
+  }
+  .app-confirm-topbar{
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #3ecf9a 30%, #8fd9c4 50%, #3ecf9a 70%, transparent);
+    opacity: 0.9;
+  }
+  .app-confirm-icon-wrap{
+    display: flex;
+    justify-content: center;
+    padding: 26px 24px 0;
+  }
+  .app-confirm-icon{
+    width: 56px !important;
+    height: 56px !important;
+    margin: 0 !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    background: rgba(62, 207, 154, 0.12) !important;
+    color: #8fd9c4 !important;
+    border: 1px solid rgba(143, 217, 196, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(62, 207, 154, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .app-confirm-icon.danger{
+    background: rgba(220, 80, 70, 0.14) !important;
+    color: #f0a8a0 !important;
+    border-color: rgba(220, 80, 70, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(220, 80, 70, 0.12);
+  }
+  .app-confirm-icon.info{
+    background: rgba(62, 207, 154, 0.12) !important;
+    color: #8fd9c4 !important;
+    border-color: rgba(143, 217, 196, 0.35) !important;
+  }
+  .app-confirm-body{
+    padding: 16px 28px 4px !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+  .app-confirm-body h3{
+    margin: 0 !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+    color: #f2faf7 !important;
+    line-height: 1.25 !important;
+  }
+  #appConfirmMessage{
+    margin: 10px auto 0 !important;
+    max-width: 32em !important;
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+    color: #a8beb6 !important;
+    white-space: pre-wrap !important;
+  }
+  #appConfirmExtra{
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 0 24px !important;
+  }
+  #appConfirmExtra.show{ display: flex !important; }
+  #appConfirmExtra .btn{
+    width: 100% !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    font-weight: 700 !important;
+  }
+  .app-confirm-actions{
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: center !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 20px 24px 0 !important;
+  }
+  .app-confirm-actions .btn{
+    min-width: 118px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    padding: 11px 18px !important;
+  }
+  .app-confirm-actions .btn-ghost,
+  #appConfirmCancel{
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #d5e6e0 !important;
+  }
+  .app-confirm-actions .btn-ghost:hover,
+  #appConfirmCancel:hover{
+    background: rgba(255,255,255,0.1) !important;
+    border-color: rgba(143, 217, 196, 0.35) !important;
+  }
+  .app-confirm-actions .btn-primary,
+  #appConfirmOk.btn-primary{
+    background: linear-gradient(180deg, #2dd4a0 0%, #1a9f78 100%) !important;
+    border: none !important;
+    color: #06241a !important;
+    box-shadow: 0 6px 20px rgba(45, 212, 160, 0.28);
+  }
+  .app-confirm-actions .btn-primary:hover{
+    filter: brightness(1.06);
+  }
+  .app-confirm-actions .btn-danger,
+  #appConfirmOk.btn-danger{
+    background: linear-gradient(180deg, #e5736a 0%, #c44a42 100%) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 6px 20px rgba(196, 74, 66, 0.28);
+  }
+  /* Light mode still uses rich dark card for contrast on any theme */
+  body:not(.dark) .app-confirm-modal{
+    background: linear-gradient(165deg, #f7fbf9 0%, #eef6f2 100%) !important;
+    border-color: rgba(20, 82, 74, 0.15) !important;
+    box-shadow: 0 28px 80px rgba(11, 54, 48, 0.2) !important;
+    color: #12332c !important;
+  }
+  body:not(.dark) .app-confirm-body h3{ color: #0f2e28 !important; }
+  body:not(.dark) #appConfirmMessage{ color: #5a736c !important; }
+  body:not(.dark) .app-confirm-glow{
+    background: radial-gradient(ellipse, rgba(20, 120, 100, 0.12), transparent 70%);
+  }
+  body:not(.dark) .app-confirm-actions .btn-ghost,
+  body:not(.dark) #appConfirmCancel{
+    background: #fff !important;
+    border: 1px solid rgba(18, 49, 43, 0.14) !important;
+    color: #2a4a42 !important;
+  }
+
 </style>
 </head>
 <body>
@@ -4079,12 +4261,16 @@
 
 
 <!-- App confirm dialog -->
-<div class="dash-backdrop" id="appConfirmBackdrop" style="z-index:400;">
-  <div class="dash-modal app-confirm-modal" style="max-width:420px;padding:0;overflow:hidden;">
-    <div class="app-confirm-icon" id="appConfirmIcon" aria-hidden="true">!</div>
+<div class="dash-backdrop" id="appConfirmBackdrop">
+  <div class="app-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
+    <div class="app-confirm-glow" aria-hidden="true"></div>
+    <div class="app-confirm-topbar" aria-hidden="true"></div>
+    <div class="app-confirm-icon-wrap">
+      <div class="app-confirm-icon" id="appConfirmIcon" aria-hidden="true">?</div>
+    </div>
     <div class="app-confirm-body">
       <h3 id="appConfirmTitle">Confirm</h3>
-      <p id="appConfirmMessage" class="modal-sub" style="margin:8px 0 0;line-height:1.5;"></p>
+      <p id="appConfirmMessage"></p>
     </div>
     <div id="appConfirmExtra"></div>
     <div class="app-confirm-actions">
@@ -6648,7 +6834,7 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
     cancelBtn.textContent = cancelLabel || 'Cancel';
     cancelBtn.style.display = hideCancel ? 'none' : '';
     icon.className = 'app-confirm-icon' + (danger ? ' danger' : (info ? ' info' : ''));
-    icon.textContent = danger ? '!' : (info ? 'i' : '?');
+    icon.textContent = danger ? '⚠' : (info ? 'ℹ' : '?');
     okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
 
     backdrop.classList.remove('has-choices');
@@ -6683,7 +6869,7 @@ function showAppChoice({ title, message, choices }){
     titleEl.textContent = title || 'Choose';
     msgEl.textContent = message || '';
     icon.className = 'app-confirm-icon info';
-    icon.textContent = 'i';
+    icon.textContent = '✉';
     okBtn.style.display = 'none';
     cancelBtn.style.display = '';
     cancelBtn.textContent = 'Cancel';
