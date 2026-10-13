@@ -4190,6 +4190,37 @@
   /* hide old trend card chrome if leftover */
   .dash-trend-card{ background: transparent; border: none; padding: 0; }
 
+
+  .dash-guide{
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px 10px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .dash-guide-title{
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--label-accent);
+    margin-bottom: 6px;
+  }
+  .dash-guide ul{
+    margin: 0;
+    padding-left: 18px;
+  }
+  .dash-guide li{ margin-bottom: 4px; }
+  .dash-sec-help{
+    font-size: 12px;
+    color: var(--muted);
+    margin: -6px 0 12px;
+    line-height: 1.4;
+  }
+
 </style>
 </head>
 <body>
@@ -4646,7 +4677,7 @@
     <div class="dash-head">
       <div>
         <h3>Metrics Dashboard</h3>
-        <div class="modal-sub">Your accomplishments (encoders) or team-wide KPIs (admins). Filter by day, week, month, site, and encoder.</div>
+        <div class="modal-sub">Filter the roster below by period, site, and staff. KPIs and charts only count patients in that filter.</div>
       </div>
       <button class="dash-close" id="dashCloseBtn" title="Close">✕</button>
     </div>
@@ -8204,48 +8235,62 @@ function renderDashboard(){
       <td>${b.missed24}</td>
     </tr>`).join('');
 
+  const guideHtml = `
+    <div class="dash-guide">
+      <div class="dash-guide-title">How to read this dashboard</div>
+      <ul>
+        <li><b>Patients encoded</b> — how many patient records are in the current filter (period + site + staff).</li>
+        <li><b>Who encoded</b> — staff who first saved the patient on the roster.</li>
+        <li><b>Who submitted T1 / T2</b> — staff marked on <i>T1 submitted by</i> / <i>T2 submitted by</i> (can be different people).</li>
+        <li><b>Quality %</b> — share of those patients with MCA, T1, T2, or filed within 24 hours.</li>
+      </ul>
+    </div>`;
+
   const kpiHtml = `
     <div class="dash-section" style="margin-bottom:14px">
-      <h4>${isAdm ? 'Team quality KPIs' : 'My quality KPIs'}</h4>
+      <h4>Claim quality</h4>
+      <p class="dash-sec-help">% of patients in this filter who completed each claim step.</p>
       <div class="dash-cards kpi-cards">
-        <div class="dash-card"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">MCA on file<br><span class="kpi-sub">${mcaCount}/${total}</span></div></div>
-        <div class="dash-card accent-green"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">T1 submitted<br><span class="kpi-sub">${t1Count}/${total}</span></div></div>
-        <div class="dash-card accent-purple"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">T2 submitted<br><span class="kpi-sub">${t2Count}/${total}</span></div></div>
-        <div class="dash-card accent-amber"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24}/${total}</span></div></div>
-        <div class="dash-card accent-blue"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h<br><span class="kpi-sub">${within24Count}/${total}</span></div></div>
+        <div class="dash-card" title="Patients with digital MCA checked"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">Has MCA photo<br><span class="kpi-sub">${mcaCount} of ${total}</span></div></div>
+        <div class="dash-card accent-green" title="Patients with T1 date or T1 submitter"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">Reached T1<br><span class="kpi-sub">${t1Count} of ${total}</span></div></div>
+        <div class="dash-card accent-purple" title="Patients with T2 date or T2 submitter"><div class="dc-num">${pct(t2Count)}</div><div class="dc-lbl">Reached T2<br><span class="kpi-sub">${t2Count} of ${total}</span></div></div>
+        <div class="dash-card accent-amber" title="Marked missed 24h"><div class="dc-num">${pct(missed24)}</div><div class="dc-lbl">Missed 24h<br><span class="kpi-sub">${missed24} of ${total}</span></div></div>
+        <div class="dash-card accent-blue" title="Submitted within 24h checkbox"><div class="dc-num">${pct(within24Count)}</div><div class="dc-lbl">Within 24h<br><span class="kpi-sub">${within24Count} of ${total}</span></div></div>
       </div>
     </div>`;
 
   const cardsHtml = `
     <div class="dash-section" style="margin-bottom:14px">
-      <h4>Volume & benefits</h4>
+      <h4>Patient volume & benefits</h4>
+      <p class="dash-sec-help">Counts for the same filtered set of patients.</p>
       <div class="dash-cards">
-        <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients encoded</div></div>
+        <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients<br><span class="kpi-sub">in this filter</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered<br><span class="kpi-sub">${registeredOther} other facility</span></div></div>
-        <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice<br><span class="kpi-sub">${pct(riceCount)}</span></div></div>
-        <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab<br><span class="kpi-sub">${pct(labCount)}</span></div></div>
-        <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds<br><span class="kpi-sub">${pct(medCount)}</span></div></div>
-        <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending<br><span class="kpi-sub">no T1 yet</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice availed<br><span class="kpi-sub">${pct(riceCount)}</span></div></div>
+        <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab availed<br><span class="kpi-sub">${pct(labCount)}</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds availed<br><span class="kpi-sub">${pct(medCount)}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Still pending<br><span class="kpi-sub">no T1 yet</span></div></div>
       </div>
     </div>`;
 
   const encoderHtml = `
     <div class="dash-section">
-      <h4>${isAdm ? 'Staff productivity (encode + T1/T2)' : 'My productivity'}</h4>
+      <h4>${isAdm ? 'Who did the work' : 'My work'}</h4>
+      <p class="dash-sec-help"><b>Encoded</b> = created the patient record. <b>T1 / T2</b> = marked as the submitter for that claim step. One patient can credit two different people.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
               <th style="text-align:left">Staff</th>
-              <th>Encoded</th>
-              <th>T1 submitted</th>
-              <th>T2 submitted</th>
-              <th>MCA</th>
-              <th>Activity</th>
-              <th style="text-align:left">Sites / groups</th>
+              <th title="Patients this person first saved">Encoded</th>
+              <th title="Patients where they are T1 submitted by">T1 by them</th>
+              <th title="Patients where they are T2 submitted by">T2 by them</th>
+              <th title="MCA among patients they encoded">MCA (encoded)</th>
+              <th title="Encoded + T1 + T2 counts">Total actions</th>
+              <th style="text-align:left">Sites touched</th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="7">No staff data in this scope</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="7">No staff activity in this filter</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -8253,12 +8298,13 @@ function renderDashboard(){
   const teamTableHtml = `
     <div class="dash-section">
       <h4>By site / group</h4>
+      <p class="dash-sec-help">Same patients, grouped by mobile / walk-in / profiling list.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
               <th style="text-align:left">Site / group</th>
-              <th>Total</th>
+              <th>Patients</th>
               <th>MCA</th>
               <th>Rice</th>
               <th>Lab</th>
@@ -8274,6 +8320,7 @@ function renderDashboard(){
     </div>`;
 
   dashBody.innerHTML = `
+    ${guideHtml}
     ${kpiHtml}
     ${cardsHtml}
     ${encoderHtml}
@@ -8413,7 +8460,12 @@ function renderTrendChart(mode){
   const peakKey = keys.length ? keys[counts.indexOf(peak)] : '';
   let peakLabel = peakKey;
   if(/^\d{4}-\d{2}$/.test(peakKey)) peakLabel = monthLabel(peakKey);
-  else if(/^\d{4}-\d{2}-\d{2}$/.test(peakKey)) peakLabel = peakKey;
+  else if(/^\d{4}-\d{2}-\d{2}$/.test(peakKey)){
+    try{
+      const d = new Date(peakKey+'T12:00:00');
+      peakLabel = d.toLocaleDateString([], {month:'short', day:'numeric'});
+    }catch(e){ peakLabel = peakKey.slice(5); }
+  }
   if(!keys.length){
     timeHtml = `<div class="vol-card"><div class="dash-empty" style="padding:28px;">No dated records in this scope.</div></div>`;
   } else {
@@ -8485,17 +8537,17 @@ function renderTrendChart(mode){
         <div class="sm-total">${s.activity} action${s.activity===1?'':'s'}</div>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-enc"></i> Encoded</span>
+        <span class="sm-label"><i class="lg lg-enc"></i> Created records</span>
         <div class="sm-track"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
         <span class="sm-count">${s.encoded}</span>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-t1"></i> T1 submitted</span>
+        <span class="sm-label"><i class="lg lg-t1"></i> Submitted T1</span>
         <div class="sm-track"><i class="sm-fill sm-t1" style="width:${pct1}%"></i></div>
         <span class="sm-count">${s.t1}</span>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-t2"></i> T2 submitted</span>
+        <span class="sm-label"><i class="lg lg-t2"></i> Submitted T2</span>
         <div class="sm-track"><i class="sm-fill sm-t2" style="width:${pct2}%"></i></div>
         <span class="sm-count">${s.t2}</span>
       </div>
