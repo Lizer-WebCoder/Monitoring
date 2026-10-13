@@ -4752,6 +4752,45 @@
   }
   .acc-del-btn:hover{ background: #fee2e2; color: #b91c1c; }
 
+
+  .acc-log-toolbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .acc-log-toolbar .acc-log-title{ margin-bottom: 0 !important; }
+  .acc-log-show{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+  }
+  .acc-log-show select{
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 0 8px;
+  }
+  .acc-log-pager{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 4px 4px;
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+  }
+
 </style>
 </head>
 <body>
@@ -8982,7 +9021,13 @@ function buildEmployeeDutyHtml(scoped){
   }).join('');
 
   // Recent manual logs
-  const recent = acc.slice(0, 12).map(a => {
+  const accShow = (typeof window._accLogShow === 'number' ? window._accLogShow : 10);
+  const accPage = (typeof window._accLogPage === 'number' ? window._accLogPage : 0);
+  const accTotal = acc.length;
+  const accPages = Math.max(1, Math.ceil(accTotal / accShow) || 1);
+  const accSafePage = Math.min(accPage, accPages - 1);
+  const accSlice = acc.slice(accSafePage * accShow, accSafePage * accShow + accShow);
+  const recent = accSlice.map(a => {
     const canDel = (typeof isAdmin === 'function' && isAdmin()) || (currentUser && String(a.userId) === String(currentUser.id));
     const label = accomplishmentLabel(a.activity, a.customLabel);
     const initial = String(a.userName || '?').trim().charAt(0).toUpperCase() || '?';
@@ -9025,8 +9070,23 @@ function buildEmployeeDutyHtml(scoped){
       </table>
     </div>
     <div class="acc-log-panel">
-      <div class="acc-log-title">Recent logged tasks ${range.start ? '('+escapeHtml(range.start)+(range.end && range.end!==range.start ? ' → '+escapeHtml(range.end) : '')+')' : '(all time)'}</div>
+      <div class="acc-log-toolbar">
+        <div class="acc-log-title">Recent logged tasks ${range.start ? '('+escapeHtml(range.start)+(range.end && range.end!==range.start ? ' → '+escapeHtml(range.end) : '')+')' : '(all time)'} · ${accTotal} total</div>
+        <div class="acc-log-show">
+          <label>Show</label>
+          <select id="accLogShow">
+            <option value="10" ${accShow===10?'selected':''}>10</option>
+            <option value="20" ${accShow===20?'selected':''}>20</option>
+            <option value="50" ${accShow===50?'selected':''}>50</option>
+          </select>
+        </div>
+      </div>
       ${recent || '<div class="dash-empty" style="padding:10px;">No manual tasks logged in this period.</div>'}
+      ${accTotal > accShow ? `<div class="acc-log-pager">
+        <button type="button" class="pager-btn" id="accLogPrev" ${accSafePage<=0?'disabled':''}>← Prev</button>
+        <span class="pager-info">Page ${accSafePage+1} / ${accPages}</span>
+        <button type="button" class="pager-btn" id="accLogNext" ${accSafePage>=accPages-1?'disabled':''}>Next →</button>
+      </div>` : ''}
     </div>
   </div>`;
 }
@@ -9231,9 +9291,9 @@ function renderDashboard(){
       <summary class="dash-guide-title">How to read this dashboard</summary>
       <ul>
         <li><b>Patients</b> — records in the current filter (period + site + staff).</li>
-        <li><b>Inputted</b> — who first entered the patient on DR CARE.</li>
+        <li><b>Claim quality</b> — % with MCA, T1, T2, or filed within 24h.</li>
         <li><b>T1 / T2 WAH·Bizbox</b> — submissions by system (set System on the patient row).</li>
-        <li><b>Quality %</b> — share with MCA, T1, T2, or within 24h.</li>
+        <li><b>Logged tasks</b> — manual duties (inquiries, RTOF, printed MCAs) via Log task.</li>
       </ul>
     </details>`;
 
@@ -9327,6 +9387,19 @@ function renderDashboard(){
       const id = btn.getAttribute('data-acc-id');
       if(id){ deleteAccomplishment(id); renderDashboard(); }
     });
+  });
+  document.getElementById('accLogShow')?.addEventListener('change', (e)=>{
+    window._accLogShow = parseInt(e.target.value, 10) || 10;
+    window._accLogPage = 0;
+    renderDashboard();
+  });
+  document.getElementById('accLogPrev')?.addEventListener('click', ()=>{
+    window._accLogPage = Math.max(0, (window._accLogPage||0) - 1);
+    renderDashboard();
+  });
+  document.getElementById('accLogNext')?.addEventListener('click', ()=>{
+    window._accLogPage = (window._accLogPage||0) + 1;
+    renderDashboard();
   });
   // Sites touched — expand full list
   dashBody.querySelectorAll('.site-more-btn').forEach(btn=>{
