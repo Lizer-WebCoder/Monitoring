@@ -4594,6 +4594,164 @@
   .sys-select option[value="WAH"]{ color: #0f766e; }
   .sys-select option[value="BIZBOX"]{ color: #5b8def; }
 
+
+  .acc-modal{
+    max-width: 440px !important;
+    width: calc(100% - 28px) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  .acc-modal .dash-head{
+    padding: 18px 20px 12px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--line);
+  }
+  .acc-modal-kicker{
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--label-accent);
+    margin-bottom: 4px;
+  }
+  .acc-modal h3{ font-size: 18px !important; margin: 0 0 4px !important; }
+  .acc-modal .modal-sub{ font-size: 12.5px !important; max-width: 36ch; }
+  .acc-form{ padding: 16px 20px 8px; display: flex; flex-direction: column; gap: 14px; }
+  .acc-field label{
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .acc-optional{ text-transform: none; letter-spacing: 0; font-weight: 600; opacity: 0.7; }
+  .acc-input{
+    width: 100%;
+    height: 42px;
+    border-radius: 11px !important;
+    border: 1px solid var(--line) !important;
+    background: var(--card) !important;
+    padding: 0 12px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    color: var(--ink) !important;
+    box-sizing: border-box;
+  }
+  .acc-input:focus{
+    outline: none;
+    border-color: var(--teal) !important;
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.18);
+  }
+  .acc-field-row{
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 12px;
+  }
+  .acc-stepper{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .acc-step{
+    width: 40px;
+    height: 42px;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--table-head);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .acc-step:hover{ background: var(--line); }
+  .acc-count-input{
+    text-align: center;
+    font-weight: 750;
+    flex: 1;
+  }
+  .acc-foot{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--table-head);
+  }
+  .acc-save{ min-width: 120px; }
+
+  .acc-log-panel{
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    padding: 12px 12px 8px !important;
+    background: var(--card) !important;
+  }
+  .acc-log-title{
+    font-size: 11px !important;
+    margin-bottom: 10px !important;
+  }
+  .acc-log-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 8px !important;
+    border-bottom: 1px solid var(--line) !important;
+    border-radius: 8px;
+  }
+  .acc-log-row:last-child{ border-bottom: none !important; }
+  .acc-log-row:hover{ background: var(--table-head); }
+  .acc-avatar{
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #0f766e, #14b8a6);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .acc-log-main{ flex: 1; min-width: 0; }
+  .acc-log-top{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin-bottom: 3px;
+  }
+  .acc-user{ font-weight: 750; font-size: 13px; color: var(--ink); }
+  .acc-pill{
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    color: var(--teal-deep);
+  }
+  body.dark .acc-pill{ color: var(--teal); }
+  .acc-count{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .acc-log-meta{ font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  .acc-del-btn{
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .acc-del-btn:hover{ background: #fee2e2; color: #b91c1c; }
+
 </style>
 </head>
 <body>
@@ -5099,41 +5257,46 @@
 
 <!-- Accomplishment / task log -->
 <div class="dash-backdrop" id="accomplishmentBackdrop">
-  <div class="dash-modal" style="max-width:480px;">
+  <div class="dash-modal acc-modal">
     <div class="dash-head">
       <div>
+        <div class="acc-modal-kicker">Staff KPI</div>
         <h3>Log accomplishment</h3>
-        <div class="modal-sub">Record finished tasks (inquiries, RTOF, printed MCAs, etc.) for admin KPI review.</div>
+        <div class="modal-sub">Record finished duties for admin review — inquiries, RTOF, printed MCAs, and custom tasks.</div>
       </div>
       <button class="dash-close" id="accomplishmentCloseBtn" title="Close">✕</button>
     </div>
-    <div class="form-grid" style="grid-template-columns:1fr;">
-      <div class="full">
-        <label for="acc_activity">Task</label>
-        <select id="acc_activity"></select>
+    <div class="acc-form">
+      <div class="acc-field">
+        <label for="acc_activity">Task type</label>
+        <select id="acc_activity" class="acc-input"></select>
       </div>
-      <div class="full" id="acc_customWrap" style="display:none;">
+      <div class="acc-field" id="acc_customWrap" style="display:none;">
         <label for="acc_custom">Custom task name</label>
-        <input type="text" id="acc_custom" placeholder="e.g. Filed reports">
+        <input type="text" id="acc_custom" class="acc-input" placeholder="e.g. Filed branch reports">
       </div>
-      <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <label for="acc_count">Count</label>
-          <input type="number" id="acc_count" min="1" value="1">
+      <div class="acc-field-row">
+        <div class="acc-field">
+          <label for="acc_count">How many</label>
+          <div class="acc-stepper">
+            <button type="button" class="acc-step" id="acc_dec" aria-label="Decrease">−</button>
+            <input type="number" id="acc_count" class="acc-input acc-count-input" min="1" value="1">
+            <button type="button" class="acc-step" id="acc_inc" aria-label="Increase">+</button>
+          </div>
         </div>
-        <div>
-          <label for="acc_date">Date</label>
-          <input type="date" id="acc_date">
+        <div class="acc-field">
+          <label for="acc_date">Date completed</label>
+          <input type="date" id="acc_date" class="acc-input">
         </div>
       </div>
-      <div class="full">
-        <label for="acc_note">Note (optional)</label>
-        <input type="text" id="acc_note" placeholder="Brief detail…">
+      <div class="acc-field">
+        <label for="acc_note">Note <span class="acc-optional">optional</span></label>
+        <input type="text" id="acc_note" class="acc-input" placeholder="e.g. Maasin phone call — YAKAP concerns">
       </div>
     </div>
-    <div class="modal-foot">
+    <div class="acc-foot">
       <button type="button" class="btn btn-ghost" id="acc_cancelBtn">Cancel</button>
-      <button type="button" class="btn btn-primary" id="acc_saveBtn">Save task</button>
+      <button type="button" class="btn btn-primary acc-save" id="acc_saveBtn">Save task</button>
     </div>
   </div>
 </div>
@@ -8809,13 +8972,11 @@ function buildEmployeeDutyHtml(scoped){
     const extras = taskKeyList.map(k => `<td>${r.tasks[k] || 0}</td>`).join('');
     return `<tr>
       <td style="text-align:left;font-weight:600">${escapeHtml(r.name)}</td>
-      <td>${r.encoded}</td>
       <td>${r.t1Wah||0}</td>
       <td>${r.t1Biz||0}</td>
       <td>${r.t2Wah||0}</td>
       <td>${r.t2Biz||0}</td>
       <td>${r.mca}</td>
-      <td>${r.walkin}</td>
       ${extras}
     </tr>`;
   }).join('');
@@ -8823,13 +8984,19 @@ function buildEmployeeDutyHtml(scoped){
   // Recent manual logs
   const recent = acc.slice(0, 12).map(a => {
     const canDel = (typeof isAdmin === 'function' && isAdmin()) || (currentUser && String(a.userId) === String(currentUser.id));
+    const label = accomplishmentLabel(a.activity, a.customLabel);
+    const initial = String(a.userName || '?').trim().charAt(0).toUpperCase() || '?';
     return `<div class="acc-log-row">
+      <div class="acc-avatar" aria-hidden="true">${escapeHtml(initial)}</div>
       <div class="acc-log-main">
-        <b>${escapeHtml(a.userName || 'Staff')}</b>
-        <span>${escapeHtml(accomplishmentLabel(a.activity, a.customLabel))}</span>
-        <span class="acc-log-meta">×${a.count} · ${escapeHtml(a.date||'')}${a.note ? ' · ' + escapeHtml(a.note) : ''}</span>
+        <div class="acc-log-top">
+          <span class="acc-user">${escapeHtml(a.userName || 'Staff')}</span>
+          <span class="acc-pill">${escapeHtml(label)}</span>
+          <span class="acc-count">×${a.count}</span>
+        </div>
+        <div class="acc-log-meta">${escapeHtml(a.date||'')}${a.note ? ' · ' + escapeHtml(a.note) : ''}</div>
       </div>
-      ${canDel ? `<button type="button" class="btn btn-ghost btn-sm acc-del" data-acc-id="${escapeAttr(a.id)}">Delete</button>` : ''}
+      ${canDel ? `<button type="button" class="acc-del-btn acc-del" data-acc-id="${escapeAttr(a.id)}" title="Delete">✕</button>` : ''}
     </div>`;
   }).join('');
 
@@ -8837,7 +9004,7 @@ function buildEmployeeDutyHtml(scoped){
     <div class="duty-head">
       <div>
         <h4 style="border:none;padding:0;margin:0 0 4px;">Employee duties & accomplishments</h4>
-        <p class="dash-sec-help" style="margin:0;"><b>Inputted</b> = entered patient on DR CARE. <b>T1/T2 WAH·Bizbox</b> = submissions by system (patient System column). Manual tasks (inquiries, RTOF) are logged separately.</p>
+        <p class="dash-sec-help" style="margin:0;"><b>T1/T2 WAH·Bizbox</b> = claim submissions by system (patient System column). Manual tasks below are logged by staff.</p>
       </div>
       <button type="button" class="btn btn-primary btn-sm" id="dashLogWorkBtn">+ Log task</button>
     </div>
@@ -8846,13 +9013,11 @@ function buildEmployeeDutyHtml(scoped){
         <thead>
           <tr>
             <th style="text-align:left">Employee</th>
-            <th title="Patients first entered on DR CARE">Inputted</th>
             <th title="T1 submissions on WAH">T1 WAH</th>
             <th title="T1 submissions on Bizbox">T1 Bizbox</th>
             <th title="T2 submissions on WAH">T2 WAH</th>
             <th title="T2 submissions on Bizbox">T2 Bizbox</th>
             <th>MCA</th>
-            <th title="Walk-in group patients">Walk-ins</th>
             ${headExtra}
           </tr>
         </thead>
@@ -9496,6 +9661,14 @@ document.getElementById('accomplishmentCloseBtn')?.addEventListener('click', clo
 document.getElementById('acc_cancelBtn')?.addEventListener('click', closeAccomplishmentModal);
 document.getElementById('acc_saveBtn')?.addEventListener('click', saveAccomplishmentFromForm);
 document.getElementById('acc_activity')?.addEventListener('change', toggleAccCustom);
+document.getElementById('acc_inc')?.addEventListener('click', ()=>{
+  const el = document.getElementById('acc_count');
+  if(el) el.value = String(Math.max(1, (parseInt(el.value,10)||1)+1));
+});
+document.getElementById('acc_dec')?.addEventListener('click', ()=>{
+  const el = document.getElementById('acc_count');
+  if(el) el.value = String(Math.max(1, (parseInt(el.value,10)||1)-1));
+});
 document.getElementById('accomplishmentBackdrop')?.addEventListener('click', e => {
   if(e.target && e.target.id === 'accomplishmentBackdrop') closeAccomplishmentModal();
 });
