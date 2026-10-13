@@ -4804,6 +4804,368 @@
     margin-top: 6px;
   }
 
+
+/* ========== Global UI system polish ========== */
+:root{
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --ctrl-h: 36px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --shadow-soft: 0 1px 2px rgba(15, 54, 48, 0.06), 0 4px 12px rgba(15, 54, 48, 0.04);
+}
+
+/* Buttons — one family */
+.btn,
+button.btn,
+.tt-btn,
+.pager-btn,
+.toolbar .btn,
+.team-tools .tt-btn{
+  height: var(--ctrl-h) !important;
+  min-height: var(--ctrl-h) !important;
+  padding: 0 14px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.01em;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit !important;
+}
+.btn:hover,
+.tt-btn:hover,
+.pager-btn:hover{
+  background: var(--table-head) !important;
+  border-color: color-mix(in srgb, var(--teal) 35%, var(--line)) !important;
+}
+.btn:active,
+.tt-btn:active{ transform: translateY(1px); }
+
+.btn-primary,
+.tt-primary,
+button.btn-primary{
+  background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%) !important;
+  border-color: #0f766e !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+.btn-primary:hover,
+.tt-primary:hover{
+  background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%) !important;
+  border-color: #0d9488 !important;
+  color: #fff !important;
+}
+
+.btn-ghost,
+button.btn-ghost{
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--muted) !important;
+  font-weight: 650 !important;
+}
+.btn-ghost:hover{
+  background: var(--table-head) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+.btn-sm,
+.btn.btn-sm{
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.tt-danger,
+.btn-danger{
+  color: #b91c1c !important;
+  border-color: color-mix(in srgb, #ef4444 30%, var(--line)) !important;
+  background: color-mix(in srgb, #fef2f2 80%, var(--card)) !important;
+}
+body.dark .tt-danger,
+body.dark .btn-danger{
+  background: color-mix(in srgb, #7f1d1d 25%, var(--card)) !important;
+  color: #fca5a5 !important;
+}
+
+/* Form controls match button height */
+select,
+.toolbar select,
+.toolbar input[type=month],
+.toolbar input[type=date],
+.toolbar input[type=search],
+.toolbar input[type=text],
+input[type=search],
+.badge-select,
+.sys-select{
+  height: var(--ctrl-h) !important;
+  min-height: var(--ctrl-h) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+  color: var(--ink) !important;
+  font-size: 12.5px !important;
+  font-family: inherit !important;
+  padding: 0 12px !important;
+  box-sizing: border-box;
+}
+.badge-select,
+.sys-select{
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 8px !important;
+  font-size: 12px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* Toolbar layout */
+.toolbar{
+  gap: 10px !important;
+  margin: 12px auto 12px !important;
+}
+.toolbar-row,
+.toolbar .toolbar-row,
+.tb-group{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.toolbar-row{
+  padding: 10px 12px !important;
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-soft);
+}
+.toolbar-row + .toolbar-row,
+.toolbar > .toolbar-row + .toolbar-row{
+  margin-top: 0 !important;
+}
+.tb-group{
+  gap: 6px !important;
+}
+.tb-group-end{
+  margin-left: auto !important;
+}
+
+/* Search bar prominence */
+#search,
+input#search{
+  flex: 1 1 220px !important;
+  min-width: 180px !important;
+  height: var(--ctrl-h) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0 14px !important;
+}
+
+/* Team card */
+.team-group{
+  margin: 0 auto 14px !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.team-head{
+  padding: 12px 14px !important;
+  gap: 10px !important;
+}
+.team-head-top{
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+.team-title-block{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+.team-title-block h2{
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+}
+.team-tools{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-left: auto !important;
+}
+.team-head-bottom{
+  padding: 0 14px 12px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.handoff-box{
+  flex: 1 1 200px !important;
+  min-width: 0 !important;
+}
+.handoff-box input{
+  width: 100% !important;
+  height: 34px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--line) !important;
+  padding: 0 12px !important;
+  background: var(--table-head) !important;
+  font-size: 12.5px !important;
+}
+
+/* Status chips OPENED / STAFF ON SITE / CLOSED */
+.team-head-bottom label,
+.mission-checks label,
+.team-status-checks label{
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+}
+
+/* Table */
+.table-wrap{
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+thead th{
+  padding: 9px 8px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.05em !important;
+}
+tbody td{
+  padding: 8px 8px !important;
+  vertical-align: middle !important;
+}
+tbody tr:hover{
+  background: color-mix(in srgb, var(--table-head) 70%, transparent) !important;
+}
+
+/* Pager */
+.team-pager{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  border-top: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+}
+.pager-left, .pager-right{
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.pager-info{
+  font-size: 12px !important;
+  color: var(--muted) !important;
+  font-weight: 600 !important;
+}
+
+/* Header / identity strip */
+header{
+  padding: 12px 18px !important;
+}
+.stat-strip{
+  gap: 6px !important;
+}
+.stat-pill,
+.stat-strip > div{
+  border-radius: var(--radius-md) !important;
+  padding: 6px 10px !important;
+  min-width: 52px;
+  text-align: center;
+}
+
+/* Legend / footer */
+.legend-wrap,
+details.legend-wrap{
+  max-width: 1600px;
+  margin: 8px auto 20px !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.legend-summary{
+  padding: 10px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+  color: var(--muted) !important;
+  cursor: pointer;
+}
+.app-footer{
+  padding: 16px !important;
+  font-size: 11.5px !important;
+  color: var(--muted) !important;
+  opacity: 0.85;
+}
+
+/* Type / count badges */
+.type-badge,
+.photo-pct,
+.count,
+.staff-toggle{
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 3px 9px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+  color: var(--muted) !important;
+}
+
+/* Reduce noisy double borders in toolbar stacks */
+.toolbar{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 16px !important;
+}
+
+@media (max-width: 900px){
+  .team-tools{ margin-left: 0 !important; width: 100%; }
+  .tb-group-end{ margin-left: 0 !important; }
+  :root{ --ctrl-h: 34px; }
+}
+
 </style>
 </head>
 <body>
