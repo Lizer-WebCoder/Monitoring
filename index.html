@@ -4116,6 +4116,80 @@
   .lg-t2{ background: #8b6bc9; }
   body.dark .lg-enc{ background: var(--teal); }
 
+
+  /* Volume over time — polished chart */
+  .vol-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 16px 10px;
+    box-shadow: 0 2px 8px rgba(11,54,48,0.05);
+  }
+  .vol-stats{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .vol-stat{
+    background: var(--table-head);
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .vol-stat .vs-num{
+    font-size: 20px;
+    font-weight: 800;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--teal-deep);
+    line-height: 1.1;
+  }
+  body.dark .vol-stat .vs-num{ color: var(--teal); }
+  .vol-stat .vs-lbl{
+    font-size: 10.5px;
+    font-weight: 650;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+  .vol-chart-wrap{
+    overflow-x: auto;
+    margin: 0 -4px;
+  }
+  .vol-svg{ display: block; min-width: 240px; }
+  .vol-grid{
+    stroke: var(--line);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+  .vol-axis{
+    fill: var(--muted);
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .vol-bar{
+    fill: url(#volBarGrad);
+    filter: drop-shadow(0 2px 4px rgba(15,118,110,0.25));
+  }
+  body.dark .vol-bar{ fill: url(#volBarGradDark); }
+  .vol-bar-peak{
+    filter: drop-shadow(0 3px 8px rgba(15,118,110,0.4));
+  }
+  .vol-val{
+    fill: var(--ink);
+    font-size: 12px;
+    font-weight: 800;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .vol-label{
+    fill: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  /* hide old trend card chrome if leftover */
+  .dash-trend-card{ background: transparent; border: none; padding: 0; }
+
 </style>
 </head>
 <body>
@@ -8230,32 +8304,69 @@ function renderTrendChart(mode){
     .map(([id,u])=>({id, ...u, activity: u.encoded+u.t1+u.t2}))
     .sort((a,b)=> b.activity - a.activity);
 
-  // Time chart SVG
+  // Time chart SVG — polished volume card
   let timeHtml = '';
+  const totalVol = counts.reduce((a,b)=>a+b, 0);
+  const peak = maxCount;
+  const peakKey = keys.length ? keys[counts.indexOf(peak)] : '';
+  let peakLabel = peakKey;
+  if(/^\d{4}-\d{2}$/.test(peakKey)) peakLabel = monthLabel(peakKey);
+  else if(/^\d{4}-\d{2}-\d{2}$/.test(peakKey)) peakLabel = peakKey;
   if(!keys.length){
-    timeHtml = `<div class="dash-empty" style="padding:18px;">No dated records in this scope.</div>`;
+    timeHtml = `<div class="vol-card"><div class="dash-empty" style="padding:28px;">No dated records in this scope.</div></div>`;
   } else {
-    const barW = Math.min(56, Math.max(28, Math.floor(520 / Math.max(keys.length,1))));
-    const gap = 12, chartH = 168, topPad = 28, bottomPad = 28, leftPad = 12;
+    const n = Math.max(keys.length, 1);
+    const leftPad = 36, rightPad = 16, topPad = 32, bottomPad = 36;
+    const chartH = 200;
     const barAreaH = chartH - topPad - bottomPad;
-    const svgW = Math.max(keys.length * (barW + gap) + leftPad + 12, 200);
+    const plotW = Math.max(n * 64, 280);
+    const svgW = leftPad + plotW + rightPad;
+    const barW = Math.min(44, Math.max(22, Math.floor((plotW - n * 10) / n)));
+    const gap = (plotW - n * barW) / Math.max(n, 1);
     let bars = '';
-    // baseline
-    bars += `<line x1="${leftPad}" y1="${chartH-bottomPad}" x2="${svgW-8}" y2="${chartH-bottomPad}" stroke="currentColor" stroke-opacity="0.12" />`;
+    // defs gradient
+    bars += `<defs>
+      <linearGradient id="volBarGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#0f766e"/>
+        <stop offset="100%" stop-color="#2dd4bf"/>
+      </linearGradient>
+      <linearGradient id="volBarGradDark" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#115e59"/>
+        <stop offset="100%" stop-color="#5eead4"/>
+      </linearGradient>
+    </defs>`;
+    // horizontal grid lines (4 levels)
+    for(let g=0; g<=4; g++){
+      const gy = topPad + barAreaH * (1 - g/4);
+      const gval = Math.round(maxCount * g/4);
+      bars += `<line x1="${leftPad}" y1="${gy}" x2="${svgW-rightPad}" y2="${gy}" class="vol-grid"/>`;
+      bars += `<text x="${leftPad-8}" y="${gy+3}" text-anchor="end" class="vol-axis">${gval}</text>`;
+    }
     keys.forEach((k, i)=>{
       const c = counts[i];
-      const h = Math.round((c / maxCount) * barAreaH);
-      const x = leftPad + i * (barW + gap);
-      const y = chartH - bottomPad - h;
+      const h = Math.max(4, Math.round((c / maxCount) * barAreaH));
+      const x = leftPad + gap/2 + i * (barW + gap);
+      const y = topPad + barAreaH - h;
       let shortLabel = k;
       if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + " '" + k.slice(2,4);
       else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
+      const isPeak = c === maxCount && c > 0;
       bars += `
-        <rect class="dash-trend-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h,3)}" rx="6"></rect>
-        <text class="dash-trend-num" x="${x + barW/2}" y="${y - 8}" text-anchor="middle">${c}</text>
-        <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 8}" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
+        <rect class="vol-bar ${isPeak?'vol-bar-peak':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="8"/>
+        <text class="vol-val" x="${x + barW/2}" y="${y - 8}" text-anchor="middle">${c}</text>
+        <text class="vol-label" x="${x + barW/2}" y="${chartH - 12}" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
     });
-    timeHtml = `<div class="dash-trend-card"><svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${bars}</svg></div>`;
+    timeHtml = `
+      <div class="vol-card">
+        <div class="vol-stats">
+          <div class="vol-stat"><div class="vs-num">${totalVol}</div><div class="vs-lbl">Total patients</div></div>
+          <div class="vol-stat"><div class="vs-num">${peak}</div><div class="vs-lbl">Peak · ${escapeHtml(peakLabel || '—')}</div></div>
+          <div class="vol-stat"><div class="vs-num">${keys.length}</div><div class="vs-lbl">${mode==='week'?'Days':mode==='day'?'Day':'Periods'}</div></div>
+        </div>
+        <div class="vol-chart-wrap">
+          <svg class="vol-svg" viewBox="0 0 ${svgW} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${bars}</svg>
+        </div>
+      </div>`;
   }
 
   // Staff horizontal metrics
