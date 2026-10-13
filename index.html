@@ -4221,6 +4221,96 @@
     line-height: 1.4;
   }
 
+
+  .vol-axis-title{
+    fill: var(--muted);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+  }
+  .vol-explain{
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 10px;
+    line-height: 1.4;
+  }
+  .vol-stat .vs-hint{
+    display: block;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-top: 2px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 10.5px;
+  }
+
+
+  .site-chip{
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 650;
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin: 2px 4px 2px 0;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .site-chip b{ font-weight: 800; color: var(--teal-deep); margin-left: 2px; }
+  body.dark .site-chip b{ color: var(--teal); }
+  .site-more-btn{
+    display: inline-flex;
+    align-items: center;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--teal-deep);
+    background: transparent;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  body.dark .site-more-btn{ color: var(--teal); }
+  .site-more-btn:hover{ background: var(--table-head); }
+  .site-full-backdrop{
+    position: fixed; inset: 0; z-index: 12000;
+    background: rgba(11,30,28,0.35);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .15s ease;
+    padding: 20px;
+  }
+  .site-full-backdrop.open{ opacity: 1; }
+  .site-full-panel{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: min(420px, 100%);
+    max-height: min(70vh, 520px);
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 40px rgba(11,54,48,0.18);
+  }
+  .site-full-head{
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line);
+  }
+  .site-full-head h4{ margin: 0; font-size: 15px; }
+  .site-full-sub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .site-full-body{ overflow-y: auto; padding: 8px 12px 14px; }
+  .site-full-row{
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .site-full-row:last-child{ border-bottom: none; }
+  .site-full-row span{ font-weight: 650; color: var(--ink); word-break: break-word; }
+  .site-full-row b{ font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+
 </style>
 </head>
 <body>
@@ -8193,8 +8283,23 @@ function renderDashboard(){
   /* Staff productivity — single source of truth */
   const staffStats = buildStaffStats(scoped);
   const userRows = staffStats.map(u=>{
-      const teamBreakdown = Object.entries(u.teams).sort((a,b)=>b[1]-a[1])
-        .map(([t,c])=> `${escapeHtml(t)} (${c})`).join(', ');
+      const teamEntries = Object.entries(u.teams).sort((a,b)=>b[1]-a[1]);
+      const siteCount = teamEntries.length;
+      let sitesCell = '—';
+      if(siteCount === 1){
+        const [t,c] = teamEntries[0];
+        sitesCell = `<span class="site-chip">${escapeHtml(t)} <b>${c}</b></span>`;
+      } else if(siteCount > 1){
+        const preview = teamEntries.slice(0,2).map(([t,c]) =>
+          `<span class="site-chip">${escapeHtml(t)} <b>${c}</b></span>`
+        ).join(' ');
+        const more = siteCount - 2;
+        const payload = encodeURIComponent(JSON.stringify(teamEntries));
+        sitesCell = `${preview}
+          <button type="button" class="site-more-btn" data-staff="${escapeAttr(u.name)}" data-sites="${payload}">
+            ${more > 0 ? '+'+more+' more' : 'View all'} · ${siteCount} sites
+          </button>`;
+      }
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
         <td>${u.encoded}</td>
@@ -8202,7 +8307,7 @@ function renderDashboard(){
         <td>${u.t2}</td>
         <td>${u.mca}</td>
         <td>${u.activity}</td>
-        <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
+        <td style="text-align:left;min-width:160px;max-width:280px">${sitesCell}</td>
       </tr>`;
     }).join('');
 
@@ -8276,7 +8381,7 @@ function renderDashboard(){
   const encoderHtml = `
     <div class="dash-section">
       <h4>${isAdm ? 'Who did the work' : 'My work'}</h4>
-      <p class="dash-sec-help"><b>Encoded</b> = created the patient record. <b>T1 / T2</b> = marked as the submitter for that claim step. One patient can credit two different people.</p>
+      <p class="dash-sec-help"><b>Encoded</b> = created the patient record. <b>T1 / T2</b> = marked as the submitter for that claim step. One patient can credit two different people.<br>Only staff with at least one action in this filter are listed. Use the Encoder(s) filter to focus on one person.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
@@ -8330,6 +8435,39 @@ function renderDashboard(){
       <div class="dash-trend-wrap" id="dashTrendWrap"></div>
     </div>
   `;
+  // Sites touched — expand full list
+  dashBody.querySelectorAll('.site-more-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      let entries = [];
+      try{ entries = JSON.parse(decodeURIComponent(btn.getAttribute('data-sites')||'[]')); }catch(err){}
+      const name = btn.getAttribute('data-staff') || 'Staff';
+      const rows = entries.map(([t,c]) =>
+        `<div class="site-full-row"><span>${escapeHtml(t)}</span><b>${c} patient${c===1?'':'s'}</b></div>`
+      ).join('');
+      const existing = document.getElementById('siteFullModal');
+      if(existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.id = 'siteFullModal';
+      modal.className = 'site-full-backdrop';
+      modal.innerHTML = `<div class="site-full-panel" role="dialog">
+        <div class="site-full-head">
+          <div>
+            <h4>Sites touched</h4>
+            <div class="site-full-sub">${escapeHtml(name)} · ${entries.length} site${entries.length===1?'':'s'}</div>
+          </div>
+          <button type="button" class="dash-close" id="siteFullClose" title="Close"></button>
+        </div>
+        <div class="site-full-body">${rows || '<div class="dash-empty">No sites</div>'}</div>
+      </div>`;
+      document.body.appendChild(modal);
+      requestAnimationFrame(()=> modal.classList.add('open'));
+      const close = ()=>{ modal.classList.remove('open'); setTimeout(()=> modal.remove(), 180); };
+      modal.querySelector('#siteFullClose')?.addEventListener('click', close);
+      modal.addEventListener('click', (ev)=>{ if(ev.target === modal) close(); });
+    });
+  });
   renderTrendChart(mode);
 }
 
@@ -8453,32 +8591,45 @@ function renderTrendChart(mode){
     });
   }
 
-  // Time chart SVG — polished volume card
+  // Volume chart — clear patient counts, clean integer Y-axis
   let timeHtml = '';
   const totalVol = counts.reduce((a,b)=>a+b, 0);
   const peak = maxCount;
   const peakKey = keys.length ? keys[counts.indexOf(peak)] : '';
   let peakLabel = peakKey;
-  if(/^\d{4}-\d{2}$/.test(peakKey)) peakLabel = monthLabel(peakKey);
-  else if(/^\d{4}-\d{2}-\d{2}$/.test(peakKey)){
+  if(/^\d{4}-\d{2}$/.test(String(peakKey))) peakLabel = monthLabel(peakKey);
+  else if(/^\d{4}-\d{2}-\d{2}$/.test(String(peakKey))){
     try{
       const d = new Date(peakKey+'T12:00:00');
-      peakLabel = d.toLocaleDateString([], {month:'short', day:'numeric'});
-    }catch(e){ peakLabel = peakKey.slice(5); }
+      peakLabel = d.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+    }catch(e){ peakLabel = String(peakKey).slice(5); }
   }
+
+  const unitWord = bucketKind === 'staff' ? 'patients encoded' : 'patients encoded';
+  const peakHelp = bucketKind === 'staff'
+    ? ('Most encodings: ' + (peakLabel || '—'))
+    : ('Busiest day: ' + (peakLabel || '—') + ' (' + peak + ' patient' + (peak===1?'':'s') + ')');
+
   if(!keys.length){
-    timeHtml = `<div class="vol-card"><div class="dash-empty" style="padding:28px;">No dated records in this scope.</div></div>`;
+    timeHtml = `<div class="vol-card"><div class="dash-empty" style="padding:28px;">No dated records in this filter.</div></div>`;
   } else {
     const n = Math.max(keys.length, 1);
-    const leftPad = 36, rightPad = 16, topPad = 32, bottomPad = 36;
-    const chartH = 200;
+    const leftPad = 40, rightPad = 16, topPad = 36, bottomPad = 40;
+    const chartH = 210;
     const barAreaH = chartH - topPad - bottomPad;
-    const plotW = Math.max(n * 64, 280);
+    const plotW = Math.max(n * 70, 280);
     const svgW = leftPad + plotW + rightPad;
-    const barW = Math.min(44, Math.max(22, Math.floor((plotW - n * 10) / n)));
+    const barW = Math.min(48, Math.max(24, Math.floor((plotW - n * 12) / n)));
     const gap = (plotW - n * barW) / Math.max(n, 1);
+
+    // Integer Y ticks only (avoid 1,1,1,1 when max is 1)
+    const yMax = Math.max(maxCount, 1);
+    const tickStep = yMax <= 4 ? 1 : Math.ceil(yMax / 4);
+    const ticks = [];
+    for(let v = 0; v <= yMax; v += tickStep) ticks.push(v);
+    if(ticks[ticks.length-1] !== yMax) ticks.push(yMax);
+
     let bars = '';
-    // defs gradient
     bars += `<defs>
       <linearGradient id="volBarGrad" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0%" stop-color="#0f766e"/>
@@ -8489,35 +8640,54 @@ function renderTrendChart(mode){
         <stop offset="100%" stop-color="#5eead4"/>
       </linearGradient>
     </defs>`;
-    // horizontal grid lines (4 levels)
-    for(let g=0; g<=4; g++){
-      const gy = topPad + barAreaH * (1 - g/4);
-      const gval = Math.round(maxCount * g/4);
+    // Y-axis title
+    bars += `<text class="vol-axis-title" x="12" y="${topPad + barAreaH/2}" text-anchor="middle" transform="rotate(-90 12 ${topPad + barAreaH/2})">Patients</text>`;
+
+    ticks.forEach(gval=>{
+      const gy = topPad + barAreaH * (1 - gval / yMax);
       bars += `<line x1="${leftPad}" y1="${gy}" x2="${svgW-rightPad}" y2="${gy}" class="vol-grid"/>`;
       bars += `<text x="${leftPad-8}" y="${gy+3}" text-anchor="end" class="vol-axis">${gval}</text>`;
-    }
+    });
+
     keys.forEach((k, i)=>{
       const c = counts[i];
-      const h = Math.max(4, Math.round((c / maxCount) * barAreaH));
+      const h = Math.max(c > 0 ? 8 : 0, Math.round((c / yMax) * barAreaH));
       const x = leftPad + gap/2 + i * (barW + gap);
       const y = topPad + barAreaH - h;
       let shortLabel = k;
-      if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + " '" + k.slice(2,4);
-      else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
-      else shortLabel = String(k).length > 10 ? String(k).slice(0,9)+'\u2026' : String(k);
+      if(/^\d{4}-\d{2}$/.test(String(k))) shortLabel = monthLabel(k).slice(0,3) + " '" + String(k).slice(2,4);
+      else if(/^\d{4}-\d{2}-\d{2}$/.test(String(k))){
+        try{
+          const d = new Date(k+'T12:00:00');
+          shortLabel = d.toLocaleDateString([], {month:'short', day:'numeric'});
+        }catch(e){ shortLabel = String(k).slice(5); }
+      } else {
+        shortLabel = String(k).length > 10 ? String(k).slice(0,9)+'\u2026' : String(k);
+      }
       const isPeak = c === maxCount && c > 0;
       bars += `
-        <rect class="vol-bar ${isPeak?'vol-bar-peak':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="8"/>
+        <rect class="vol-bar ${isPeak?'vol-bar-peak':''}" x="${x}" y="${y}" width="${barW}" height="${Math.max(h, c?4:0)}" rx="8"/>
         <text class="vol-val" x="${x + barW/2}" y="${y - 8}" text-anchor="middle">${c}</text>
-        <text class="vol-label" x="${x + barW/2}" y="${chartH - 12}" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
+        <text class="vol-label" x="${x + barW/2}" y="${chartH - 14}" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
     });
+
     timeHtml = `
       <div class="vol-card">
         <div class="vol-stats">
-          <div class="vol-stat"><div class="vs-num">${totalVol}</div><div class="vs-lbl">Total patients</div></div>
-          <div class="vol-stat"><div class="vs-num">${peak}</div><div class="vs-lbl">Peak · ${escapeHtml(peakLabel || '—')}</div></div>
-          <div class="vol-stat"><div class="vs-num">${keys.length}</div><div class="vs-lbl">${bucketKind==='staff'?'Staff':bucketKind==='day'?'Days':'Periods'}</div></div>
+          <div class="vol-stat">
+            <div class="vs-num">${totalVol}</div>
+            <div class="vs-lbl">Total patients<br><span class="vs-hint">in this chart</span></div>
+          </div>
+          <div class="vol-stat">
+            <div class="vs-num">${peak}</div>
+            <div class="vs-lbl">Peak day count<br><span class="vs-hint">${escapeHtml(peakLabel || '—')}</span></div>
+          </div>
+          <div class="vol-stat">
+            <div class="vs-num">${keys.filter((k,i)=>counts[i]>0).length}</div>
+            <div class="vs-lbl">${bucketKind==='staff'?'Staff with work':'Days with patients'}<br><span class="vs-hint">${bucketKind==='day'?'each bar = 1 day':bucketKind==='staff'?'each bar = 1 person':'each bar = 1 period'}</span></div>
+          </div>
         </div>
+        <p class="vol-explain">Each bar is the <b>number of patients encoded</b> that ${bucketKind==='staff'?'by that staff member':'day'}. Higher bar = more patients.</p>
         <div class="vol-chart-wrap">
           <svg class="vol-svg" viewBox="0 0 ${svgW} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${bars}</svg>
         </div>
