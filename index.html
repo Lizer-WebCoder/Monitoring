@@ -7946,6 +7946,63 @@ function hasT2(p){
   return !!(p && (p.claim === 't2' || p.dateT2 || p.t2By));
 }
 
+
+function normalizeDashDate(raw){
+  if(raw == null || raw === '') return '';
+  const s = String(raw).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  // MM/DD/YYYY or M/D/YYYY
+  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(m){
+    const mm = m[1].padStart(2,'0'), dd = m[2].padStart(2,'0');
+    return m[3] + '-' + mm + '-' + dd;
+  }
+  const d = new Date(s);
+  if(!isNaN(d.getTime())){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  return '';
+}
+function patientActivityDate(p){
+  if(!p) return '';
+  return normalizeDashDate(p.dateEncoded)
+    || normalizeDashDate(p.dateT1)
+    || normalizeDashDate(p.dateSubmitted)
+    || normalizeDashDate(p.createdAt)
+    || '';
+}
+function latestPatientActivityDate(){
+  let best = '';
+  (state.patients || []).forEach(p=>{
+    if(p.deleted) return;
+    const d = patientActivityDate(p);
+    if(d && d > best) best = d;
+  });
+  return best || new Date().toISOString().slice(0,10);
+}
+function snapDashDatesToData(){
+  const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
+  const latest = latestPatientActivityDate();
+  const dayIn = document.getElementById('dashDayInput');
+  const weekIn = document.getElementById('dashWeekInput');
+  if(mode === 'day' && dayIn){
+    // If current day has no rows, jump to latest activity day
+    const cur = dayIn.value;
+    const has = (state.patients || []).some(p => !p.deleted && patientActivityDate(p) === cur);
+    if(!cur || !has) dayIn.value = latest;
+  }
+  if(mode === 'week' && weekIn){
+    const cur = weekIn.value || latest;
+    const b = dashWeekBounds(cur);
+    const has = b && (state.patients || []).some(p=>{
+      if(p.deleted) return false;
+      const d = patientActivityDate(p);
+      return d && d >= b.start && d <= b.end;
+    });
+    if(!weekIn.value || !has) weekIn.value = latest;
+  }
+}
+
 function dashboardScopePatients(){
   const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
   const team = dashTeamSelect ? dashTeamSelect.value : 'all';
@@ -7966,18 +8023,18 @@ function dashboardScopePatients(){
       if(!patientBelongsToEncoder(p, selectedEnc)) return false;
     }
 
-    const enc = (p.dateEncoded || '').trim();
+    const enc = patientActivityDate(p);
     if(mode === 'all') return true;
     if(mode === 'month'){
       const month = dashMonthSelect ? dashMonthSelect.value : 'all';
       if(month === 'all') return true;
-      if(!enc) return true;
+      if(!enc) return true; // undated still show in month view
       return enc.slice(0,7) === month;
     }
     if(mode === 'day'){
       const day = (document.getElementById('dashDayInput') || {}).value;
       if(!day) return true;
-      return enc === day || (!enc && false);
+      return !!enc && enc === day;
     }
     if(mode === 'week'){
       const weekOf = (document.getElementById('dashWeekInput') || {}).value;
@@ -8001,6 +8058,10 @@ function dashBarRow(label, count, total, extraClass){
 
 function renderDashboard(){
   populateDashboardControls();
+  if(typeof snapDashDatesToData === 'function'){
+    const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
+    if(mode === 'day' || mode === 'week') snapDashDatesToData();
+  }
   const scoped = dashboardScopePatients();
   const total = scoped.length;
   const registered = scoped.filter(p=>p.status==='registered').length;
@@ -8043,8 +8104,28 @@ function renderDashboard(){
   if(note) note.textContent = `${rangeLabel} · ${teamVal==='all'?'all sites':teamVal} · ${scopeWho}`;
 
   if(total === 0){
-    dashBody.innerHTML = `<div class="dash-empty">No patient records in this scope. Try another day/week/month or encoder filter.</div>`;
-  try{ if(typeof branchHeatmapHtml==='function') dashBody.innerHTML += branchHeatmapHtml(); }catch(e){}
+    const mode0 = (document.getElementById('dashRangeMode') || {}).value || 'month';
+    const latest = typeof latestPatientActivityDate === 'function' ? latestPatientActivityDate() : '';
+    let hint = 'Try another day, week, month, or encoder filter.';
+    if(mode0 === 'day') hint = 'No patients encoded on this date. Pick a date that has encodings' + (latest ? ' (latest: <b>'+escapeHtml(latest)+'</b>)' : '') + '.';
+    if(mode0 === 'week') hint = 'No patients in this week. Choose a week that includes encoding activity' + (latest ? ' (latest activity: <b>'+escapeHtml(latest)+'</b>)' : '') + '.';
+    dashBody.innerHTML = `<div class="dash-empty" style="padding:28px 16px;text-align:center;line-height:1.5;">
+      <div style="font-weight:750;margin-bottom:6px;">No patient records in this scope</div>
+      <div style="font-size:13px;color:var(--muted);">${hint}</div>
+      ${latest && (mode0==='day'||mode0==='week') ? `<button type="button" class="btn btn-primary btn-sm" id="dashJumpLatest" style="margin-top:14px;">Jump to latest activity</button>` : ''}
+    </div>`;
+    document.getElementById('dashJumpLatest')?.addEventListener('click', ()=>{
+      const mode = (document.getElementById('dashRangeMode') || {}).value;
+      if(mode === 'day'){
+        const el = document.getElementById('dashDayInput');
+        if(el) el.value = latest;
+      } else if(mode === 'week'){
+        const el = document.getElementById('dashWeekInput');
+        if(el) el.value = latest;
+      }
+      renderDashboard();
+    });
+    try{ if(typeof branchHeatmapHtml==='function') dashBody.innerHTML += branchHeatmapHtml(); }catch(e){}
     return;
   }
 
@@ -8231,7 +8312,7 @@ function renderTrendChart(mode){
       }
     }
     scoped.forEach(p=>{
-      const enc = (p.dateEncoded||'').slice(0,10);
+      const enc = (typeof patientActivityDate==='function' ? patientActivityDate(p) : (p.dateEncoded||'').slice(0,10));
       if(!enc) return;
       buckets[enc] = (buckets[enc]||0)+1;
     });
@@ -8240,7 +8321,8 @@ function renderTrendChart(mode){
     buckets[day] = scoped.length;
   } else {
     scoped.forEach(p=>{
-      const m = (p.dateEncoded||'').slice(0,7) || 'undated';
+      const d = (typeof patientActivityDate==='function' ? patientActivityDate(p) : (p.dateEncoded||''));
+      const m = (d||'').slice(0,7) || 'undated';
       buckets[m] = (buckets[m]||0)+1;
     });
   }
@@ -8441,7 +8523,7 @@ document.getElementById('dashCloseBtn').addEventListener('click', closeDashboard
 dashBackdrop.addEventListener('click', e=>{ if(e.target===dashBackdrop) closeDashboard(); });
 if(dashMonthSelect) dashMonthSelect.addEventListener('change', renderDashboard);
 if(dashTeamSelect) dashTeamSelect.addEventListener('change', renderDashboard);
-document.getElementById('dashRangeMode')?.addEventListener('change', ()=>{ updateDashRangeVisibility(); renderDashboard(); });
+document.getElementById('dashRangeMode')?.addEventListener('change', ()=>{ updateDashRangeVisibility(); if(typeof snapDashDatesToData==='function') snapDashDatesToData(); renderDashboard(); });
 document.getElementById('dashDayInput')?.addEventListener('change', renderDashboard);
 document.getElementById('dashWeekInput')?.addEventListener('change', renderDashboard);
 // encoder filter wired via checklist dropdown
@@ -10529,7 +10611,9 @@ function endOfDayPack(){
 
 /* Branch heatmap HTML for dashboard injection */
 function branchHeatmapHtml(){
-  const all = (typeof monthPatients === 'function') ? monthPatients() : [];
+  const all = (typeof dashboardScopePatients === 'function')
+    ? dashboardScopePatients()
+    : ((typeof monthPatients === 'function') ? monthPatients() : (state.patients||[]).filter(p=>!p.deleted));
   const map = {};
   all.forEach(p=>{
     const f = p.facility || '—';
