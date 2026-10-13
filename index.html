@@ -4311,6 +4311,207 @@
   .site-full-row span{ font-weight: 650; color: var(--ink); word-break: break-word; }
   .site-full-row b{ font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
 
+
+  /* ===== Dashboard layout polish (tight, neat) ===== */
+  .dash-backdrop.open .dash-modal.dash-modal-metrics,
+  .dash-backdrop.open .dash-modal{
+    max-width: 1040px !important;
+    width: calc(100% - 32px) !important;
+    max-height: min(92vh, 900px) !important;
+    padding: 18px 20px 20px !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #dashBody{
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: 4px;
+    margin-top: 4px;
+  }
+  .dash-head{
+    margin-bottom: 10px !important;
+    padding-right: 36px !important;
+    flex-shrink: 0;
+  }
+  .dash-head h3{
+    font-size: 17px !important;
+    margin: 0 0 2px !important;
+  }
+  .dash-head .modal-sub{
+    font-size: 12px !important;
+    max-width: 60ch !important;
+    line-height: 1.35 !important;
+  }
+
+  .dash-controls{
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px 12px !important;
+    align-items: end !important;
+    margin: 0 0 10px !important;
+    padding: 12px 14px !important;
+    background: var(--table-head) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    flex-shrink: 0;
+  }
+  .dash-controls > div{ min-width: 0 !important; }
+  .dash-controls label{
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    color: var(--muted) !important;
+    margin: 0 0 4px !important;
+  }
+  .dash-controls select,
+  .dash-controls input[type=date],
+  .dash-controls .enc-dd-btn,
+  .dash-controls button#dashEncoderBtn{
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    padding: 0 10px !important;
+  }
+  .dash-scope-note{
+    grid-column: 1 / -1 !important;
+    font-size: 11px !important;
+    color: var(--muted) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  details.dash-guide{
+    margin-bottom: 12px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+  }
+  details.dash-guide summary{
+    cursor: pointer;
+    list-style: none;
+    font-size: 11px !important;
+    margin: 0 !important;
+  }
+  details.dash-guide summary::-webkit-details-marker{ display: none; }
+  details.dash-guide summary::after{
+    content: ' ▾';
+    opacity: 0.6;
+    font-size: 10px;
+  }
+  details.dash-guide[open] summary::after{ content: ' ▴'; }
+  details.dash-guide ul{
+    margin: 8px 0 2px !important;
+    padding-left: 16px !important;
+  }
+  details.dash-guide li{
+    margin-bottom: 3px !important;
+    font-size: 12px !important;
+  }
+
+  .dash-section{
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+  }
+  .dash-section h4{
+    font-size: 11px !important;
+    letter-spacing: 0.06em !important;
+    margin: 0 0 4px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .dash-sec-help{
+    font-size: 11.5px !important;
+    margin: 0 0 8px !important;
+    color: var(--muted) !important;
+  }
+
+  .dash-cards,
+  .dash-cards.kpi-cards{
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin: 0 !important;
+  }
+  .dash-cards:not(.kpi-cards){
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+  .dash-card{
+    padding: 10px 11px !important;
+    border-radius: 10px !important;
+    min-width: 0 !important;
+    box-shadow: none !important;
+  }
+  .dash-card .dc-num{
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+  .dash-card .dc-lbl{
+    font-size: 10px !important;
+    margin-top: 4px !important;
+    line-height: 1.3 !important;
+  }
+  .dash-card .kpi-sub{
+    font-size: 10px !important;
+  }
+
+  .dash-section .table-wrap{
+    margin: 0 !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--line) !important;
+    overflow: auto !important;
+  }
+  .dash-table thead th{
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+  }
+  .dash-table tbody td{
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .dash-trend-grid{
+    gap: 12px !important;
+  }
+  .vol-card{
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+  .vol-stats{
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+  .vol-stat{
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+  }
+  .vol-stat .vs-num{ font-size: 17px !important; }
+  .vol-explain{ font-size: 11.5px !important; margin-bottom: 8px !important; }
+  .staff-metric-list{ gap: 8px !important; max-height: 240px !important; }
+  .staff-metric-card{ padding: 10px 12px !important; border-radius: 10px !important; }
+  .sm-row{ grid-template-columns: 108px 1fr 28px !important; gap: 8px !important; margin-bottom: 5px !important; }
+
+  @media (max-width: 900px){
+    .dash-controls{ grid-template-columns: 1fr 1fr !important; }
+    .dash-cards, .dash-cards.kpi-cards,
+    .dash-cards:not(.kpi-cards){
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+  }
+  @media (max-width: 560px){
+    .dash-controls{ grid-template-columns: 1fr !important; }
+    .dash-cards, .dash-cards.kpi-cards,
+    .dash-cards:not(.kpi-cards){
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -4763,7 +4964,7 @@
 
 <!-- Dashboard -->
 <div class="dash-backdrop" id="dashBackdrop">
-  <div class="dash-modal" style="max-width:980px;">
+  <div class="dash-modal dash-modal-metrics">
     <div class="dash-head">
       <div>
         <h3>Metrics Dashboard</h3>
@@ -4771,7 +4972,7 @@
       </div>
       <button class="dash-close" id="dashCloseBtn" title="Close">✕</button>
     </div>
-    <div class="dash-controls" style="flex-wrap:wrap;gap:8px;align-items:flex-end;">
+    <div class="dash-controls">
       <div>
         <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Period</label>
         <select id="dashRangeMode">
@@ -4806,7 +5007,7 @@
         </div>
         <select id="dashEncoderSelect" multiple hidden aria-hidden="true"></select>
       </div>
-      <span class="dash-scope-note" id="dashScopeNote" style="align-self:center;"></span>
+      <span class="dash-scope-note" id="dashScopeNote"></span>
     </div>
     <div id="dashBody"></div>
   </div>
@@ -8341,20 +8542,20 @@ function renderDashboard(){
     </tr>`).join('');
 
   const guideHtml = `
-    <div class="dash-guide">
-      <div class="dash-guide-title">How to read this dashboard</div>
+    <details class="dash-guide">
+      <summary class="dash-guide-title">How to read this dashboard</summary>
       <ul>
-        <li><b>Patients encoded</b> — how many patient records are in the current filter (period + site + staff).</li>
-        <li><b>Who encoded</b> — staff who first saved the patient on the roster.</li>
-        <li><b>Who submitted T1 / T2</b> — staff marked on <i>T1 submitted by</i> / <i>T2 submitted by</i> (can be different people).</li>
-        <li><b>Quality %</b> — share of those patients with MCA, T1, T2, or filed within 24 hours.</li>
+        <li><b>Patients</b> — records in the current filter (period + site + staff).</li>
+        <li><b>Encoded</b> — who first saved the patient.</li>
+        <li><b>T1 / T2</b> — who is marked as submitter (can differ from encoder).</li>
+        <li><b>Quality %</b> — share with MCA, T1, T2, or within 24h.</li>
       </ul>
-    </div>`;
+    </details>`;
 
   const kpiHtml = `
     <div class="dash-section" style="margin-bottom:14px">
       <h4>Claim quality</h4>
-      <p class="dash-sec-help">% of patients in this filter who completed each claim step.</p>
+      <p class="dash-sec-help">Share of patients in this filter.</p>
       <div class="dash-cards kpi-cards">
         <div class="dash-card" title="Patients with digital MCA checked"><div class="dc-num">${pct(mcaCount)}</div><div class="dc-lbl">Has MCA photo<br><span class="kpi-sub">${mcaCount} of ${total}</span></div></div>
         <div class="dash-card accent-green" title="Patients with T1 date or T1 submitter"><div class="dc-num">${pct(t1Count)}</div><div class="dc-lbl">Reached T1<br><span class="kpi-sub">${t1Count} of ${total}</span></div></div>
@@ -8367,7 +8568,7 @@ function renderDashboard(){
   const cardsHtml = `
     <div class="dash-section" style="margin-bottom:14px">
       <h4>Patient volume & benefits</h4>
-      <p class="dash-sec-help">Counts for the same filtered set of patients.</p>
+      <p class="dash-sec-help">Same filtered patient set.</p>
       <div class="dash-cards">
         <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients<br><span class="kpi-sub">in this filter</span></div></div>
         <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered<br><span class="kpi-sub">${registeredOther} other facility</span></div></div>
@@ -8381,7 +8582,7 @@ function renderDashboard(){
   const encoderHtml = `
     <div class="dash-section">
       <h4>${isAdm ? 'Who did the work' : 'My work'}</h4>
-      <p class="dash-sec-help"><b>Encoded</b> = created the patient record. <b>T1 / T2</b> = marked as the submitter for that claim step. One patient can credit two different people.<br>Only staff with at least one action in this filter are listed. Use the Encoder(s) filter to focus on one person.</p>
+      <p class="dash-sec-help">Encoded = created record · T1/T2 = submitter · Only staff with activity in this filter.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
@@ -8403,7 +8604,7 @@ function renderDashboard(){
   const teamTableHtml = `
     <div class="dash-section">
       <h4>By site / group</h4>
-      <p class="dash-sec-help">Same patients, grouped by mobile / walk-in / profiling list.</p>
+      <p class="dash-sec-help">Grouped by mobile / walk-in / profiling list.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
