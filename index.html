@@ -7628,6 +7628,40 @@ function dashWeekBounds(dateStr){
   return { start: fmt(start), end: fmt(end) };
 }
 
+
+function patientOwnerIds(p){
+  if(!p) return [];
+  return [p.encodedBy, p.createdBy, p.updatedBy, p.t1By, p.t2By]
+    .filter(Boolean)
+    .map(x => String(x));
+}
+function patientBelongsToEncoder(p, selectedIds){
+  if(!selectedIds || !selectedIds.length) return true;
+  const owners = patientOwnerIds(p);
+  if(!owners.length) return false;
+  const sel = selectedIds.map(String);
+  // Direct id match
+  if(owners.some(id => sel.includes(id))) return true;
+  // Match by display name (covers name:Diether vs profile uuid both showing "Diether")
+  const ownerNames = owners.map(id => {
+    const n = (typeof displayNameFor === 'function' ? displayNameFor(id) : id);
+    return String(n || id).trim().toLowerCase();
+  });
+  const selNames = sel.map(id => {
+    const n = (typeof displayNameFor === 'function' ? displayNameFor(id) : id);
+    // strip name: prefix
+    const raw = String(id).startsWith('name:') ? String(id).slice(5) : (n || id);
+    return String(raw || '').trim().toLowerCase();
+  });
+  return ownerNames.some(n => n && selNames.includes(n));
+}
+function hasT1(p){
+  return !!(p && (p.claim === 't1' || p.claim === 't2' || p.dateT1 || p.dateSubmitted || p.t1By));
+}
+function hasT2(p){
+  return !!(p && (p.claim === 't2' || p.dateT2 || p.t2By));
+}
+
 function dashboardScopePatients(){
   const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
   const team = dashTeamSelect ? dashTeamSelect.value : 'all';
@@ -7641,16 +7675,11 @@ function dashboardScopePatients(){
     if(p.deleted) return false;
     if(team !== 'all' && p.team !== team) return false;
 
-    // Encoder filter — match any attribution field
-    const owners = [p.encodedBy, p.createdBy, p.updatedBy, p.t1By, p.t2By].filter(Boolean);
+    // Encoder filter — match encode / T1 / T2 attribution (id or display name)
     if(forceSelf){
-      if(selfId){
-        if(!owners.length) return false;
-        if(!owners.includes(selfId)) return false;
-      }
+      if(selfId && !patientBelongsToEncoder(p, [selfId])) return false;
     } else if(selectedEnc.length){
-      // Admin multi-select: patient matches if ANY attribution is selected
-      if(!owners.some(id => selectedEnc.includes(id))) return false;
+      if(!patientBelongsToEncoder(p, selectedEnc)) return false;
     }
 
     const enc = (p.dateEncoded || '').trim();
@@ -7700,8 +7729,8 @@ function renderDashboard(){
   const mcaCount = scoped.filter(p=>p.mca).length;
   const dupCount = typeof countDuplicateExtras === 'function' ? countDuplicateExtras(scoped) : 0;
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
-  const t1Count = scoped.filter(p=>p.claim==='t1').length;
-  const t2Count = scoped.filter(p=>p.claim==='t2').length;
+  const t1Count = scoped.filter(p => typeof hasT1 === 'function' ? hasT1(p) : p.claim==='t1').length;
+  const t2Count = scoped.filter(p => typeof hasT2 === 'function' ? hasT2(p) : p.claim==='t2').length;
   const pendingClaim = scoped.filter(p=>!p.claim || p.claim==='pending').length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
@@ -7719,7 +7748,13 @@ function renderDashboard(){
     rangeLabel = m === 'all' ? 'All months' : monthLabel(m);
   }
   const isAdm = typeof isAdmin === 'function' && isAdmin();
-  const scopeWho = isAdm ? 'All selected encoders' : 'My encodes only';
+  const selEnc = (typeof getSelectedEncoderIds === 'function') ? getSelectedEncoderIds() : [];
+  let scopeWho = 'My work only';
+  if(isAdm){
+    if(!selEnc.length) scopeWho = 'All users';
+    else if(selEnc.length === 1) scopeWho = (typeof displayNameFor === 'function' ? displayNameFor(selEnc[0]) : selEnc[0]);
+    else scopeWho = selEnc.length + ' users selected';
+  }
   const note = document.getElementById('dashScopeNote');
   if(note) note.textContent = `${rangeLabel} · ${teamVal==='all'?'all sites':teamVal} · ${scopeWho}`;
 
@@ -7729,32 +7764,50 @@ function renderDashboard(){
     return;
   }
 
-  /* Encoder productivity */
+  /* Staff productivity — credits encoder AND T1/T2 submitters */
   const byUser = {};
+  function touchUser(uid, patch){
+    if(!uid) uid = '_unknown';
+    uid = String(uid);
+    if(!byUser[uid]){
+      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
+        || (uid === '_unknown' ? 'Unknown / imported' : (String(uid).startsWith('name:') ? String(uid).slice(5) : String(uid).slice(0, 12)));
+      byUser[uid] = { name, encoded: 0, t1: 0, t2: 0, mca: 0, teams: {} };
+    }
+    if(patch.encoded) byUser[uid].encoded++;
+    if(patch.t1) byUser[uid].t1++;
+    if(patch.t2) byUser[uid].t2++;
+    if(patch.mca) byUser[uid].mca++;
+    if(patch.team) byUser[uid].teams[patch.team] = (byUser[uid].teams[patch.team] || 0) + 1;
+  }
   scoped.forEach(p=>{
-    const uid = p.createdBy || p.updatedBy || '_unknown';
-    const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
-      || (uid === '_unknown' ? 'Unknown / imported' : String(uid).slice(0, 12));
-    if(!byUser[uid]) byUser[uid] = { name, total: 0, teams: {}, mca: 0, t1: 0, t2: 0 };
-    byUser[uid].total++;
-    if(p.mca) byUser[uid].mca++;
-    if(p.claim==='t1') byUser[uid].t1++;
-    if(p.claim==='t2') byUser[uid].t2++;
-    const t = p.team || 'Unknown';
-    byUser[uid].teams[t] = (byUser[uid].teams[t] || 0) + 1;
+    const team = p.team || 'Unknown';
+    const encUid = p.encodedBy || p.createdBy || null;
+    if(encUid) touchUser(encUid, { encoded: 1, mca: p.mca ? 1 : 0, team });
+    // T1 credit: explicit t1By, else fall back to encoder if T1 present
+    if(typeof hasT1 === 'function' ? hasT1(p) : (p.claim==='t1' || p.dateT1)){
+      const t1uid = p.t1By || encUid || '_unknown';
+      touchUser(t1uid, { t1: 1, team });
+    }
+    // T2 credit: explicit t2By, else encoder if T2 present
+    if(typeof hasT2 === 'function' ? hasT2(p) : (p.claim==='t2' || p.dateT2)){
+      const t2uid = p.t2By || (p.claim==='t2' ? encUid : null);
+      if(t2uid) touchUser(t2uid, { t2: 1, team });
+    }
   });
   const userRows = Object.entries(byUser)
-    .sort((a,b)=> b[1].total - a[1].total)
+    .sort((a,b)=> (b[1].encoded + b[1].t1 + b[1].t2) - (a[1].encoded + a[1].t1 + a[1].t2))
     .map(([uid, u])=>{
       const teamBreakdown = Object.entries(u.teams).sort((a,b)=>b[1]-a[1])
         .map(([t,c])=> `${escapeHtml(t)} (${c})`).join(', ');
+      const activity = u.encoded + u.t1 + u.t2;
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
-        <td>${u.total}</td>
-        <td>${total ? Math.round(u.total/total*100) : 0}%</td>
-        <td>${u.mca}</td>
+        <td>${u.encoded}</td>
         <td>${u.t1}</td>
         <td>${u.t2}</td>
+        <td>${u.mca}</td>
+        <td>${activity}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
       </tr>`;
     }).join('');
@@ -7817,21 +7870,21 @@ function renderDashboard(){
 
   const encoderHtml = `
     <div class="dash-section">
-      <h4>${isAdm ? 'Encoded by user' : 'My encoding summary'}</h4>
+      <h4>${isAdm ? 'Staff productivity (encode + T1/T2)' : 'My productivity'}</h4>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
-              <th style="text-align:left">Encoder</th>
-              <th>Total</th>
-              <th>Share</th>
+              <th style="text-align:left">Staff</th>
+              <th>Encoded</th>
+              <th>T1 submitted</th>
+              <th>T2 submitted</th>
               <th>MCA</th>
-              <th>T1</th>
-              <th>T2</th>
+              <th>Activity</th>
               <th style="text-align:left">Sites / groups</th>
             </tr>
           </thead>
-          <tbody>${userRows || '<tr><td colspan="7">No encoder data</td></tr>'}</tbody>
+          <tbody>${userRows || '<tr><td colspan="7">No staff data in this scope</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -9060,7 +9113,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
     const t = p.team || 'Unknown';
     if(!byTeam[t]) byTeam[t] = {total:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0};
     const b = byTeam[t];
-    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if(p.claim==='t1')b.t1++;
+    b.total++; if(p.rice)b.rice++; if(p.lab)b.lab++; if(p.medicine)b.medicine++; if(p.vitamins)b.vitamins++; if(p.referral)b.referral++; if(p.mca)b.mca++; if((typeof hasT1==='function'?hasT1(p):p.claim==='t1'))b.t1++;
   });
   const teamRows = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>
     `<tr><td>${t}</td><td>${b.total}</td><td>${b.mca}</td><td>${b.rice}</td><td>${b.lab}</td><td>${b.medicine}</td><td>${b.vitamins}</td><td>${b.referral}</td><td>${b.t1}</td></tr>`
