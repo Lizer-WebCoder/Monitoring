@@ -4313,8 +4313,7 @@
 
 
   /* ===== Dashboard layout polish (tight, neat) ===== */
-  .dash-backdrop.open .dash-modal.dash-modal-metrics,
-  .dash-backdrop.open .dash-modal{
+  .dash-backdrop.open .dash-modal.dash-modal-metrics{
     max-width: 1040px !important;
     width: calc(100% - 32px) !important;
     max-height: min(92vh, 900px) !important;
@@ -4329,6 +4328,21 @@
     min-height: 0;
     padding-right: 4px;
     margin-top: 4px;
+  }
+  /* Admin & other dash modals — scroll the whole panel */
+  .dash-backdrop.open .dash-modal:not(.dash-modal-metrics){
+    max-height: min(90vh, 860px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  #adminUsersBody{
+    max-height: none;
+    overflow: visible;
+  }
+  #adminBackdrop .dash-modal{
+    max-width: 780px !important;
+    width: calc(100% - 28px) !important;
   }
   .dash-head{
     margin-bottom: 10px !important;
@@ -5163,7 +5177,7 @@
 
 <!-- Admin panel -->
 <div class="dash-backdrop" id="adminBackdrop">
-  <div class="dash-modal" style="max-width:780px;">
+  <div class="dash-modal dash-modal-admin" style="max-width:780px;">
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
@@ -8796,12 +8810,8 @@ function buildEmployeeDutyHtml(scoped){
     return `<tr>
       <td style="text-align:left;font-weight:600">${escapeHtml(r.name)}</td>
       <td>${r.encoded}</td>
-      <td>${r.encWah||0}</td>
-      <td>${r.encBiz||0}</td>
-      <td>${r.t1}</td>
       <td>${r.t1Wah||0}</td>
       <td>${r.t1Biz||0}</td>
-      <td>${r.t2}</td>
       <td>${r.t2Wah||0}</td>
       <td>${r.t2Biz||0}</td>
       <td>${r.mca}</td>
@@ -8827,7 +8837,7 @@ function buildEmployeeDutyHtml(scoped){
     <div class="duty-head">
       <div>
         <h4 style="border:none;padding:0;margin:0 0 4px;">Employee duties & accomplishments</h4>
-        <p class="dash-sec-help" style="margin:0;">Roster auto-counts + logged tasks (for admin KPI). Paper form duties like inquiries & RTOF are entered here.</p>
+        <p class="dash-sec-help" style="margin:0;"><b>Inputted</b> = entered patient on DR CARE. <b>T1/T2 WAH·Bizbox</b> = submissions by system (patient System column). Manual tasks (inquiries, RTOF) are logged separately.</p>
       </div>
       <button type="button" class="btn btn-primary btn-sm" id="dashLogWorkBtn">+ Log task</button>
     </div>
@@ -8836,15 +8846,11 @@ function buildEmployeeDutyHtml(scoped){
         <thead>
           <tr>
             <th style="text-align:left">Employee</th>
-            <th title="Patients first saved">Encoded</th>
-            <th>Enc WAH</th>
-            <th>Enc Bizbox</th>
-            <th>T1 by them</th>
-            <th>T1 WAH</th>
-            <th>T1 Bizbox</th>
-            <th>T2 by them</th>
-            <th>T2 WAH</th>
-            <th>T2 Bizbox</th>
+            <th title="Patients first entered on DR CARE">Inputted</th>
+            <th title="T1 submissions on WAH">T1 WAH</th>
+            <th title="T1 submissions on Bizbox">T1 Bizbox</th>
+            <th title="T2 submissions on WAH">T2 WAH</th>
+            <th title="T2 submissions on Bizbox">T2 Bizbox</th>
             <th>MCA</th>
             <th title="Walk-in group patients">Walk-ins</th>
             ${headExtra}
@@ -9020,10 +9026,8 @@ function renderDashboard(){
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
         <td>${u.encoded}</td>
-        <td>${u.t1}</td>
-        <td>${u.t2}</td>
         <td>${u.mca}</td>
-        <td>${u.activity}</td>
+        <td>${siteCount}</td>
         <td style="text-align:left;min-width:160px;max-width:280px">${sitesCell}</td>
       </tr>`;
     }).join('');
@@ -9062,8 +9066,8 @@ function renderDashboard(){
       <summary class="dash-guide-title">How to read this dashboard</summary>
       <ul>
         <li><b>Patients</b> — records in the current filter (period + site + staff).</li>
-        <li><b>Encoded</b> — who first saved the patient.</li>
-        <li><b>T1 / T2</b> — who is marked as submitter (can differ from encoder).</li>
+        <li><b>Inputted</b> — who first entered the patient on DR CARE.</li>
+        <li><b>T1 / T2 WAH·Bizbox</b> — submissions by system (set System on the patient row).</li>
         <li><b>Quality %</b> — share with MCA, T1, T2, or within 24h.</li>
       </ul>
     </details>`;
@@ -9097,18 +9101,16 @@ function renderDashboard(){
 
   const encoderHtml = `
     <div class="dash-section">
-      <h4>${isAdm ? 'Who did the work' : 'My work'}</h4>
-      <p class="dash-sec-help">Encoded = created record · T1/T2 = submitter · Only staff with activity in this filter.</p>
+      <h4>${isAdm ? 'Who inputted patients' : 'Patients I inputted'}</h4>
+      <p class="dash-sec-help"><b>Inputted</b> = user who first entered the patient on DR CARE. Only staff with activity in this filter.</p>
       <div class="table-wrap" style="box-shadow:none;margin:0">
         <table class="dash-table">
           <thead>
             <tr>
               <th style="text-align:left">Staff</th>
-              <th title="Patients this person first saved">Encoded</th>
-              <th title="Patients where they are T1 submitted by">T1 by them</th>
-              <th title="Patients where they are T2 submitted by">T2 by them</th>
-              <th title="MCA among patients they encoded">MCA (encoded)</th>
-              <th title="Encoded + T1 + T2 counts">Total actions</th>
+              <th title="Patients this user first entered on DR CARE">Inputted</th>
+              <th title="MCA on patients they inputted">MCA</th>
+              <th title="Sites/groups they worked on">Sites</th>
               <th style="text-align:left">Sites touched</th>
             </tr>
           </thead>
@@ -9433,7 +9435,7 @@ function renderTrendChart(mode){
         <div class="sm-total">${s.activity} action${s.activity===1?'':'s'}</div>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-enc"></i> Created records</span>
+        <span class="sm-label"><i class="lg lg-enc"></i> Inputted patients</span>
         <div class="sm-track"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
         <span class="sm-count">${s.encoded}</span>
       </div>
