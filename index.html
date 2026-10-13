@@ -4027,72 +4027,94 @@
   .dash-trend-label{ fill: var(--muted); font-size: 10px; font-family: 'IBM Plex Mono', monospace; }
 
   .staff-metric-legend{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 10px;
+    display: none; /* labels now inline per row */
   }
-  .staff-metric-legend .lg{
-    display: inline-block;
-    width: 10px; height: 10px;
-    border-radius: 3px;
-    margin-right: 5px;
-    vertical-align: -1px;
-  }
-  .lg-enc{ background: var(--teal-deep); }
-  .lg-t1{ background: #5b8def; }
-  .lg-t2{ background: #8b6bc9; }
-  body.dark .lg-enc{ background: var(--teal); }
-
   .staff-metric-list{
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    max-height: 340px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .staff-metric-card{
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 8px 12px;
-    max-height: 280px;
-    overflow-y: auto;
+    border-radius: 12px;
+    padding: 12px 14px;
   }
-  .staff-metric-row{
-    display: grid;
-    grid-template-columns: 100px 1fr auto;
-    gap: 10px;
+  .sm-head{
+    display: flex;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line);
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
   }
-  .staff-metric-row:last-child{ border-bottom: none; }
   .sm-name{
-    font-size: 12.5px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 750;
     color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .sm-bars{ display: flex; flex-direction: column; gap: 3px; }
+  .sm-total{
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--muted);
+    background: var(--table-head);
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .sm-row{
+    display: grid;
+    grid-template-columns: 110px 1fr 36px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .sm-row:last-child{ margin-bottom: 0; }
+  .sm-label{
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .sm-label .lg{
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex: none;
+  }
   .sm-track{
-    height: 7px;
+    height: 8px;
     background: var(--table-head);
     border-radius: 99px;
     overflow: hidden;
   }
-  .sm-fill{ display: block; height: 100%; border-radius: 99px; min-width: 0; }
+  .sm-fill{ display: block; height: 100%; border-radius: 99px; min-width: 0; transition: width .2s ease; }
   .sm-enc{ background: var(--teal-deep); }
   .sm-t1{ background: #5b8def; }
   .sm-t2{ background: #8b6bc9; }
   body.dark .sm-enc{ background: var(--teal); }
-  .sm-nums{
-    display: grid;
-    grid-template-columns: 22px 22px 22px;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 700;
+  .sm-count{
+    font-size: 13px;
+    font-weight: 800;
     font-family: 'IBM Plex Mono', monospace;
-    color: var(--muted);
+    color: var(--ink);
     text-align: right;
   }
+  .lg-enc{ background: var(--teal-deep); }
+  .lg-t1{ background: #5b8def; }
+  .lg-t2{ background: #8b6bc9; }
+  body.dark .lg-enc{ background: var(--teal); }
 
 </style>
 </head>
@@ -8239,17 +8261,30 @@ function renderTrendChart(mode){
   // Staff horizontal metrics
   const maxAct = Math.max(...staffList.map(s=>s.activity), 1);
   const staffBars = staffList.length ? staffList.map(s=>{
-    const pctE = Math.round((s.encoded/maxAct)*100);
-    const pct1 = Math.round((s.t1/maxAct)*100);
-    const pct2 = Math.round((s.t2/maxAct)*100);
-    return `<div class="staff-metric-row">
-      <div class="sm-name" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
-      <div class="sm-bars">
-        <div class="sm-track" title="Encoded ${s.encoded}"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
-        <div class="sm-track" title="T1 ${s.t1}"><i class="sm-fill sm-t1" style="width:${pct1}%"></i></div>
-        <div class="sm-track" title="T2 ${s.t2}"><i class="sm-fill sm-t2" style="width:${pct2}%"></i></div>
+    const maxRow = Math.max(s.encoded, s.t1, s.t2, 1);
+    const pctE = Math.round((s.encoded/maxRow)*100);
+    const pct1 = Math.round((s.t1/maxRow)*100);
+    const pct2 = Math.round((s.t2/maxRow)*100);
+    return `<div class="staff-metric-card">
+      <div class="sm-head">
+        <div class="sm-name" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
+        <div class="sm-total">${s.activity} action${s.activity===1?'':'s'}</div>
       </div>
-      <div class="sm-nums"><span>${s.encoded}</span><span>${s.t1}</span><span>${s.t2}</span></div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-enc"></i> Encoded</span>
+        <div class="sm-track"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
+        <span class="sm-count">${s.encoded}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-t1"></i> T1 submitted</span>
+        <div class="sm-track"><i class="sm-fill sm-t1" style="width:${pct1}%"></i></div>
+        <span class="sm-count">${s.t1}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-t2"></i> T2 submitted</span>
+        <div class="sm-track"><i class="sm-fill sm-t2" style="width:${pct2}%"></i></div>
+        <span class="sm-count">${s.t2}</span>
+      </div>
     </div>`;
   }).join('') : `<div class="dash-empty" style="padding:12px;">No staff activity in this scope.</div>`;
 
