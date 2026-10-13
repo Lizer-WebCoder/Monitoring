@@ -3906,6 +3906,194 @@
     border-radius: 999px !important;
   }
 
+
+  /* Dashboard polish */
+  .dash-modal{
+    max-width: 1120px !important;
+    padding: 22px 24px 28px !important;
+  }
+  .dash-section{
+    margin-bottom: 22px !important;
+  }
+  .dash-section h4{
+    font-size: 11.5px !important;
+    letter-spacing: 0.06em !important;
+    font-weight: 750 !important;
+    color: var(--label-accent) !important;
+    margin: 0 0 12px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .dash-cards, .dash-cards.kpi-cards{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .dash-card{
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 1px 2px rgba(11,54,48,0.04) !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+  .dash-card .dc-num{
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    color: var(--teal-deep) !important;
+  }
+  body.dark .dash-card .dc-num{ color: var(--teal) !important; }
+  .dash-card .dc-lbl{
+    font-size: 10.5px !important;
+    font-weight: 650 !important;
+    color: var(--muted) !important;
+    margin-top: 6px !important;
+    line-height: 1.35 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .dash-card .kpi-sub{
+    font-weight: 600 !important;
+    opacity: 0.85;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .dash-card.accent-green{ background: var(--green-bg) !important; border-color: transparent !important; }
+  .dash-card.accent-blue{ background: var(--blue-bg) !important; border-color: transparent !important; }
+  .dash-card.accent-amber{ background: var(--amber-bg) !important; border-color: transparent !important; }
+  .dash-card.accent-purple{ background: var(--purple-bg) !important; border-color: transparent !important; }
+  .dash-table{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+  }
+  .dash-table thead th{
+    background: var(--table-head);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .dash-table tbody td{
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+  }
+  .dash-table tbody tr:hover td{ background: var(--row-hover); }
+
+  .dash-trend-grid{
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 820px){
+    .dash-trend-grid{ grid-template-columns: 1fr; }
+  }
+  .dash-subhead{
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dash-filter-pill{
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--teal-deep);
+    background: var(--green-bg);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+  body.dark .dash-filter-pill{ color: var(--teal); }
+  .dash-trend-card{
+    background: var(--table-head);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 10px 6px;
+    overflow-x: auto;
+  }
+  .dash-trend-bar{ fill: var(--teal-deep); }
+  body.dark .dash-trend-bar{ fill: var(--teal); }
+  .dash-trend-num{ fill: var(--ink); font-size: 11px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .dash-trend-label{ fill: var(--muted); font-size: 10px; font-family: 'IBM Plex Mono', monospace; }
+
+  .staff-metric-legend{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .staff-metric-legend .lg{
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    margin-right: 5px;
+    vertical-align: -1px;
+  }
+  .lg-enc{ background: var(--teal-deep); }
+  .lg-t1{ background: #5b8def; }
+  .lg-t2{ background: #8b6bc9; }
+  body.dark .lg-enc{ background: var(--teal); }
+
+  .staff-metric-list{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px 12px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .staff-metric-row{
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .staff-metric-row:last-child{ border-bottom: none; }
+  .sm-name{
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sm-bars{ display: flex; flex-direction: column; gap: 3px; }
+  .sm-track{
+    height: 7px;
+    background: var(--table-head);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .sm-fill{ display: block; height: 100%; border-radius: 99px; min-width: 0; }
+  .sm-enc{ background: var(--teal-deep); }
+  .sm-t1{ background: #5b8def; }
+  .sm-t2{ background: #8b6bc9; }
+  body.dark .sm-enc{ background: var(--teal); }
+  .sm-nums{
+    display: grid;
+    grid-template-columns: 22px 22px 22px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    text-align: right;
+  }
+
 </style>
 </head>
 <body>
@@ -7824,8 +8012,8 @@ function renderDashboard(){
     if(p.medicine) b.medicine++;
     if(p.vitamins) b.vitamins++;
     if(p.referral) b.referral++;
-    if(p.claim==='t1') b.t1++;
-    if(p.claim==='t2') b.t2++;
+    if(typeof hasT1 === 'function' ? hasT1(p) : p.claim==='t1') b.t1++;
+    if(typeof hasT2 === 'function' ? hasT2(p) : p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
   });
   const teamRowsHtml = Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,b])=>`
@@ -7931,6 +8119,10 @@ function renderTrendChart(mode){
   const wrap = document.getElementById('dashTrendWrap');
   if(!wrap) return;
   const scoped = dashboardScopePatients();
+  const selEnc = (typeof getSelectedEncoderIds === 'function') ? getSelectedEncoderIds() : [];
+  const isAllUsers = !selEnc.length;
+
+  // --- Time buckets (respects encoder filter via scoped) ---
   let buckets = {};
   if(mode === 'week'){
     const weekOf = (document.getElementById('dashWeekInput') || {}).value;
@@ -7939,48 +8131,151 @@ function renderTrendChart(mode){
       for(let i=0;i<7;i++){
         const d = new Date(b.start + 'T12:00:00');
         d.setDate(d.getDate()+i);
-        const key = d.toISOString().slice(0,10);
-        buckets[key] = 0;
+        buckets[d.toISOString().slice(0,10)] = 0;
       }
     }
     scoped.forEach(p=>{
       const enc = (p.dateEncoded||'').slice(0,10);
-      if(enc && buckets[enc] != null) buckets[enc]++;
-      else if(enc) buckets[enc] = (buckets[enc]||0)+1;
+      if(!enc) return;
+      buckets[enc] = (buckets[enc]||0)+1;
     });
   } else if(mode === 'day'){
-    const day = (document.getElementById('dashDayInput') || {}).value || '';
-    buckets[day || 'selected day'] = scoped.length;
+    const day = (document.getElementById('dashDayInput') || {}).value || 'selected day';
+    buckets[day] = scoped.length;
   } else {
-    // month / all → by month
     scoped.forEach(p=>{
       const m = (p.dateEncoded||'').slice(0,7) || 'undated';
       buckets[m] = (buckets[m]||0)+1;
     });
   }
   const keys = Object.keys(buckets).sort();
-  if(!keys.length){ wrap.innerHTML = `<div class="dash-empty">No dated records in scope.</div>`; return; }
   const counts = keys.map(k => buckets[k]);
   const maxCount = Math.max(...counts, 1);
-  const barW = 46, gap = 14, chartH = 150, topPad = 24, bottomPad = 22, leftPad = 6;
-  const barAreaH = chartH - topPad - bottomPad;
-  const svgW = Math.max(keys.length * (barW + gap) + leftPad, 120);
-  let bars = '';
-  keys.forEach((k, i)=>{
-    const c = counts[i];
-    const h = Math.round((c / maxCount) * barAreaH);
-    const x = leftPad + i * (barW + gap);
-    const y = chartH - bottomPad - h;
-    let shortLabel = k;
-    if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + ' ' + k.slice(2,4);
-    else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
-    bars += `
-      <text class="dash-trend-num" x="${x + barW/2}" y="${y - 7}" text-anchor="middle">${c}</text>
-      <rect class="dash-trend-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h,2)}" rx="4"></rect>
-      <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 6}" text-anchor="middle">${escapeHtml(shortLabel)}</text>
-    `;
+
+  // --- Staff activity in current scope (All users = everyone; else selected) ---
+  const staffMap = {};
+  function addStaff(uid, kind){
+    if(!uid) return;
+    uid = String(uid);
+    if(!isAllUsers && selEnc.length){
+      // only show selected staff in the metric bars when filtered
+      const ok = selEnc.map(String).includes(uid) ||
+        (typeof patientBelongsToEncoder === 'function' && patientBelongsToEncoder({encodedBy:uid,t1By:uid,t2By:uid,createdBy:uid}, selEnc));
+      // simpler: match id or name against selection
+      if(!selEnc.map(String).includes(uid)){
+        const nm = (typeof displayNameFor==='function'?displayNameFor(uid):uid)||'';
+        const selN = selEnc.map(id => {
+          const n = (typeof displayNameFor==='function'?displayNameFor(id):id)||'';
+          return String(id).startsWith('name:') ? String(id).slice(5).toLowerCase() : String(n).toLowerCase();
+        });
+        if(!selN.includes(String(nm).toLowerCase()) && !selN.includes(String(uid).toLowerCase())) return;
+      }
+    }
+    if(!staffMap[uid]){
+      const name = (typeof displayNameFor==='function'?displayNameFor(uid):null)
+        || (String(uid).startsWith('name:')?String(uid).slice(5):String(uid).slice(0,10));
+      staffMap[uid] = { name, encoded:0, t1:0, t2:0 };
+    }
+    staffMap[uid][kind]++;
+  }
+  scoped.forEach(p=>{
+    const encUid = p.encodedBy || p.createdBy;
+    if(encUid) addStaff(encUid, 'encoded');
+    if(typeof hasT1==='function' ? hasT1(p) : (p.claim==='t1'||p.dateT1)){
+      addStaff(p.t1By || encUid, 't1');
+    }
+    if(typeof hasT2==='function' ? hasT2(p) : (p.claim==='t2'||p.dateT2)){
+      if(p.t2By || p.claim==='t2') addStaff(p.t2By || encUid, 't2');
+    }
   });
-  wrap.innerHTML = `<svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="${svgW}" height="${chartH}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+  // If All users and staffMap empty from scope, still try list all known encoders with 0
+  if(isAllUsers && typeof getEncoderOptions === 'function'){
+    getEncoderOptions().forEach(o=>{
+      if(!staffMap[o.id]) staffMap[o.id] = { name: o.label, encoded:0, t1:0, t2:0 };
+    });
+  }
+  // When filtered, ensure selected users appear even at 0
+  if(!isAllUsers){
+    selEnc.forEach(id=>{
+      if(!staffMap[id]){
+        const name = (typeof displayNameFor==='function'?displayNameFor(id):id);
+        staffMap[id] = { name: String(name).startsWith('name:')?String(name).slice(5):name, encoded:0, t1:0, t2:0 };
+      }
+    });
+  }
+
+  const staffList = Object.entries(staffMap)
+    .map(([id,u])=>({id, ...u, activity: u.encoded+u.t1+u.t2}))
+    .sort((a,b)=> b.activity - a.activity);
+
+  // Time chart SVG
+  let timeHtml = '';
+  if(!keys.length){
+    timeHtml = `<div class="dash-empty" style="padding:18px;">No dated records in this scope.</div>`;
+  } else {
+    const barW = Math.min(56, Math.max(28, Math.floor(520 / Math.max(keys.length,1))));
+    const gap = 12, chartH = 168, topPad = 28, bottomPad = 28, leftPad = 12;
+    const barAreaH = chartH - topPad - bottomPad;
+    const svgW = Math.max(keys.length * (barW + gap) + leftPad + 12, 200);
+    let bars = '';
+    // baseline
+    bars += `<line x1="${leftPad}" y1="${chartH-bottomPad}" x2="${svgW-8}" y2="${chartH-bottomPad}" stroke="currentColor" stroke-opacity="0.12" />`;
+    keys.forEach((k, i)=>{
+      const c = counts[i];
+      const h = Math.round((c / maxCount) * barAreaH);
+      const x = leftPad + i * (barW + gap);
+      const y = chartH - bottomPad - h;
+      let shortLabel = k;
+      if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + " '" + k.slice(2,4);
+      else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
+      bars += `
+        <rect class="dash-trend-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(h,3)}" rx="6"></rect>
+        <text class="dash-trend-num" x="${x + barW/2}" y="${y - 8}" text-anchor="middle">${c}</text>
+        <text class="dash-trend-label" x="${x + barW/2}" y="${chartH - 8}" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
+    });
+    timeHtml = `<div class="dash-trend-card"><svg class="dash-trend-svg" viewBox="0 0 ${svgW} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${bars}</svg></div>`;
+  }
+
+  // Staff horizontal metrics
+  const maxAct = Math.max(...staffList.map(s=>s.activity), 1);
+  const staffBars = staffList.length ? staffList.map(s=>{
+    const pctE = Math.round((s.encoded/maxAct)*100);
+    const pct1 = Math.round((s.t1/maxAct)*100);
+    const pct2 = Math.round((s.t2/maxAct)*100);
+    return `<div class="staff-metric-row">
+      <div class="sm-name" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
+      <div class="sm-bars">
+        <div class="sm-track" title="Encoded ${s.encoded}"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
+        <div class="sm-track" title="T1 ${s.t1}"><i class="sm-fill sm-t1" style="width:${pct1}%"></i></div>
+        <div class="sm-track" title="T2 ${s.t2}"><i class="sm-fill sm-t2" style="width:${pct2}%"></i></div>
+      </div>
+      <div class="sm-nums"><span>${s.encoded}</span><span>${s.t1}</span><span>${s.t2}</span></div>
+    </div>`;
+  }).join('') : `<div class="dash-empty" style="padding:12px;">No staff activity in this scope.</div>`;
+
+  const filterNote = isAllUsers
+    ? 'Showing all users'
+    : ('Showing: ' + selEnc.map(id => {
+        const n = typeof displayNameFor==='function'?displayNameFor(id):id;
+        return String(id).startsWith('name:')?String(id).slice(5):n;
+      }).join(', '));
+
+  wrap.innerHTML = `
+    <div class="dash-trend-grid">
+      <div>
+        <div class="dash-subhead">Volume over time</div>
+        ${timeHtml}
+      </div>
+      <div>
+        <div class="dash-subhead">Staff metrics <span class="dash-filter-pill">${escapeHtml(filterNote)}</span></div>
+        <div class="staff-metric-legend">
+          <span><i class="lg lg-enc"></i> Encoded</span>
+          <span><i class="lg lg-t1"></i> T1 submitted</span>
+          <span><i class="lg lg-t2"></i> T2 submitted</span>
+        </div>
+        <div class="staff-metric-list">${staffBars}</div>
+      </div>
+    </div>`;
 }
 
 async function openDashboard(){
