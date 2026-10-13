@@ -5985,6 +5985,14 @@ function idbGet(key){
   }));
 }
 
+function ensureTeamsFromPatients(){
+  try{
+    (state.patients || []).forEach(p=>{
+      if(p && p.team && !p.deleted) registerKnownTeam(p.team);
+    });
+  }catch(e){}
+}
+
 async function saveLocalCache(){
   try{
     // Strip bulky MCA data-URLs from roster cache — keep photos in a side store
@@ -6515,6 +6523,10 @@ async function pullRemote(){
     }
     // Keep ALL patients locally (including archived). Archived rows stay
     // until the user restores or permanently deletes them.
+    try{
+      state.patients.forEach(p=>{ if(p && p.team && !p.deleted) registerKnownTeam(p.team); });
+      if(typeof pushKnownTeams === 'function') pushKnownTeams();
+    }catch(e){}
     saveLocalCache();
     renderAll();
     const pendingCount = prunePendingIds();
@@ -7029,15 +7041,27 @@ function renderAll(){
 
   const monthVal = document.getElementById('monthFilter').value;
 
-  // When a specific month is selected, only show mobiles that have patients in that month
-  // (plus any brand-new empty mobiles the user just created). Avoids "copying" empty tables into next month.
+  // Month filter: show groups with patients in that month, plus known/empty groups (never hide saved sites)
   let teamsToShow = teams;
-  if(monthVal){
-    const teamsWithPatients = new Set(monthList.map(p => p.team));
-    teamsToShow = teams.filter(t => {
-      if([...removedTeams].some(r => r.toLowerCase() === String(t).toLowerCase())) return false;
-      return teamsWithPatients.has(t) || pendingEmptyTeams.has(t) || knownTeams.includes(t);
+  // Re-register every patient team so groups never "disappear" after refresh
+  try{
+    state.patients.forEach(p=>{
+      if(p && p.team && !p.deleted) registerKnownTeam(p.team);
     });
+  }catch(e){}
+  if(monthVal){
+    const teamsWithPatients = new Set(monthList.map(p => p.team).filter(Boolean));
+    const knownLower = new Set((knownTeams || []).map(t => String(t).toLowerCase()));
+    const pendingLower = new Set([...pendingEmptyTeams].map(t => String(t).toLowerCase()));
+    teamsToShow = teams.filter(t => {
+      const tl = String(t).toLowerCase();
+      if([...removedTeams].some(r => String(r).toLowerCase() === tl)) return false;
+      return teamsWithPatients.has(t) || knownLower.has(tl) || pendingLower.has(tl);
+    });
+    // If filter still empty but we have known teams, show them
+    if(!teamsToShow.length && knownTeams.length){
+      teamsToShow = knownTeams.filter(t => ![...removedTeams].some(r => String(r).toLowerCase() === String(t).toLowerCase()));
+    }
   }
   const typeFilter = (document.getElementById('filterType') || {}).value || '';
   if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
@@ -7053,13 +7077,23 @@ function renderAll(){
   groupsContainer.innerHTML = '';
   if(teamsToShow.length === 0){
     const msg = monthVal
-      ? `No records for ${monthLabel(monthVal)}. Switch months, or add a site/group (mobile or walk-in) and encode patients.`
+      ? `No sites/patients for <b>${monthLabel(monthVal)}</b>. Try <b>All months</b>, or add a site/group and encode patients.`
       : `No sites yet. Click “+ Add site / group” (mobile team or walk-in day), then “+ Add Patient”.`;
     groupsContainer.innerHTML = `<div class="empty-state">${msg}
-      <div class="empty-state-cta"><button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add site / group</button></div>
+      <div class="empty-state-cta" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+        ${monthVal ? '<button type="button" class="btn" id="emptyAllMonthsBtn">All months</button>' : ''}
+        <button type="button" class="btn btn-primary" id="emptyAddBtn">+ Add site / group</button>
+        <button type="button" class="btn" id="emptySyncBtn">Sync now</button>
+      </div>
     </div>`;
-    const ebtn = document.getElementById('emptyAddBtn');
-    if(ebtn) ebtn.addEventListener('click', ()=>{ document.getElementById('addTeamBtn')?.click(); });
+    document.getElementById('emptyAddBtn')?.addEventListener('click', ()=>{ document.getElementById('addTeamBtn')?.click(); });
+    document.getElementById('emptyAllMonthsBtn')?.addEventListener('click', ()=>{
+      const mf = document.getElementById('monthFilter');
+      if(mf){ mf.value = ''; }
+      document.getElementById('clearMonthBtn')?.click();
+      renderAll();
+    });
+    document.getElementById('emptySyncBtn')?.addEventListener('click', ()=>{ document.getElementById('syncNowBtn')?.click(); });
     return;
   }
   teamsToShow.forEach(team=>{
@@ -10969,6 +11003,7 @@ async function initApp(){
   await pullTeamStaff();
   try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
   try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
+  try{ ensureTeamsFromPatients(); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
