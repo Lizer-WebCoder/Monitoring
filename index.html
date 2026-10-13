@@ -8293,9 +8293,24 @@ function renderTrendChart(mode){
   const selEnc = (typeof getSelectedEncoderIds === 'function') ? getSelectedEncoderIds() : [];
   const isAllUsers = !selEnc.length;
 
-  // --- Time buckets (respects encoder filter via scoped) ---
+  // --- Volume buckets: prefer useful breakdown (days / staff), not one lonely month bar ---
   let buckets = {};
+  let bucketKind = 'month'; // month | day | staff
+  let chartTitle = 'Volume over time';
+
+  function dateOf(p){
+    return (typeof patientActivityDate === 'function' ? patientActivityDate(p) : String(p.dateEncoded||'').slice(0,10));
+  }
+  function staffLabel(p){
+    const uid = p.encodedBy || p.createdBy || '_unknown';
+    let label = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid) || 'Unknown';
+    if(String(uid).startsWith('name:')) label = String(uid).slice(5);
+    return { uid: String(uid), label: String(label) };
+  }
+
   if(mode === 'week'){
+    bucketKind = 'day';
+    chartTitle = 'Volume by day (this week)';
     const weekOf = (document.getElementById('dashWeekInput') || {}).value;
     const b = weekOf ? dashWeekBounds(weekOf) : null;
     if(b){
@@ -8306,21 +8321,67 @@ function renderTrendChart(mode){
       }
     }
     scoped.forEach(p=>{
-      const enc = (typeof patientActivityDate==='function' ? patientActivityDate(p) : (p.dateEncoded||'').slice(0,10));
+      const enc = dateOf(p);
       if(!enc) return;
       buckets[enc] = (buckets[enc]||0)+1;
     });
   } else if(mode === 'day'){
-    const day = (document.getElementById('dashDayInput') || {}).value || 'selected day';
-    buckets[day] = scoped.length;
-  } else {
+    bucketKind = 'staff';
+    chartTitle = 'Volume by staff (selected day)';
     scoped.forEach(p=>{
-      const d = (typeof patientActivityDate==='function' ? patientActivityDate(p) : (p.dateEncoded||''));
-      const m = (d||'').slice(0,7) || 'undated';
-      buckets[m] = (buckets[m]||0)+1;
+      const s = staffLabel(p);
+      if(String(s.label).toLowerCase().includes('declined')) return;
+      buckets[s.label] = (buckets[s.label]||0)+1;
     });
+  } else {
+    // month / all
+    const monthSel = dashMonthSelect ? dashMonthSelect.value : 'all';
+    const byMonth = {};
+    scoped.forEach(p=>{
+      const d = dateOf(p);
+      const m = (d||'').slice(0,7) || 'undated';
+      byMonth[m] = (byMonth[m]||0)+1;
+    });
+    const monthKeys = Object.keys(byMonth).filter(k => k !== 'undated').sort();
+
+    // One month selected OR only one month of data → daily bars
+    if(monthSel !== 'all' || monthKeys.length <= 1){
+      const focusMonth = monthSel !== 'all' ? monthSel : (monthKeys[0] || '');
+      bucketKind = 'day';
+      chartTitle = focusMonth
+        ? ('Daily volume · ' + (typeof monthLabel === 'function' ? monthLabel(focusMonth) : focusMonth))
+        : 'Daily volume';
+      scoped.forEach(p=>{
+        const d = dateOf(p);
+        if(!d) return;
+        if(focusMonth && d.slice(0,7) !== focusMonth) return;
+        buckets[d] = (buckets[d]||0)+1;
+      });
+      const activeDays = Object.keys(buckets).filter(k => buckets[k] > 0);
+      // Still only one day of activity → show by staff instead (more informative for All users)
+      if(activeDays.length <= 1 && scoped.length > 0){
+        buckets = {};
+        bucketKind = 'staff';
+        chartTitle = isAllUsers ? 'Volume by staff (all users)' : 'Volume by staff';
+        scoped.forEach(p=>{
+          const s = staffLabel(p);
+          if(String(s.label).toLowerCase().includes('declined')) return;
+          buckets[s.label] = (buckets[s.label]||0)+1;
+        });
+      }
+    } else {
+      bucketKind = 'month';
+      chartTitle = 'Volume by month';
+      Object.keys(byMonth).forEach(k => { buckets[k] = byMonth[k]; });
+    }
   }
-  const keys = Object.keys(buckets).sort();
+
+  let keys = Object.keys(buckets);
+  if(bucketKind === 'staff'){
+    keys.sort((a,b) => buckets[b] - buckets[a] || String(a).localeCompare(String(b)));
+  } else {
+    keys.sort();
+  }
   const counts = keys.map(k => buckets[k]);
   const maxCount = Math.max(...counts, 1);
 
@@ -8391,6 +8452,7 @@ function renderTrendChart(mode){
       let shortLabel = k;
       if(/^\d{4}-\d{2}$/.test(k)) shortLabel = monthLabel(k).slice(0,3) + " '" + k.slice(2,4);
       else if(/^\d{4}-\d{2}-\d{2}$/.test(k)) shortLabel = k.slice(5);
+      else shortLabel = String(k).length > 10 ? String(k).slice(0,9)+'\u2026' : String(k);
       const isPeak = c === maxCount && c > 0;
       bars += `
         <rect class="vol-bar ${isPeak?'vol-bar-peak':''}" x="${x}" y="${y}" width="${barW}" height="${h}" rx="8"/>
@@ -8402,7 +8464,7 @@ function renderTrendChart(mode){
         <div class="vol-stats">
           <div class="vol-stat"><div class="vs-num">${totalVol}</div><div class="vs-lbl">Total patients</div></div>
           <div class="vol-stat"><div class="vs-num">${peak}</div><div class="vs-lbl">Peak · ${escapeHtml(peakLabel || '—')}</div></div>
-          <div class="vol-stat"><div class="vs-num">${keys.length}</div><div class="vs-lbl">${mode==='week'?'Days':mode==='day'?'Day':'Periods'}</div></div>
+          <div class="vol-stat"><div class="vs-num">${keys.length}</div><div class="vs-lbl">${bucketKind==='staff'?'Staff':bucketKind==='day'?'Days':'Periods'}</div></div>
         </div>
         <div class="vol-chart-wrap">
           <svg class="vol-svg" viewBox="0 0 ${svgW} ${chartH}" width="100%" height="${chartH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${bars}</svg>
@@ -8450,7 +8512,7 @@ function renderTrendChart(mode){
   wrap.innerHTML = `
     <div class="dash-trend-grid">
       <div>
-        <div class="dash-subhead">Volume over time</div>
+        <div class="dash-subhead">${escapeHtml(chartTitle)}</div>
         ${timeHtml}
       </div>
       <div>
