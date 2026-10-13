@@ -5785,6 +5785,29 @@ function displayNameFor(uid){
   return uid.slice(0,8) + '…';
 }
 
+const PROFILE_LOCAL_KEY = 'drcare_profile_cache_v1';
+function saveProfileLocal(uid, profile){
+  if(!uid || !profile) return;
+  try{
+    const all = JSON.parse(localStorage.getItem(PROFILE_LOCAL_KEY) || '{}');
+    all[uid] = {
+      id: uid,
+      email: profile.email || '',
+      full_name: profile.full_name || profile.fullName || '',
+      role: profile.role || 'encoder',
+      approved: !!(profile.approved || profile.role === 'admin'),
+      cachedAt: new Date().toISOString()
+    };
+    localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(all));
+  }catch(e){}
+}
+function readProfileLocal(uid){
+  try{
+    const all = JSON.parse(localStorage.getItem(PROFILE_LOCAL_KEY) || '{}');
+    return all[uid] || null;
+  }catch(e){ return null; }
+}
+
 async function loadCurrentProfile(session){
   const user = session.user;
   currentUser = {
@@ -5794,11 +5817,24 @@ async function loadCurrentProfile(session){
     role: 'encoder',
     approved: false
   };
+
+  // Offline / network fail: use last cached approved profile so the app stays usable
+  const cached = readProfileLocal(user.id);
+  if(cached){
+    currentUser.fullName = cached.full_name || currentUser.email;
+    currentUser.role = cached.role || 'encoder';
+    currentUser.approved = (cached.role === 'admin') ? true : !!cached.approved;
+    profileCache[user.id] = cached;
+  }
+
+  if(!navigator.onLine){
+    return currentUser;
+  }
+
   try{
     let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
     if(error) throw error;
     if(!data){
-      // Profile missing — create one (not approved by default)
       const { data: inserted, error: insErr } = await sb.from('profiles').upsert({
         id: user.id,
         email: user.email,
@@ -5811,12 +5847,13 @@ async function loadCurrentProfile(session){
     if(data){
       currentUser.fullName = data.full_name || data.email || currentUser.email;
       currentUser.role = data.role || 'encoder';
-      // Admins are always treated as approved
       currentUser.approved = (data.role === 'admin') ? true : !!data.approved;
       profileCache[user.id] = data;
+      saveProfileLocal(user.id, data);
     }
   }catch(e){
     console.warn('loadCurrentProfile', e);
+    // keep cached values if fetch failed
   }
   return currentUser;
 }
@@ -10143,7 +10180,21 @@ async function doLogin(){
     return;
   }
   if(!navigator.onLine){
-    showLoginError("You're offline. Connect to the internet once to sign in on this device.");
+    // Offline: resume existing Supabase session on this device (after at least one online login)
+    try{
+      const { data } = await sb.auth.getSession();
+      const sess = data && data.session;
+      if(sess && sess.user){
+        const sessEmail = String(sess.user.email || '').toLowerCase();
+        if(sessEmail && sessEmail === email){
+          await onSignedIn(sess);
+          return;
+        }
+        showLoginError('This device has a session for a different account. Connect online to switch users, or continue with the saved account after a refresh.');
+        return;
+      }
+    }catch(e){}
+    showLoginError("You're offline and this device has no saved session. Connect once to sign in — then you can use DR CARE offline.");
     return;
   }
   if(!window.supabase || !sb || !sb.auth){
@@ -10261,7 +10312,19 @@ async function onSignedIn(session){
 
   // Block unapproved users (admins always pass)
   if(!currentUser.approved && currentUser.role !== 'admin'){
-    try{ await sb.auth.signOut(); }catch(e){}
+    // Offline with no cache → cannot verify approval
+    if(!navigator.onLine && !readProfileLocal(session.user.id)){
+      loginOverlay.classList.remove('hidden');
+      if(loginErr){
+        loginErr.style.display = 'block';
+        loginErr.style.color = '#fecaca';
+        loginErr.textContent = 'Offline and this device has no saved approval yet. Connect once after an admin approves you, then offline use will work.';
+        loginErr.classList.add('show');
+      }
+      return;
+    }
+    // Known unapproved (online fetch or cache)
+    try{ if(navigator.onLine) await sb.auth.signOut(); }catch(e){}
     loginOverlay.classList.remove('hidden');
     if(loginErr){
       loginErr.style.display = 'block';
@@ -10272,6 +10335,13 @@ async function onSignedIn(session){
     if(typeof softToast === 'function') softToast('Waiting for admin approval');
     return;
   }
+  // Persist profile for offline boots
+  try{ saveProfileLocal(currentUser.id, {
+    email: currentUser.email,
+    full_name: currentUser.fullName,
+    role: currentUser.role,
+    approved: currentUser.approved
+  }); }catch(e){}
 
   loginOverlay.classList.add('hidden');
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
@@ -10466,8 +10536,11 @@ async function initApp(){
   
   loginOverlay.classList.remove('hidden');
   if(!navigator.onLine){
-    loginErr.textContent = "You're offline and this device hasn't signed in before — connect once to sign in, then offline access will work.";
-    loginErr.style.display = 'block';
+    if(loginErr){
+      loginErr.textContent = "You're offline and this device has no active session. Connect once to sign in (and get admin approval) — then you can use DR CARE offline on this device.";
+      loginErr.style.display = 'block';
+      loginErr.classList.add('show');
+    }
   }
 })();
 
