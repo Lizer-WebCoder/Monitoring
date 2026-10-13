@@ -5166,6 +5166,162 @@ details.legend-wrap{
   :root{ --ctrl-h: 34px; }
 }
 
+
+/* ========== Team header — compact neat bar ========== */
+.team-group{
+  overflow: hidden;
+}
+.team-head{
+  padding: 10px 12px 8px !important;
+  gap: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--card) !important;
+}
+.team-head-top{
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px 10px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.team-head .chev{
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.team-title-block{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px 8px !important;
+  min-width: 0 !important;
+  flex: 1 1 180px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.team-title-block h2{
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.25 !important;
+}
+.team-title-block .type-badge,
+.team-title-block .photo-pct,
+.team-title-block .count,
+.team-title-block .staff-toggle{
+  margin: 0 !important;
+  padding: 2px 8px !important;
+  font-size: 10.5px !important;
+  line-height: 1.3 !important;
+  height: auto !important;
+  border-radius: 999px !important;
+}
+.team-tools{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 !important;
+}
+.team-tools .tt-btn{
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  border-radius: 8px !important;
+}
+
+.team-head-bottom{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 0 0 !important;
+  margin: 8px 0 0 !important;
+  border-top: 1px solid var(--line) !important;
+}
+.team-head-bottom .handoff-box{
+  flex: 1 1 160px !important;
+  min-width: 140px !important;
+  max-width: 360px !important;
+  margin: 0 !important;
+}
+.team-head-bottom .handoff-box input,
+.handoff-box input[data-handoff]{
+  width: 100% !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+  margin: 0 !important;
+}
+.team-status-row,
+.team-head-bottom .mission-checks,
+.team-head-bottom > div:not(.handoff-box){
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.team-head-bottom label{
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  gap: 5px !important;
+  border-radius: 999px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.04em !important;
+  white-space: nowrap;
+}
+.team-head-bottom label input{
+  margin: 0 !important;
+  width: 13px;
+  height: 13px;
+}
+
+@media (max-width: 720px){
+  .team-tools{
+    margin-left: 0 !important;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .team-head-bottom .handoff-box{
+    max-width: none !important;
+    flex: 1 1 100% !important;
+  }
+}
+
+
+.team-head-bottom .team-checklist{
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 auto !important;
+}
+.team-head-bottom .team-checklist label{
+  height: 30px !important;
+  margin: 0 !important;
+}
+
 </style>
 </head>
 <body>
@@ -7159,6 +7315,7 @@ function renderAll(){
         </div>
         <div class="team-head-bottom" onclick="event.stopPropagation()">
           <div class="handoff-box"><input type="text" data-handoff="${escapeAttr(team)}" placeholder="Handoff note for next shift…" value="${escapeAttr(getHandoff(team))}"></div>
+          ${typeof teamChecklistHtml === 'function' ? teamChecklistHtml(team) : ''}
         </div>
       </div>
       ${collapsed ? '' : `
@@ -12282,18 +12439,8 @@ if(typeof renderAll === 'function'){
   renderAll = function(){
     _ra2();
     try{
-      document.querySelectorAll('.team-head').forEach(head=>{
-        if(head.querySelector('.team-checklist')) return;
-        const h2 = head.querySelector('h2');
-        if(!h2) return;
-        // Use data-team for accurate name (h2 includes badge text)
-        const team = head.getAttribute('data-team') || h2.childNodes[0]?.textContent?.trim() || h2.textContent.trim();
-        const div = document.createElement('div');
-        div.innerHTML = teamChecklistHtml(team);
-        const bottom = head.querySelector('.team-head-bottom');
-        const target = bottom || head.querySelector('.team-title-block') || h2.parentElement;
-        target.appendChild(div.firstChild);
-      });
+      // Checklist is rendered in team-head-bottom template (no second inject)
+      document.querySelectorAll('.team-head').forEach(()=>{});
       // zebra rows
       document.querySelectorAll('tbody tr[data-id]').forEach((tr,i)=>{
         tr.classList.toggle('zebra-alt', i % 2 === 1);
