@@ -4571,6 +4571,15 @@
     z-index: 6;
   }
 
+
+  .sys-select{
+    min-width: 88px !important;
+    font-weight: 700 !important;
+    font-size: 11.5px !important;
+  }
+  .sys-select option[value="WAH"]{ color: #0f766e; }
+  .sys-select option[value="BIZBOX"]{ color: #5b8def; }
+
 </style>
 </head>
 <body>
@@ -4668,7 +4677,7 @@
       <button class="btn" id="logWorkBtn" title="Log accomplishment"></button>
       <button class="btn" id="activityBtn"></button>
       <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
-      <button type="button" class="btn btn-ghost btn-sm" id="manageEncodersBtn" title="Manage encoder names" style="display:none;">Encoders</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="manageEncodersBtn" title="Manage user names" style="display:none;">Users</button>
     <button type="button" class="btn btn-ghost btn-sm" id="adminBtn" style="display:none;"></button>
     </div>
     <div class="tb-group tb-group-end">
@@ -4813,7 +4822,7 @@
       <div>
         <label>Encoded by</label>
         <select id="f_encodedBy"></select>
-        <div class="field-hint">Who encoded this patient. Manage extra names via <b>Encoders</b> (admin).</div>
+        <div class="field-hint">Who encoded this patient. Manage extra names via <b>Users</b> (admin).</div>
       </div>
       <div>
         <label>Status of claim</label>
@@ -5059,8 +5068,8 @@
         <select id="dashTeamSelect"></select>
       </div>
       <div id="dashEncoderWrap" style="min-width:180px;position:relative;">
-        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">Encoder(s)</label>
-        <button type="button" id="dashEncoderBtn" class="enc-dd-btn">All encoders</button>
+        <label style="font-size:10px;display:block;margin-bottom:2px;color:var(--muted);">User(s)</label>
+        <button type="button" id="dashEncoderBtn" class="enc-dd-btn">All users</button>
         <div id="dashEncoderPanel" class="enc-dd-panel" hidden>
           <label class="enc-dd-item enc-dd-all"><input type="checkbox" id="dashEncAll" checked> All users</label>
           <div id="dashEncoderList" class="enc-dd-list"></div>
@@ -5198,12 +5207,12 @@
 </div>
 
 
-<!-- Manage encoder names (extra options beyond signed-up users) -->
+<!-- Manage user names (extra options beyond signed-up users) -->
 <div class="dash-backdrop" id="encoderListBackdrop" style="z-index:460;">
   <div class="dash-modal" style="max-width:440px;">
     <div class="dash-head">
       <div>
-        <h3>Encoder list</h3>
+        <h3>User list</h3>
         <div class="modal-sub">Signed-up users appear automatically. Add extra names for staff who encode without an account. Remove only removes extras — not account users.</div>
       </div>
       <button type="button" class="dash-close" id="encoderListClose" title="Close">✕</button>
@@ -5481,6 +5490,7 @@ function toRemote(p, mode){
   if(p.t2By) custom.t2By = p.t2By;
   if(p.t1At) custom.t1At = p.t1At;
   if(p.t2At) custom.t2At = p.t2At;
+  if(p.claimSystem) custom.claimSystem = p.claimSystem;
   return Object.assign({}, core, {
     date_t1: emptyToNull(p.dateT1 || p.dateSubmitted),
     date_t2: emptyToNull(p.dateT2),
@@ -5524,7 +5534,8 @@ function fromRemote(r){
     t1By: cb.t1By || null,
     t2By: cb.t2By || null,
     t1At: cb.t1At || null,
-    t2At: cb.t2At || null
+    t2At: cb.t2At || null,
+    claimSystem: cb.claimSystem || null
   };
 }
 
@@ -5729,6 +5740,8 @@ async function pullRemote(){
         if(keepEnc) local.customBenefits.encodedBy = local.encodedBy || keepEnc;
         if(local.t1By) local.customBenefits.t1By = local.t1By;
         if(local.t2By) local.customBenefits.t2By = local.t2By;
+        if(!local.claimSystem && keepCb.claimSystem) local.claimSystem = keepCb.claimSystem;
+        if(local.claimSystem) local.customBenefits.claimSystem = local.claimSystem;
       } else state.patients.push(remote);
     });
     // Drop any local copies of purged IDs
@@ -6365,7 +6378,9 @@ function renderAll(){
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th><th>T1 submitted date</th><th>T2 submitted date</th>
+              <th>Digital MCA</th>
+              <th title="System used to encode / submit this patient">System</th>
+              <th>T1 submitted date</th><th>T2 submitted date</th>
               <th>Within 24h</th><th>T1 submitted by</th><th>T2 submitted by</th><th>Duplicate tracker</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
             </tr>
@@ -6458,6 +6473,7 @@ function rowHtml(p){
       </select></td>
       ${facilityCellHtml(p)}
       <td style="text-align:center"><input type="checkbox" data-field="mca" ${p.mca?'checked':''}></td>
+      <td style="min-width:96px;text-align:center;">${typeof systemSelectHtml==='function' ? systemSelectHtml(p,'claimSystem') : '—'}</td>
       <td class="datecell"><input type="date" data-field="dateT1" value="${p.dateT1||p.dateSubmitted||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;" title="T1 submitted date"></td>
       <td class="datecell"><input type="date" data-field="dateT2" value="${p.dateT2||''}" style="border:none; background:transparent; font-family:inherit; font-size:12px; color:var(--muted); width:126px; text-align:center;" title="T2 submitted date"></td>
       <td style="text-align:center"><input type="checkbox" data-field="within24" ${p.within24?'checked':''}></td>
@@ -6855,6 +6871,11 @@ groupsContainer.addEventListener('change', e=>{
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
     p.customBenefits.encodedBy = p.encodedBy;
   }
+  if(field === 'claimSystem'){
+    p.claimSystem = e.target.value || null;
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.claimSystem = p.claimSystem;
+  }
   // Do NOT stampAttribution(t1/t2) here — that would overwrite the chosen person with current user
   if(currentUser && currentUser.id){
     p.updatedBy = currentUser.id;
@@ -6862,7 +6883,7 @@ groupsContainer.addEventListener('change', e=>{
   }
   persistChange(p);
   // Re-render after local cache is written so dropdown keeps selection
-  if(field === 'dateT2' || field === 'dateT1' || field === 't1By' || field === 't2By' || field === 'encodedBy'){
+  if(field === 'dateT2' || field === 'dateT1' || field === 't1By' || field === 't2By' || field === 'encodedBy' || field === 'claimSystem'){
     Promise.resolve(saveLocalCache()).then(() => renderAll());
   }
 });
@@ -7108,6 +7129,21 @@ function getEncoderOptions(){
     .map(([id, label]) => ({ id, label: String(label) }))
     .sort((a,b) => a.label.localeCompare(b.label));
 }
+
+function systemSelectHtml(p, field){
+  field = field || 'claimSystem';
+  const cur = (p && p[field]) ? String(p[field]) : '';
+  const disabled = (typeof canEdit === 'function' && !canEdit()) ? 'disabled' : '';
+  const opts = [
+    { id: '', label: '—' },
+    { id: 'WAH', label: 'WAH' },
+    { id: 'BIZBOX', label: 'Bizbox' }
+  ];
+  return `<select class="badge-select sys-select" data-field="${escapeAttr(field)}" ${disabled} title="WAH or Bizbox">
+    ${opts.map(o => `<option value="${escapeAttr(o.id)}" ${o.id===cur?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}
+  </select>`;
+}
+
 function encoderSelectHtml(p, field){
   field = field || 'encodedBy';
   let cur = '';
@@ -8291,7 +8327,7 @@ function populateDashboardControls(){
               const chk = prev.has(o.id) ? 'checked' : '';
               return '<label class="enc-dd-item"><input type="checkbox" data-enc-id="'+escapeAttr(o.id)+'" '+chk+'> '+escapeHtml(String(o.label))+'</label>';
             }).join('')
-          : '<div style="padding:8px 10px;font-size:12px;color:var(--muted);">No users found. Staff must sign up, or add names under Encoders.</div>';
+          : '<div style="padding:8px 10px;font-size:12px;color:var(--muted);">No users found. Staff must sign up, or add names under Users.</div>';
       }
       const allCb = document.getElementById('dashEncAll');
       if(allCb){
@@ -8489,14 +8525,6 @@ const ACCOMPLISH_TYPES = [
   { id: 'inquiries', label: 'Answered inquiries (chat / text / calls)', manual: true },
   { id: 'rtof', label: 'Prepared RTOF', manual: true },
   { id: 'printed_mca', label: 'Generated & printed MCAs', manual: true },
-  { id: 'encoding_t1_wah', label: 'Encoding T1 WAH', manual: true },
-  { id: 'submission_t1_wah', label: 'Submission T1 WAH', manual: true },
-  { id: 'encoding_t2_wah', label: 'Encoding T2 WAH', manual: true },
-  { id: 'submission_t2_wah', label: 'Submission T2 WAH', manual: true },
-  { id: 'encoding_t1_bizbox', label: 'Encoding T1 Bizbox', manual: true },
-  { id: 'submission_t1_bizbox', label: 'Submission T1 Bizbox', manual: true },
-  { id: 'encoding_t2_bizbox', label: 'Encoding T2 Bizbox', manual: true },
-  { id: 'submission_t2_bizbox', label: 'Submission T2 Bizbox', manual: true },
   { id: 'custom', label: 'Other / custom task', manual: true }
 ];
 
@@ -8643,8 +8671,43 @@ function buildEmployeeDutyHtml(scoped){
       id: s.id, name: s.name,
       encoded: s.encoded, t1: s.t1, t2: s.t2, mca: s.mca,
       walkin: walkBy[s.id] || 0,
+      encWah: 0, encBiz: 0, t1Wah: 0, t1Biz: 0, t2Wah: 0, t2Biz: 0,
       tasks: {}
     };
+  });
+  function ensureDutyUser(uid, name){
+    if(!uid) return null;
+    uid = String(uid);
+    if(!byId[uid]){
+      byId[uid] = { id: uid, name: name || uid, encoded:0, t1:0, t2:0, mca:0, walkin:0,
+        encWah:0, encBiz:0, t1Wah:0, t1Biz:0, t2Wah:0, t2Biz:0, tasks:{} };
+    }
+    return byId[uid];
+  }
+  (scoped || []).forEach(p=>{
+    const sys = String(p.claimSystem || '').toUpperCase();
+    const encUid = p.encodedBy || p.createdBy;
+    if(encUid){
+      const row = ensureDutyUser(encUid, typeof displayNameFor==='function'?displayNameFor(encUid):encUid);
+      if(row){
+        if(sys === 'WAH') row.encWah++;
+        else if(sys === 'BIZBOX') row.encBiz++;
+      }
+    }
+    if(hasT1(p) && p.t1By){
+      const row = ensureDutyUser(p.t1By, typeof displayNameFor==='function'?displayNameFor(p.t1By):p.t1By);
+      if(row){
+        if(sys === 'WAH') row.t1Wah++;
+        else if(sys === 'BIZBOX') row.t1Biz++;
+      }
+    }
+    if(hasT2(p) && p.t2By){
+      const row = ensureDutyUser(p.t2By, typeof displayNameFor==='function'?displayNameFor(p.t2By):p.t2By);
+      if(row){
+        if(sys === 'WAH') row.t2Wah++;
+        else if(sys === 'BIZBOX') row.t2Biz++;
+      }
+    }
   });
   acc.forEach(a => {
     let id = String(a.userId || '');
@@ -8675,7 +8738,42 @@ function buildEmployeeDutyHtml(scoped){
     }
   });
 
-  const rows = Object.values(byId).sort((a,b) => String(a.name).localeCompare(String(b.name)));
+  let rows = Object.values(byId).sort((a,b) => String(a.name).localeCompare(String(b.name)));
+  if(selEnc.length){
+    rows = rows.filter(r => {
+      if(selEnc.map(String).includes(String(r.id))) return true;
+      const nm = String(r.name||'').toLowerCase();
+      return selEnc.some(id=>{
+        const n = (typeof displayNameFor==='function'?displayNameFor(id):id)||id;
+        const raw = String(id).startsWith('name:') ? String(id).slice(5) : n;
+        return String(raw).toLowerCase() === nm;
+      });
+    });
+    // Recompute auto stats only for selected people
+    rows = rows.map(r => {
+      const me = String(r.id);
+      const myName = String(r.name||'').toLowerCase();
+      function isMe(uid){
+        if(!uid) return false;
+        if(String(uid)===me) return true;
+        const n = (typeof displayNameFor==='function'?displayNameFor(uid):uid)||'';
+        return String(n).toLowerCase()===myName || (String(uid).startsWith('name:') && String(uid).slice(5).toLowerCase()===myName);
+      }
+      let encoded=0,t1=0,t2=0,mca=0,walkin=0;
+      (scoped||[]).forEach(p=>{
+        const encUid = p.encodedBy || p.createdBy;
+        if(isMe(encUid)){
+          encoded++;
+          if(p.mca) mca++;
+          const team = String(p.team||'');
+          if(/walk-?in/i.test(team) || p.groupType==='walkin') walkin++;
+        }
+        if(hasT1(p) && isMe(p.t1By)) t1++;
+        if(hasT2(p) && isMe(p.t2By)) t2++;
+      });
+      return Object.assign({}, r, { encoded, t1, t2, mca, walkin });
+    });
+  }
   if(!rows.length && !acc.length){
     return `<div class="dash-section">
       <h4>Employee duties & accomplishments</h4>
@@ -8698,8 +8796,14 @@ function buildEmployeeDutyHtml(scoped){
     return `<tr>
       <td style="text-align:left;font-weight:600">${escapeHtml(r.name)}</td>
       <td>${r.encoded}</td>
+      <td>${r.encWah||0}</td>
+      <td>${r.encBiz||0}</td>
       <td>${r.t1}</td>
+      <td>${r.t1Wah||0}</td>
+      <td>${r.t1Biz||0}</td>
       <td>${r.t2}</td>
+      <td>${r.t2Wah||0}</td>
+      <td>${r.t2Biz||0}</td>
       <td>${r.mca}</td>
       <td>${r.walkin}</td>
       ${extras}
@@ -8733,8 +8837,14 @@ function buildEmployeeDutyHtml(scoped){
           <tr>
             <th style="text-align:left">Employee</th>
             <th title="Patients first saved">Encoded</th>
+            <th>Enc WAH</th>
+            <th>Enc Bizbox</th>
             <th>T1 by them</th>
+            <th>T1 WAH</th>
+            <th>T1 Bizbox</th>
             <th>T2 by them</th>
+            <th>T2 WAH</th>
+            <th>T2 Bizbox</th>
             <th>MCA</th>
             <th title="Walk-in group patients">Walk-ins</th>
             ${headExtra}
@@ -8854,7 +8964,41 @@ function renderDashboard(){
   }
 
   /* Staff productivity — single source of truth */
-  const staffStats = buildStaffStats(scoped);
+  let staffStats = buildStaffStats(scoped);
+  // If specific users selected, only show THOSE users' own actions (not co-workers on same patients)
+  const selForStaff = (typeof getSelectedEncoderIds === 'function') ? getSelectedEncoderIds() : [];
+  if(selForStaff.length){
+    staffStats = staffStats.filter(s => {
+      if(selForStaff.map(String).includes(String(s.id))) return true;
+      const nm = String(s.name || '').toLowerCase();
+      return selForStaff.some(id => {
+        const n = (typeof displayNameFor === 'function' ? displayNameFor(id) : id) || id;
+        const raw = String(id).startsWith('name:') ? String(id).slice(5) : n;
+        return String(raw).toLowerCase() === nm;
+      });
+    }).map(s => {
+      // Recompute only this person's credits from scoped patients
+      const me = String(s.id);
+      const myNames = [String(s.name||'').toLowerCase()];
+      let encoded=0,t1=0,t2=0,mca=0;
+      const teams = {};
+      function isMe(uid){
+        if(!uid) return false;
+        if(String(uid) === me) return true;
+        const n = (typeof displayNameFor === 'function' ? displayNameFor(uid) : uid) || '';
+        return myNames.includes(String(n).toLowerCase()) ||
+          (String(uid).startsWith('name:') && myNames.includes(String(uid).slice(5).toLowerCase()));
+      }
+      (scoped||[]).forEach(p=>{
+        const encUid = p.encodedBy || p.createdBy;
+        if(isMe(encUid)){ encoded++; if(p.mca) mca++; const t=p.team||'Unknown'; teams[t]=(teams[t]||0)+1; }
+        if(hasT1(p) && isMe(p.t1By)) t1++;
+        if(hasT2(p) && isMe(p.t2By)) t2++;
+      });
+      // When filtered to a person, T1/T2 only if they are the submitter
+      return Object.assign({}, s, { encoded, t1, t2, mca, teams, activity: encoded+t1+t2 });
+    });
+  }
   const userRows = staffStats.map(u=>{
       const teamEntries = Object.entries(u.teams).sort((a,b)=>b[1]-a[1]);
       const siteCount = teamEntries.length;
