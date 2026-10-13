@@ -5950,7 +5950,7 @@ async function loadCurrentProfile(session){
   }
 
   try{
-    let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    let { data, error } = await withTimeout(sb.from('profiles').select('*').eq('id', user.id).maybeSingle(), 12000, 'Profile');
     if(error) throw error;
     if(!data){
       const { data: inserted, error: insErr } = await sb.from('profiles').upsert({
@@ -10264,7 +10264,19 @@ document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
   setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
 });
 
+function withTimeout(promise, ms, label){
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error((label || 'Request') + ' timed out. Check internet and try again.')), ms);
+    Promise.resolve(promise).then(
+      v => { clearTimeout(t); resolve(v); },
+      e => { clearTimeout(t); reject(e); }
+    );
+  });
+}
+
 async function doLogin(){
+  if(window._loginBusy) return;
+  window._loginBusy = true;
   const emailEl = document.getElementById('loginEmail');
   const passEl = document.getElementById('loginPassword');
   const email = (emailEl && emailEl.value || '').trim().toLowerCase();
@@ -10291,18 +10303,18 @@ async function doLogin(){
 
   if(!email || !password){
     showLoginError('Enter email and password.');
-    return;
+    window._loginBusy = false; return;
   }
   if(authMode === 'signup' && password.length < 6){
     showLoginError('Password must be at least 6 characters.');
-    return;
+    window._loginBusy = false; return;
   }
   if(!navigator.onLine){
     if(btn){ btn.disabled = true; btn.textContent = 'Unlocking…'; }
     try{
       // 1) Existing Supabase session for this email
       try{
-        const { data } = await sb.auth.getSession();
+        const { data } = await withTimeout(sb.auth.getSession(), 8000, 'Session');
         const sess = data && data.session;
         if(sess && sess.user){
           const sessEmail = String(sess.user.email || '').toLowerCase();
@@ -10328,6 +10340,7 @@ async function doLogin(){
       }
       showLoginError("No offline unlock on this device yet. Connect once, sign in while approved — then the same password works offline here.");
     } finally {
+      window._loginBusy = false;
       if(btn){ btn.disabled = false; btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in'; }
     }
     return;
@@ -10341,11 +10354,11 @@ async function doLogin(){
 
   try{
     if(authMode === 'signup'){
-      const { data, error } = await sb.auth.signUp({
+      const { data, error } = await withTimeout(sb.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName || email.split('@')[0] } }
-      });
+      }), 20000, 'Sign up');
       if(error){
         let msg = error.message || 'Sign up failed';
         if(/already registered|already been registered/i.test(msg)) msg = 'That email is already registered. Sign in instead.';
@@ -10365,7 +10378,7 @@ async function doLogin(){
       return;
     }
 
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await withTimeout(sb.auth.signInWithPassword({ email, password }), 20000, 'Sign in');
     if(error){
       let msg = error.message || 'Sign in failed';
       if(/invalid login credentials/i.test(msg)) msg = 'Wrong email or password.';
@@ -10388,8 +10401,10 @@ async function doLogin(){
     let msg = (e && e.message) ? e.message : 'Sign in failed';
     if(/quota|storage/i.test(msg)) msg = 'Browser storage is full. Clear site data for this page, then try again.';
     if(/createClient|supabase is not defined/i.test(msg)) msg = 'Supabase client failed to start. Hard-refresh or re-upload supabase.js.';
+    if(/timed out/i.test(msg)) msg = msg;
     showLoginError(msg);
   }finally{
+    window._loginBusy = false;
     if(btn){
       btn.disabled = false;
       btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
@@ -10508,13 +10523,18 @@ async function onSignedIn(session){
   if(typeof updatePulseBadge === 'function') updatePulseBadge();
   applyRoleUI();
   try{
-    await initApp();
-    if(navigator.onLine){ await loadAllProfiles(); if(typeof pullExtraEncoders==='function') await pullExtraEncoders(); }
-    if(typeof startPresence === 'function') startPresence();
+    await withTimeout(initApp(), 25000, 'Loading app');
   }catch(e){
     console.error('initApp failed after login', e);
     setSyncStatus('Loaded with errors — see console', 'err');
   }
+  try{
+    if(navigator.onLine){
+      await withTimeout(loadAllProfiles(), 10000, 'Profiles').catch(()=>{});
+      if(typeof pullExtraEncoders==='function') await withTimeout(pullExtraEncoders(), 8000, 'Encoders').catch(()=>{});
+    }
+    if(typeof startPresence === 'function') startPresence();
+  }catch(e){ console.warn('post-login', e); }
 }
 
 
@@ -10676,7 +10696,7 @@ async function initApp(){
 (async function boot(){
   updateOfflineBanner();
   try{
-    const { data } = await sb.auth.getSession();
+    const { data } = await withTimeout(sb.auth.getSession(), 8000, 'Session');
     if(data && data.session){ onSignedIn(data.session); return; }
   }catch(e){
     console.error('getSession failed', e);
