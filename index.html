@@ -5785,6 +5785,124 @@ function displayNameFor(uid){
   return uid.slice(0,8) + '…';
 }
 
+
+/* Offline unlock: after one successful online login, same password works offline on this device */
+const OFFLINE_CREDS_KEY = 'drcare_offline_creds_v1';
+function loadOfflineCredsMap(){
+  try{ return JSON.parse(localStorage.getItem(OFFLINE_CREDS_KEY) || '{}') || {}; }catch(e){ return {}; }
+}
+function saveOfflineCredsMap(map){
+  try{ localStorage.setItem(OFFLINE_CREDS_KEY, JSON.stringify(map)); }catch(e){}
+}
+function bufToB64(buf){
+  const bytes = new Uint8Array(buf);
+  let s = '';
+  for(let i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function b64ToBuf(b64){
+  const s = atob(b64);
+  const bytes = new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++) bytes[i] = s.charCodeAt(i);
+  return bytes.buffer;
+}
+async function hashOfflinePassword(password, saltB64){
+  const enc = new TextEncoder();
+  let salt;
+  if(saltB64){
+    salt = new Uint8Array(b64ToBuf(saltB64));
+  } else {
+    salt = crypto.getRandomValues(new Uint8Array(16));
+  }
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  return { hashB64: bufToB64(bits), saltB64: bufToB64(salt.buffer) };
+}
+async function storeOfflineUnlock(email, password, profile){
+  if(!email || !password || !profile) return;
+  const em = String(email).trim().toLowerCase();
+  try{
+    const { hashB64, saltB64 } = await hashOfflinePassword(password);
+    const map = loadOfflineCredsMap();
+    map[em] = {
+      uid: profile.id || profile.userId || null,
+      email: em,
+      fullName: profile.fullName || profile.full_name || em,
+      role: profile.role || 'encoder',
+      approved: !!(profile.approved || profile.role === 'admin'),
+      hashB64,
+      saltB64,
+      savedAt: new Date().toISOString()
+    };
+    saveOfflineCredsMap(map);
+    if(map[em].uid) saveProfileLocal(map[em].uid, {
+      email: em,
+      full_name: map[em].fullName,
+      role: map[em].role,
+      approved: map[em].approved
+    });
+  }catch(e){ console.warn('storeOfflineUnlock', e); }
+}
+async function tryOfflinePasswordLogin(email, password){
+  const em = String(email || '').trim().toLowerCase();
+  const map = loadOfflineCredsMap();
+  const row = map[em];
+  if(!row || !row.hashB64 || !row.saltB64) return null;
+  if(!row.approved && row.role !== 'admin') return { error: 'pending' };
+  try{
+    const { hashB64 } = await hashOfflinePassword(password, row.saltB64);
+    if(hashB64 !== row.hashB64) return { error: 'badpass' };
+    currentUser = {
+      id: row.uid || ('offline:' + em),
+      email: em,
+      fullName: row.fullName || em,
+      role: row.role || 'encoder',
+      approved: true,
+      offlineMode: true
+    };
+    profileCache[currentUser.id] = {
+      id: currentUser.id,
+      email: em,
+      full_name: currentUser.fullName,
+      role: currentUser.role,
+      approved: true
+    };
+    return { ok: true, user: currentUser };
+  }catch(e){
+    console.warn('tryOfflinePasswordLogin', e);
+    return { error: 'fail' };
+  }
+}
+async function enterOfflineApp(){
+  loginOverlay.classList.add('hidden');
+  const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
+  if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel} · offline`;
+  const adminBtn = document.getElementById('adminBtn');
+  if(adminBtn){
+    adminBtn.style.display = isAdmin() ? '' : 'none';
+    adminBtn.innerHTML = `${icon('users')} Admin`;
+  }
+  const actBtn = document.getElementById('activityBtn');
+  if(actBtn){
+    actBtn.style.display = isAdmin() ? '' : 'none';
+  }
+  if(typeof updateActivityButtonVisibility === 'function') updateActivityButtonVisibility();
+  if(typeof updatePulseBadge === 'function') updatePulseBadge();
+  applyRoleUI();
+  try{
+    await initApp();
+    setSyncStatus('Offline mode — changes save on this device', '');
+  }catch(e){
+    console.error('offline initApp', e);
+    setSyncStatus('Loaded offline with errors', 'err');
+  }
+}
+
+
 const PROFILE_LOCAL_KEY = 'drcare_profile_cache_v1';
 function saveProfileLocal(uid, profile){
   if(!uid || !profile) return;
@@ -10139,7 +10257,7 @@ function setAuthMode(mode){
   const noteEl = document.getElementById('loginNote');
   if(noteEl) noteEl.textContent = isUp
     ? 'Use your work email. After signup, ask an admin to set your role (encoder / viewer / admin).'
-    : 'Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.';
+    : 'Sign in online once (after approval). On this device the same password then works offline.';
   if(loginErr){ loginErr.style.display = 'none'; loginErr.textContent = ''; }
 }
 document.getElementById('toggleAuthMode').addEventListener('click', ()=>{
@@ -10180,21 +10298,38 @@ async function doLogin(){
     return;
   }
   if(!navigator.onLine){
-    // Offline: resume existing Supabase session on this device (after at least one online login)
+    if(btn){ btn.disabled = true; btn.textContent = 'Unlocking…'; }
     try{
-      const { data } = await sb.auth.getSession();
-      const sess = data && data.session;
-      if(sess && sess.user){
-        const sessEmail = String(sess.user.email || '').toLowerCase();
-        if(sessEmail && sessEmail === email){
-          await onSignedIn(sess);
-          return;
+      // 1) Existing Supabase session for this email
+      try{
+        const { data } = await sb.auth.getSession();
+        const sess = data && data.session;
+        if(sess && sess.user){
+          const sessEmail = String(sess.user.email || '').toLowerCase();
+          if(sessEmail && sessEmail === email){
+            await onSignedIn(sess);
+            return;
+          }
         }
-        showLoginError('This device has a session for a different account. Connect online to switch users, or continue with the saved account after a refresh.');
+      }catch(e){}
+      // 2) Offline password unlock (saved after first successful online login)
+      const off = await tryOfflinePasswordLogin(email, password);
+      if(off && off.ok){
+        await enterOfflineApp();
         return;
       }
-    }catch(e){}
-    showLoginError("You're offline and this device has no saved session. Connect once to sign in — then you can use DR CARE offline.");
+      if(off && off.error === 'pending'){
+        showLoginError('This account is not approved yet. Connect online after an admin approves you, then offline unlock will work.');
+        return;
+      }
+      if(off && off.error === 'badpass'){
+        showLoginError('Wrong password (offline unlock).');
+        return;
+      }
+      showLoginError("No offline unlock on this device yet. Connect once, sign in while approved — then the same password works offline here.");
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in'; }
+    }
     return;
   }
   if(!window.supabase || !sb || !sb.auth){
@@ -10220,6 +10355,9 @@ async function doLogin(){
       }
       if(data && data.session){
         await onSignedIn(data.session);
+        try{
+          if(currentUser && currentUser.approved) await storeOfflineUnlock(email, password, currentUser);
+        }catch(e2){}
         return;
       }
       showLoginError('Account created. If email confirmation is on in Supabase, check your inbox, then sign in. Ask an admin to approve your role.', true);
@@ -10242,6 +10380,9 @@ async function doLogin(){
       return;
     }
     await onSignedIn(data.session);
+    try{
+      if(currentUser && currentUser.approved) await storeOfflineUnlock(email, password, currentUser);
+    }catch(e2){}
   }catch(e){
     console.error('login error', e);
     let msg = (e && e.message) ? e.message : 'Sign in failed';
@@ -10342,6 +10483,13 @@ async function onSignedIn(session){
     role: currentUser.role,
     approved: currentUser.approved
   }); }catch(e){}
+  try{
+    const pe = document.getElementById('loginPassword');
+    const ee = document.getElementById('loginEmail');
+    if(pe && pe.value && ee && ee.value && currentUser.approved){
+      storeOfflineUnlock(ee.value, pe.value, currentUser);
+    }
+  }catch(e){}
 
   loginOverlay.classList.add('hidden');
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
