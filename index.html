@@ -8056,12 +8056,42 @@ function dashBarRow(label, count, total, extraClass){
   </div>`;
 }
 
+
+function buildStaffStats(scoped){
+  const byUser = {};
+  function touch(uid, patch){
+    if(!uid) return;
+    uid = String(uid);
+    if(!byUser[uid]){
+      let name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null) || uid;
+      if(String(uid).startsWith('name:')) name = String(uid).slice(5);
+      if(String(name).includes('[DECLINED]') || String(name).toLowerCase().includes('declined')) return; // skip declined accounts
+      byUser[uid] = { id: uid, name: String(name), encoded: 0, t1: 0, t2: 0, mca: 0, teams: {} };
+    }
+    if(!byUser[uid]) return;
+    if(patch.encoded) byUser[uid].encoded++;
+    if(patch.t1) byUser[uid].t1++;
+    if(patch.t2) byUser[uid].t2++;
+    if(patch.mca) byUser[uid].mca++;
+    if(patch.team){
+      byUser[uid].teams[patch.team] = (byUser[uid].teams[patch.team] || 0) + 1;
+    }
+  }
+  (scoped || []).forEach(p=>{
+    const team = p.team || 'Unknown';
+    const encUid = p.encodedBy || p.createdBy || null;
+    if(encUid) touch(encUid, { encoded: 1, mca: p.mca ? 1 : 0, team });
+    if(hasT1(p)) touch(p.t1By || encUid, { t1: 1, team });
+    if(hasT2(p)) touch(p.t2By || (p.claim === 't2' ? encUid : null), { t2: 1, team });
+  });
+  return Object.values(byUser)
+    .map(u => Object.assign(u, { activity: u.encoded + u.t1 + u.t2 }))
+    .filter(u => u.activity > 0)
+    .sort((a,b) => b.activity - a.activity || a.name.localeCompare(b.name));
+}
+
 function renderDashboard(){
   populateDashboardControls();
-  if(typeof snapDashDatesToData === 'function'){
-    const mode = (document.getElementById('dashRangeMode') || {}).value || 'month';
-    if(mode === 'day' || mode === 'week') snapDashDatesToData();
-  }
   const scoped = dashboardScopePatients();
   const total = scoped.length;
   const registered = scoped.filter(p=>p.status==='registered').length;
@@ -8076,7 +8106,7 @@ function renderDashboard(){
   const missed24 = scoped.filter(p=>p.claim==='missed24').length;
   const t1Count = scoped.filter(p => typeof hasT1 === 'function' ? hasT1(p) : p.claim==='t1').length;
   const t2Count = scoped.filter(p => typeof hasT2 === 'function' ? hasT2(p) : p.claim==='t2').length;
-  const pendingClaim = scoped.filter(p=>!p.claim || p.claim==='pending').length;
+  const pendingClaim = scoped.filter(p=>!hasT1(p) && p.claim !== 'missed24').length;
   const within24Count = scoped.filter(p=>p.within24).length;
   const pct = (n) => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
 
@@ -8129,50 +8159,18 @@ function renderDashboard(){
     return;
   }
 
-  /* Staff productivity — credits encoder AND T1/T2 submitters */
-  const byUser = {};
-  function touchUser(uid, patch){
-    if(!uid) uid = '_unknown';
-    uid = String(uid);
-    if(!byUser[uid]){
-      const name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null)
-        || (uid === '_unknown' ? 'Unknown / imported' : (String(uid).startsWith('name:') ? String(uid).slice(5) : String(uid).slice(0, 12)));
-      byUser[uid] = { name, encoded: 0, t1: 0, t2: 0, mca: 0, teams: {} };
-    }
-    if(patch.encoded) byUser[uid].encoded++;
-    if(patch.t1) byUser[uid].t1++;
-    if(patch.t2) byUser[uid].t2++;
-    if(patch.mca) byUser[uid].mca++;
-    if(patch.team) byUser[uid].teams[patch.team] = (byUser[uid].teams[patch.team] || 0) + 1;
-  }
-  scoped.forEach(p=>{
-    const team = p.team || 'Unknown';
-    const encUid = p.encodedBy || p.createdBy || null;
-    if(encUid) touchUser(encUid, { encoded: 1, mca: p.mca ? 1 : 0, team });
-    // T1 credit: explicit t1By, else fall back to encoder if T1 present
-    if(typeof hasT1 === 'function' ? hasT1(p) : (p.claim==='t1' || p.dateT1)){
-      const t1uid = p.t1By || encUid || '_unknown';
-      touchUser(t1uid, { t1: 1, team });
-    }
-    // T2 credit: explicit t2By, else encoder if T2 present
-    if(typeof hasT2 === 'function' ? hasT2(p) : (p.claim==='t2' || p.dateT2)){
-      const t2uid = p.t2By || (p.claim==='t2' ? encUid : null);
-      if(t2uid) touchUser(t2uid, { t2: 1, team });
-    }
-  });
-  const userRows = Object.entries(byUser)
-    .sort((a,b)=> (b[1].encoded + b[1].t1 + b[1].t2) - (a[1].encoded + a[1].t1 + a[1].t2))
-    .map(([uid, u])=>{
+  /* Staff productivity — single source of truth */
+  const staffStats = buildStaffStats(scoped);
+  const userRows = staffStats.map(u=>{
       const teamBreakdown = Object.entries(u.teams).sort((a,b)=>b[1]-a[1])
         .map(([t,c])=> `${escapeHtml(t)} (${c})`).join(', ');
-      const activity = u.encoded + u.t1 + u.t2;
       return `<tr>
         <td style="text-align:left;font-weight:600">${escapeHtml(u.name)}</td>
         <td>${u.encoded}</td>
         <td>${u.t1}</td>
         <td>${u.t2}</td>
         <td>${u.mca}</td>
-        <td>${activity}</td>
+        <td>${u.activity}</td>
         <td style="text-align:left;font-size:11.5px;color:var(--muted)">${teamBreakdown || '—'}</td>
       </tr>`;
     }).join('');
@@ -8201,8 +8199,6 @@ function renderDashboard(){
       <td>${b.rice}</td>
       <td>${b.lab}</td>
       <td>${b.medicine}</td>
-      <td>${b.vitamins}</td>
-      <td>${b.referral}</td>
       <td>${b.t1}</td>
       <td>${b.t2}</td>
       <td>${b.missed24}</td>
@@ -8221,16 +8217,16 @@ function renderDashboard(){
     </div>`;
 
   const cardsHtml = `
-    <div class="dash-cards">
-      <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients encoded</div></div>
-      <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered</div></div>
-      <div class="dash-card accent-purple"><div class="dc-num">${registeredOther}</div><div class="dc-lbl">Other facility</div></div>
-      <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice (${pct(riceCount)})</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab (${pct(labCount)})</div></div>
-      <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds (${pct(medCount)})</div></div>
-      <div class="dash-card accent-blue"><div class="dc-num">${vitCount}</div><div class="dc-lbl">Vits (${pct(vitCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${refCount}</div><div class="dc-lbl">Referral (${pct(refCount)})</div></div>
-      <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending</div></div>
+    <div class="dash-section" style="margin-bottom:14px">
+      <h4>Volume & benefits</h4>
+      <div class="dash-cards">
+        <div class="dash-card"><div class="dc-num">${total}</div><div class="dc-lbl">Patients encoded</div></div>
+        <div class="dash-card accent-amber"><div class="dc-num">${registered}</div><div class="dc-lbl">Registered<br><span class="kpi-sub">${registeredOther} other facility</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${riceCount}</div><div class="dc-lbl">Rice<br><span class="kpi-sub">${pct(riceCount)}</span></div></div>
+        <div class="dash-card accent-blue"><div class="dc-num">${labCount}</div><div class="dc-lbl">Lab<br><span class="kpi-sub">${pct(labCount)}</span></div></div>
+        <div class="dash-card accent-green"><div class="dc-num">${medCount}</div><div class="dc-lbl">Meds<br><span class="kpi-sub">${pct(medCount)}</span></div></div>
+        <div class="dash-card"><div class="dc-num">${pendingClaim}</div><div class="dc-lbl">Claim pending<br><span class="kpi-sub">no T1 yet</span></div></div>
+      </div>
     </div>`;
 
   const encoderHtml = `
@@ -8267,11 +8263,9 @@ function renderDashboard(){
               <th>Rice</th>
               <th>Lab</th>
               <th>Meds</th>
-              <th>Vits</th>
-              <th>Ref</th>
               <th>T1</th>
               <th>T2</th>
-              <th>Missed</th>
+              <th>Missed 24h</th>
             </tr>
           </thead>
           <tbody>${teamRowsHtml}</tbody>
@@ -8330,61 +8324,26 @@ function renderTrendChart(mode){
   const counts = keys.map(k => buckets[k]);
   const maxCount = Math.max(...counts, 1);
 
-  // --- Staff activity in current scope (All users = everyone; else selected) ---
-  const staffMap = {};
-  function addStaff(uid, kind){
-    if(!uid) return;
-    uid = String(uid);
-    if(!isAllUsers && selEnc.length){
-      // only show selected staff in the metric bars when filtered
-      const ok = selEnc.map(String).includes(uid) ||
-        (typeof patientBelongsToEncoder === 'function' && patientBelongsToEncoder({encodedBy:uid,t1By:uid,t2By:uid,createdBy:uid}, selEnc));
-      // simpler: match id or name against selection
-      if(!selEnc.map(String).includes(uid)){
-        const nm = (typeof displayNameFor==='function'?displayNameFor(uid):uid)||'';
-        const selN = selEnc.map(id => {
-          const n = (typeof displayNameFor==='function'?displayNameFor(id):id)||'';
-          return String(id).startsWith('name:') ? String(id).slice(5).toLowerCase() : String(n).toLowerCase();
-        });
-        if(!selN.includes(String(nm).toLowerCase()) && !selN.includes(String(uid).toLowerCase())) return;
-      }
-    }
-    if(!staffMap[uid]){
-      const name = (typeof displayNameFor==='function'?displayNameFor(uid):null)
-        || (String(uid).startsWith('name:')?String(uid).slice(5):String(uid).slice(0,10));
-      staffMap[uid] = { name, encoded:0, t1:0, t2:0 };
-    }
-    staffMap[uid][kind]++;
-  }
-  scoped.forEach(p=>{
-    const encUid = p.encodedBy || p.createdBy;
-    if(encUid) addStaff(encUid, 'encoded');
-    if(typeof hasT1==='function' ? hasT1(p) : (p.claim==='t1'||p.dateT1)){
-      addStaff(p.t1By || encUid, 't1');
-    }
-    if(typeof hasT2==='function' ? hasT2(p) : (p.claim==='t2'||p.dateT2)){
-      if(p.t2By || p.claim==='t2') addStaff(p.t2By || encUid, 't2');
-    }
-  });
-  // If All users and staffMap empty from scope, still try list all known encoders with 0
-  if(isAllUsers && typeof getEncoderOptions === 'function'){
-    getEncoderOptions().forEach(o=>{
-      if(!staffMap[o.id]) staffMap[o.id] = { name: o.label, encoded:0, t1:0, t2:0 };
+  // --- Staff activity (same engine as productivity table) ---
+  let staffList = buildStaffStats(scoped);
+  if(!isAllUsers && selEnc.length){
+    staffList = staffList.filter(s => {
+      if(selEnc.map(String).includes(String(s.id))) return true;
+      const nm = String(s.name||'').toLowerCase();
+      return selEnc.some(id=>{
+        const n = (typeof displayNameFor==='function'?displayNameFor(id):id)||'';
+        const raw = String(id).startsWith('name:') ? String(id).slice(5) : n;
+        return String(raw).toLowerCase() === nm;
+      });
     });
-  }
-  // When filtered, ensure selected users appear even at 0
-  if(!isAllUsers){
+    // include selected with zeros if no activity in scope
     selEnc.forEach(id=>{
-      if(!staffMap[id]){
-        const name = (typeof displayNameFor==='function'?displayNameFor(id):id);
-        staffMap[id] = { name: String(name).startsWith('name:')?String(name).slice(5):name, encoded:0, t1:0, t2:0 };
-      }
+      if(staffList.some(s => String(s.id)===String(id))) return;
+      let name = (typeof displayNameFor==='function'?displayNameFor(id):id)||id;
+      if(String(id).startsWith('name:')) name = String(id).slice(5);
+      staffList.push({ id, name, encoded:0, t1:0, t2:0, mca:0, teams:{}, activity:0 });
     });
   }
-
-  const staffList = Object.entries(staffMap)
-    .map(([id,u])=>({id, ...u, activity: u.encoded+u.t1+u.t2}))
-    .sort((a,b)=> b.activity - a.activity);
 
   // Time chart SVG — polished volume card
   let timeHtml = '';
