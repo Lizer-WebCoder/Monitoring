@@ -7133,6 +7133,75 @@ tbody td.name{ text-align: left !important; font-weight: 650 !important; }
   font-weight: 800 !important;
 }
 
+
+/* ========== Login fields — typed text visible ========== */
+#loginOverlay .login-card input,
+#loginOverlay .login-card input[type=email],
+#loginOverlay .login-card input[type=password],
+#loginOverlay .login-card input[type=text],
+#loginOverlay #loginEmail,
+#loginOverlay #loginPassword,
+#loginOverlay #loginFullName{
+  color: #0b3c26 !important;
+  -webkit-text-fill-color: #0b3c26 !important;
+  caret-color: #0f766e !important;
+  background: #ffffff !important;
+  border: 1.5px solid #c5d0cb !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+#loginOverlay .login-card input::placeholder{
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+}
+#loginOverlay .login-card input:focus{
+  color: #0b3c26 !important;
+  -webkit-text-fill-color: #0b3c26 !important;
+  background: #fff !important;
+  border-color: #0f766e !important;
+}
+/* Autofill (Chrome) often forces white text on dark — override */
+#loginOverlay .login-card input:-webkit-autofill,
+#loginOverlay .login-card input:-webkit-autofill:hover,
+#loginOverlay .login-card input:-webkit-autofill:focus{
+  -webkit-text-fill-color: #0b3c26 !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  transition: background-color 99999s ease-out;
+}
+
+/* Header org / status readability */
+header input,
+header #orgName,
+header .org-input,
+#orgName{
+  color: #ecfdf5 !important;
+  -webkit-text-fill-color: #ecfdf5 !important;
+  background: rgba(0,0,0,0.22) !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  font-weight: 600 !important;
+}
+header input::placeholder,
+#orgName::placeholder{
+  color: rgba(236, 253, 245, 0.55) !important;
+  -webkit-text-fill-color: rgba(236, 253, 245, 0.55) !important;
+}
+header .who-am-i,
+header #whoAmI,
+header .header-meta,
+header a,
+header .account-link{
+  color: #ecfdf5 !important;
+  opacity: 1 !important;
+  font-weight: 650 !important;
+}
+header #syncPill,
+header .sync-pill{
+  color: #ecfdf5 !important;
+  background: rgba(0,0,0,0.25) !important;
+}
+
 </style>
 </head>
 <body>
@@ -9126,7 +9195,7 @@ function renderAll(){
               <th title="System used to encode / submit this patient">System</th>
               <th>T1 submitted date</th><th>T2 submitted date</th>
               <th>Within 24h</th><th>T1 submitted by</th><th>T2 submitted by</th><th>Duplicate tracker</th>
-              <th>Rice</th><th>Lab</th><th>Meds</th><th></th>
+              <th>Rice</th><th>Lab</th><th>Meds</th><th>Action</th>
             </tr>
           </thead>
           <tbody>
