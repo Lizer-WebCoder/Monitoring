@@ -15,8 +15,92 @@
 </head>
 <body>
 <div id="offlineBanner">You're offline — changes are saved on this device and will sync once you're back online.</div>
-<!-- Full shell continues in repo; loading modular CSS/JS -->
-<p style="padding:24px;font-family:system-ui">Loading DR CARE… If this stays, hard-refresh or check that <code>css/app.css</code> and <code>js/*.js</code> deployed.</p>
+<div id="scaleWarnBanner" style="display:none;position:sticky;top:0;z-index:39;background:#e4edf5;color:#2f5f8a;font-size:12px;font-weight:600;text-align:center;padding:6px 10px;">Large roster — use a month filter and keep page size at 20–50 for best speed. <button type="button" id="scaleWarnDismiss" style="margin-left:8px;font-size:11px;cursor:pointer;">Dismiss</button></div>
+<div id="loginOverlay">
+  <div class="login-bg" aria-hidden="true">
+    <div class="iso-base"></div>
+    <div class="iso-breathe"><div class="iso-grid"></div><div class="iso-grid-2"></div></div>
+    <div class="iso-shine"></div>
+    <div class="glow glow-1"></div><div class="glow glow-2"></div><div class="glow glow-3"></div><div class="glow glow-4"></div>
+    <div class="vignette"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-brand-mark">DR</div>
+    <h1 id="loginTitle">DR CARE — Sign in</h1>
+    <p id="loginSub">Divine Rays · Patient Care Tracker · staff accounts</p>
+    <label for="loginEmail">Medical ID / Email</label>
+    <input type="email" id="loginEmail" placeholder="name@clinic.com" autocomplete="username">
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+    <div id="signupNameWrap" style="display:none;">
+      <label for="loginFullName">Full name</label>
+      <input type="text" id="loginFullName" placeholder="Your name" autocomplete="name">
+    </div>
+    <button type="button" id="loginBtn">Sign in</button>
+    <div class="login-note" id="loginNote">Sign in with your own email. New staff: use Need an account? below, then ask an admin to set your role.</div>
+    <div class="login-err" id="loginErr" style="display:none;"></div>
+    <button type="button" id="toggleAuthMode">Need an account? Sign up</button>
+  </div>
+</div>
+<header>
+  <div class="header-row">
+    <div class="brand-lockup">
+      <div class="brand-mark">DR</div>
+      <div>
+        <div class="brand-title">DR CARE <span class="brand-pill">PATIENT TRACKER</span></div>
+        <input type="text" id="orgName" placeholder="Organization / tagline">
+        <div class="header-meta">
+          <span class="sync-pill" id="syncPill">—</span>
+          <span id="whoAmI"></span>
+          <a href="#" id="accountBtn">Account</a>
+          <a href="#" id="signOutBtn">Sign out</a>
+          <button type="button" id="clearLocalBtn" class="btn-ghost">· all clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="stat-strip" id="statStrip"></div>
+  </div>
+</header>
+<div class="toolbar">
+  <div class="toolbar-row">
+    <input type="month" id="monthFilter">
+    <button type="button" class="btn" id="clearMonthBtn">All months</button>
+    <button type="button" class="btn btn-primary" id="addTeamBtn">+ Add site / group</button>
+    <button type="button" class="btn" id="todayMissionBtn">Today's mission</button>
+    <button type="button" class="btn" id="dashBtn">Dashboard</button>
+    <button type="button" class="btn" id="logWorkBtn">Log task</button>
+    <button type="button" class="btn" id="activityBtn">Activity</button>
+    <button type="button" class="btn" id="archivedBtn">Archived</button>
+    <button type="button" class="btn" id="usersBtn">Users</button>
+    <button type="button" class="btn" id="adminBtn">Admin</button>
+    <span style="flex:1"></span>
+    <button type="button" class="btn" id="themeBtn">Dark mode</button>
+    <button type="button" class="btn" id="recycleBtn">Recycle bin</button>
+  </div>
+  <div class="toolbar-row">
+    <input type="search" id="search" placeholder="Search name, PhilHealth ID, notes, or team…" style="flex:1;min-width:180px">
+    <select id="filterStatus"><option value="">All statuses</option></select>
+    <select id="filterBenefit"><option value="">All benefit states</option></select>
+    <select id="filterType"><option value="">All types</option></select>
+    <select id="filterDup"><option value="">All records</option></select>
+  </div>
+  <div class="toolbar-row">
+    <button type="button" class="btn" id="syncNowBtn">Sync now</button>
+    <button type="button" class="btn" id="exportCsvBtn">Export CSV</button>
+    <button type="button" class="btn" id="dailyReportBtn">Daily report</button>
+    <button type="button" class="btn" id="pdfReportBtn">PDF report</button>
+    <button type="button" class="btn" id="sendReportBtn">Send report</button>
+    <button type="button" class="btn" id="importCsvBtn">Import CSV</button>
+    <button type="button" class="btn" id="csvTemplateBtn">CSV template</button>
+    <button type="button" class="btn" id="excelTemplateBtn">Excel template</button>
+    <button type="button" class="btn" id="installBtn">Install app</button>
+  </div>
+</div>
+<div id="groupsContainer"></div>
+<details class="legend-wrap"><summary class="legend-summary">How to use this tracker</summary><div id="legend" class="legend"></div></details>
+<div class="app-footer">By : BOYS AT THE BACK · © 2026 All rights reserved</div>
+<div id="bulkBar"><span class="bulk-count" id="bulkCount">0 selected</span><div class="bulk-actions" id="bulkActions"></div></div>
+<input type="file" id="importFile" accept=".csv,.xlsx,.xls" style="display:none">
 <script src="./supabase.js"></script>
 <script src="./xlsx.full.min.js"></script>
 <script src="./js/core.js"></script>
