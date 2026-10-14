@@ -5322,6 +5322,12 @@ details.legend-wrap{
   margin: 0 !important;
 }
 
+
+  #signupBtn,
+  #loginOverlay #signupBtn{
+    display: none !important;
+  }
+
 </style>
 </head>
 <body>
@@ -5358,7 +5364,6 @@ details.legend-wrap{
       <input type="text" id="loginFullName" placeholder="Your name" autocomplete="name">
     </div>
     <button id="loginBtn">Sign in</button>
-    <button id="signupBtn" type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;">Create account</button>
     <div class="login-err" id="loginErr"></div>
     <div class="login-note" id="loginNote">
       Sign in with your own email. New staff: use “Need an account?” below, then ask an admin to set your role.
@@ -10828,7 +10833,7 @@ function setAuthMode(mode){
     : 'Divine Rays · Patient Care Tracker · staff accounts';
   document.getElementById('signupNameWrap').style.display = isUp ? 'block' : 'none';
   document.getElementById('loginBtn').textContent = isUp ? 'Create account' : 'Sign in';
-  document.getElementById('signupBtn').style.display = 'none';
+  const __su = document.getElementById('signupBtn'); if(__su) __su.style.display = 'none';
   document.getElementById('toggleAuthMode').textContent = isUp
     ? 'Already have an account? Sign in'
     : 'Need an account? Sign up';
