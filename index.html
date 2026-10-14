@@ -6902,45 +6902,39 @@ tbody td.name{ text-align: left !important; font-weight: 650 !important; }
 }
 
 
-/* ========== Row actions — lock to patient row ========== */
-.team-group table tbody tr[data-id]{
-  height: 44px;
-}
+/* ========== Row actions — fixed in table cell (not sticky) ========== */
 .team-group table tbody tr[data-id] > td{
   vertical-align: middle !important;
-  height: 44px;
-  box-sizing: border-box;
 }
 .team-group table thead th:last-child,
 .team-group table tbody td.row-actions{
   width: 72px !important;
   min-width: 72px !important;
   max-width: 72px !important;
-  padding: 0 6px !important;
+  padding: 4px 6px !important;
   text-align: center !important;
   vertical-align: middle !important;
-  position: sticky !important;
-  right: 0 !important;
-  background: var(--card) !important;
-  z-index: 3;
-  box-shadow: -4px 0 8px rgba(15, 54, 48, 0.06);
+  position: static !important;
+  right: auto !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 .team-group table thead th:last-child{
   background: var(--table-head) !important;
-  z-index: 4;
-}
-.team-group table tbody tr[data-id]:hover > td.row-actions{
-  background: color-mix(in srgb, var(--table-head) 80%, var(--card)) !important;
 }
 .team-group td.row-actions{
-  display: table-cell !important; /* override flex from older rules */
+  display: table-cell !important;
 }
-.team-group td.row-actions .row-actions-inner,
-.team-group td.row-actions{
-  /* buttons sit in a flex center inside the cell via nested approach */
-}
-.team-group td.row-actions{
-  line-height: 0 !important;
+.team-group td.row-actions .row-actions-inner{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  width: 100% !important;
 }
 .team-group td.row-actions .icon-btn{
   width: 30px !important;
@@ -6949,7 +6943,7 @@ tbody td.name{ text-align: left !important; font-weight: 650 !important; }
   min-height: 30px !important;
   max-height: 30px !important;
   padding: 0 !important;
-  margin: 0 2px !important;
+  margin: 0 !important;
   border-radius: 8px !important;
   border: 1px solid var(--line) !important;
   background: var(--table-head) !important;
@@ -6959,26 +6953,14 @@ tbody td.name{ text-align: left !important; font-weight: 650 !important; }
   justify-content: center !important;
   vertical-align: middle !important;
   box-sizing: border-box !important;
-  line-height: 1 !important;
-  font-size: 0 !important;
-  flex: none !important;
-}
-.team-group td.row-actions .icon-btn svg{
-  display: block !important;
-  margin: 0 !important;
-  vertical-align: middle !important;
+  position: static !important;
 }
 .team-group td.row-actions .icon-btn:hover{
   color: var(--teal) !important;
   border-color: var(--teal) !important;
   background: var(--card) !important;
 }
-/* Prevent global .btn height rules from touching icon buttons */
-.team-group .icon-btn.btn,
-button.icon-btn{
-  height: 30px !important;
-  min-height: 30px !important;
-}
+
 
 .team-group td.row-actions .row-actions-inner{
   display: inline-flex !important;
@@ -6988,6 +6970,167 @@ button.icon-btn{
   height: 100% !important;
   min-height: 40px !important;
   width: 100% !important;
+}
+
+
+/* ========== Login UI — high contrast restore ========== */
+#loginOverlay{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 200 !important;
+  background: #0b3c26 !important;
+}
+#loginOverlay.hidden{ display: none !important; }
+
+#loginOverlay .login-card{
+  position: relative !important;
+  z-index: 5 !important;
+  width: min(400px, calc(100vw - 32px)) !important;
+  margin: 24px auto !important;
+  padding: 28px 26px 24px !important;
+  background: #ffffff !important;
+  color: #12312b !important;
+  border: 1px solid rgba(255,255,255,0.55) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 4px 6px rgba(0,0,0,0.06),
+    0 24px 48px rgba(11, 54, 48, 0.35) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: auto !important;
+}
+
+#loginOverlay .login-card h1,
+#loginOverlay #loginTitle{
+  color: #0b3c26 !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 6px !important;
+  opacity: 1 !important;
+}
+
+#loginOverlay .login-card p,
+#loginOverlay #loginSub{
+  color: #5b6b64 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  margin: 0 0 18px !important;
+  opacity: 1 !important;
+}
+
+#loginOverlay .login-card label{
+  color: #0f766e !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  margin: 12px 0 6px !important;
+  opacity: 1 !important;
+}
+
+#loginOverlay .login-card input,
+#loginOverlay .login-card input[type=email],
+#loginOverlay .login-card input[type=password],
+#loginOverlay .login-card input[type=text]{
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
+  border: 1px solid #d5ddd8 !important;
+  background: #f8faf9 !important;
+  color: #12312b !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+}
+#loginOverlay .login-card input::placeholder{
+  color: #8a9690 !important;
+  opacity: 1 !important;
+}
+#loginOverlay .login-card input:focus{
+  outline: none !important;
+  border-color: #0f766e !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18) !important;
+}
+
+#loginOverlay #loginBtn{
+  width: 100% !important;
+  height: 46px !important;
+  margin-top: 18px !important;
+  border: none !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg, #0f766e 0%, #0b3c26 100%) !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 16px rgba(11, 54, 48, 0.28) !important;
+  opacity: 1 !important;
+}
+#loginOverlay #loginBtn:hover{
+  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%) !important;
+}
+#loginOverlay #loginBtn:disabled{
+  opacity: 0.65 !important;
+  cursor: default !important;
+}
+
+#loginOverlay #loginNote,
+#loginOverlay .login-note{
+  color: #6b7a73 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 14px 0 0 !important;
+  opacity: 1 !important;
+}
+
+#loginOverlay #toggleAuthMode{
+  display: block !important;
+  width: 100% !important;
+  margin-top: 12px !important;
+  padding: 11px 12px !important;
+  border-radius: 11px !important;
+  border: 1px solid #d5ddd8 !important;
+  background: #f3f7f5 !important;
+  color: #0f766e !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+#loginOverlay #toggleAuthMode:hover{
+  background: #e7f5f1 !important;
+  border-color: #0f766e !important;
+}
+
+#loginOverlay .login-err,
+#loginOverlay #loginErr{
+  color: #b91c1c !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+  margin-top: 12px !important;
+  line-height: 1.4 !important;
+  opacity: 1 !important;
+}
+
+#loginOverlay .login-logo,
+#loginOverlay .brand-mark{
+  background: #0f766e !important;
+  color: #fff !important;
+  font-weight: 800 !important;
 }
 
 </style>
