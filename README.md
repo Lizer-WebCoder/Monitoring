@@ -1,43 +1,31 @@
-# DR CARE — Divine Rays Mobile Operations Tracker
+# DR CARE — Divine Rays Patient Care Tracker
 
-Offline-first field roster for Divine Rays mobile medical operations.
+Offline-first patient care tracker (roster, PhilHealth, claims, benefits, multi-user Supabase sync).
 
-## Deploy (GitHub Pages / static host)
-
-**Production file:** `index.html` (single file, includes all CSS/JS).
-
-Also required next to it:
-- `supabase.js`
-- `xlsx.full.min.js`
-- `sw.js`
-- `manifest.json`
-
-After updating `index.html`, hard-refresh the site (or clear cache once) so the service worker picks up changes.
-
-## Local modular layout (optional, for development)
+## Layout (modular)
 
 ```
-css/app.css
-js/core.js      — config, state, sync
-js/ui.js        — roster render
-js/screens.js   — modals, dashboard, admin
-js/features.js  — drawer, merge, checklist
-js/boot.js      — SW toast
-index.modular.html
+index.html          → markup shell only
+css/app.css         → all styles
+js/app.js           → application logic
+supabase.js         → vendor (auth/db client)
+xlsx.full.min.js    → vendor (Excel import/export)
+sw.js               → PWA service worker (dr-care-v7)
+manifest.json
+favicon.svg
 ```
 
-The modular tree mirrors the same app; `index.html` is the bundled deploy artifact.
+## Deploy (Vercel / static host)
 
-## Supabase optional columns
+- Framework: **Other** (static)
+- Root: repo root (folder with `index.html`)
+- No build command
+- After deploy: hard-refresh so SW updates to **dr-care-v7**
 
-```sql
-alter table patients
-  add column if not exists medicine boolean default false,
-  add column if not exists vitamins boolean default false,
-  add column if not exists referral boolean default false,
-  add column if not exists mca_photo text,
-  add column if not exists custom_benefits jsonb default '{}'::jsonb,
-  add column if not exists history jsonb default '[]'::jsonb;
-```
+## Supabase
 
-**Boyz at the Back · © 2026**
+See `GO_LIVE.md` for SQL columns (`custom_benefits`, `date_t2`, etc.).
+
+## Dev
+
+Edit `css/app.css` or `js/app.js`, commit, push. Vercel redeploys from `main`.
