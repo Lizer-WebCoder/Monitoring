@@ -7314,6 +7314,96 @@ body.dark .staff-metric-card{
   flex: none !important;
 }
 
+
+/* ========== Volume panel — compact bordered ========== */
+.vol-card{
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  box-shadow: 0 1px 2px rgba(15,54,48,0.04) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+body.dark .vol-card{
+  background: color-mix(in srgb, var(--card) 94%, var(--table-head)) !important;
+}
+.vol-stats{
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 0 10px !important;
+}
+.vol-stat{
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  background: var(--table-head) !important;
+  padding: 8px 10px !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+}
+.vol-stat .vs-num{
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  color: var(--teal-deep) !important;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace !important;
+}
+body.dark .vol-stat .vs-num{ color: var(--teal) !important; }
+.vol-stat .vs-lbl{
+  font-size: 10.5px !important;
+  font-weight: 650 !important;
+  color: var(--muted) !important;
+  margin-top: 3px !important;
+  line-height: 1.25 !important;
+}
+.vol-stat .vs-hint{
+  font-size: 10px !important;
+  font-weight: 550 !important;
+  opacity: 0.9;
+}
+.vol-explain{
+  margin: 0 0 10px !important;
+  padding: 8px 10px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--table-head) 70%, var(--card)) !important;
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+  color: var(--muted) !important;
+}
+.vol-chart-wrap{
+  margin: 0 !important;
+  padding: 8px 6px 4px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--card) 88%, var(--table-head)) !important;
+  overflow-x: auto !important;
+}
+.vol-svg{
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  margin: 0 auto !important;
+}
+.dash-subhead{
+  margin: 0 0 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+}
+.dash-trend-grid{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+@media (max-width: 900px){
+  .dash-trend-grid{ grid-template-columns: 1fr !important; }
+  .vol-stats{ grid-template-columns: 1fr !important; }
+}
+
 </style>
 </head>
 <body>
@@ -12363,7 +12453,7 @@ function renderTrendChart(mode){
   } else {
     const n = Math.max(keys.length, 1);
     const leftPad = 40, rightPad = 16, topPad = 36, bottomPad = 40;
-    const chartH = 210;
+    const chartH = 170;
     const barAreaH = chartH - topPad - bottomPad;
     const plotW = Math.max(n * 70, 280);
     const svgW = leftPad + plotW + rightPad;
