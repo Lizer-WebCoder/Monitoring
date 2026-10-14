@@ -8056,6 +8056,9 @@ async function loadLocalCache(){
         else if(p.mcaPhoto === '__local__') p.mcaPhoto = null;
       });
     }
+    if(Array.isArray(state.patients) && typeof applyPatientMetaBackup === 'function'){
+      state.patients.forEach(applyPatientMetaBackup);
+    }
     return state.patients;
   }catch(e){
     console.warn('loadLocalCache', e);
@@ -8074,11 +8077,76 @@ function emptyToNull(v){
   const s = String(v).trim();
   return s ? s : null;
 }
+function mirrorPatientMeta(p){
+  if(!p) return;
+  if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+  const c = p.customBenefits;
+  if(p.encodedBy) c.encodedBy = p.encodedBy;
+  if(p.t1By) c.t1By = p.t1By; else delete c.t1By;
+  if(p.t2By) c.t2By = p.t2By; else delete c.t2By;
+  if(p.t1At) c.t1At = p.t1At;
+  if(p.t2At) c.t2At = p.t2At;
+  if(p.claimSystem) c.claimSystem = p.claimSystem; else delete c.claimSystem;
+  if(p.dateT1 || p.dateSubmitted) c.dateT1 = p.dateT1 || p.dateSubmitted;
+  if(p.dateT2) c.dateT2 = p.dateT2; else delete c.dateT2;
+  if(Array.isArray(p.labTests) && p.labTests.length) c.labTests = p.labTests.filter(Boolean);
+  try{
+    const key = 'drcare_patient_meta_v1';
+    const map = JSON.parse(localStorage.getItem(key) || '{}') || {};
+    map[p.id] = {
+      t1By: p.t1By || null,
+      t2By: p.t2By || null,
+      claimSystem: p.claimSystem || null,
+      dateT1: p.dateT1 || p.dateSubmitted || null,
+      dateT2: p.dateT2 || null,
+      encodedBy: p.encodedBy || null,
+      t1At: p.t1At || null,
+      t2At: p.t2At || null,
+      labTests: Array.isArray(p.labTests) ? p.labTests : []
+    };
+    localStorage.setItem(key, JSON.stringify(map));
+  }catch(e){}
+}
+function applyPatientMetaBackup(p){
+  if(!p || !p.id) return p;
+  try{
+    const map = JSON.parse(localStorage.getItem('drcare_patient_meta_v1') || '{}') || {};
+    const m = map[p.id];
+    if(!m) return p;
+    if(!p.t1By && m.t1By) p.t1By = m.t1By;
+    if(!p.t2By && m.t2By) p.t2By = m.t2By;
+    if(!p.claimSystem && m.claimSystem) p.claimSystem = m.claimSystem;
+    if(!p.dateT2 && m.dateT2) p.dateT2 = m.dateT2;
+    if(!(p.dateT1 || p.dateSubmitted) && m.dateT1){ p.dateT1 = m.dateT1; p.dateSubmitted = m.dateT1; }
+    if(!p.encodedBy && m.encodedBy) p.encodedBy = m.encodedBy;
+    if(!p.t1At && m.t1At) p.t1At = m.t1At;
+    if(!p.t2At && m.t2At) p.t2At = m.t2At;
+    if((!p.labTests || !p.labTests.length) && m.labTests && m.labTests.length) p.labTests = m.labTests.slice();
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    if(p.t1By) p.customBenefits.t1By = p.t1By;
+    if(p.t2By) p.customBenefits.t2By = p.t2By;
+    if(p.claimSystem) p.customBenefits.claimSystem = p.claimSystem;
+    if(p.dateT2) p.customBenefits.dateT2 = p.dateT2;
+    if(p.dateT1) p.customBenefits.dateT1 = p.dateT1;
+  }catch(e){}
+  return p;
+}
 function toRemote(p, mode){
-  // mode: 'full' | 'core' (strip extended cols unknown to older schemas)
   const uid = (currentUser && currentUser.id) || null;
   let claim = p.claim || 'pending';
-  // Older DBs may only allow pending/t1/missed24 — map t2 for core mode
+  mirrorPatientMeta(p);
+  const labs = Array.isArray(p.labTests) ? p.labTests.filter(Boolean) : [];
+  const custom = Object.assign({}, (p.customBenefits && typeof p.customBenefits === 'object') ? p.customBenefits : {});
+  custom.labTests = labs;
+  if(p.encodedBy) custom.encodedBy = p.encodedBy;
+  if(p.t1By) custom.t1By = p.t1By;
+  if(p.t2By) custom.t2By = p.t2By;
+  if(p.t1At) custom.t1At = p.t1At;
+  if(p.t2At) custom.t2At = p.t2At;
+  if(p.claimSystem) custom.claimSystem = p.claimSystem;
+  if(p.dateT1 || p.dateSubmitted) custom.dateT1 = p.dateT1 || p.dateSubmitted;
+  if(p.dateT2) custom.dateT2 = p.dateT2;
+
   const core = {
     id: p.id,
     team: p.team || null,
@@ -8095,31 +8163,17 @@ function toRemote(p, mode){
     lab: !!p.lab,
     notes: p.notes || '',
     deleted: !!p.deleted,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    custom_benefits: custom
   };
   if(uid && /^[0-9a-f-]{36}$/i.test(uid)){
     core.created_by = p.createdBy && /^[0-9a-f-]{36}$/i.test(p.createdBy) ? p.createdBy : uid;
     core.updated_by = uid;
   }
-  if(mode === 'core'){
-    // Prefer safe claim values if t2 unsupported
+  if(mode === 'core' || mode === 'core_meta'){
     if(claim === 't2') core.claim = 't1';
     return core;
   }
-  const labs = Array.isArray(p.labTests) ? p.labTests.filter(Boolean) : [];
-  const custom = Object.assign({}, (p.customBenefits && typeof p.customBenefits === 'object') ? p.customBenefits : {});
-  custom.labTests = labs; // always mirror so labs survive without a lab_tests column
-  // Attribution survives even without dedicated DB columns
-  if(p.encodedBy) custom.encodedBy = p.encodedBy;
-  if(p.t1By) custom.t1By = p.t1By;
-  if(p.t2By) custom.t2By = p.t2By;
-  if(p.t1At) custom.t1At = p.t1At;
-  if(p.t2At) custom.t2At = p.t2At;
-  if(p.claimSystem) custom.claimSystem = p.claimSystem;
-  // Dates also in custom_benefits so they survive if date_t2 column is missing
-  if(p.dateT1 || p.dateSubmitted) custom.dateT1 = p.dateT1 || p.dateSubmitted;
-  if(p.dateT2) custom.dateT2 = p.dateT2;
-  else if(custom.dateT2) delete custom.dateT2;
   return Object.assign({}, core, {
     date_t1: emptyToNull(p.dateT1 || p.dateSubmitted),
     date_t2: emptyToNull(p.dateT2),
@@ -8128,7 +8182,6 @@ function toRemote(p, mode){
     referral: !!p.referral,
     lab_tests: labs.length ? labs.join('|') : null,
     mca_photo: p.mcaPhoto ? String(p.mcaPhoto).slice(0, 350000) : null,
-    custom_benefits: custom,
     history: Array.isArray(p.history) ? p.history.slice(-40) : []
   });
 }
@@ -8143,7 +8196,7 @@ function fromRemote(r){
   else if(r.lab_tests) labTests = String(r.lab_tests).split('|').map(s=>s.trim()).filter(Boolean);
   else if(Array.isArray(cb.labTests)) labTests = cb.labTests.filter(Boolean);
 
-  return {
+  const out = {
     id: r.id, team: r.team, name: r.name || '', phid: r.phid || '', status: r.status, facility: r.facility,
     mca: !!r.mca, dateEncoded: r.date_encoded || '', dateSubmitted: r.date_submitted || '',
     dateT1: r.date_t1 || r.date_submitted || cb.dateT1 || '', dateT2: r.date_t2 || cb.dateT2 || '',
@@ -8166,6 +8219,7 @@ function fromRemote(r){
     t2At: cb.t2At || null,
     claimSystem: cb.claimSystem || null
   };
+  return (typeof applyPatientMetaBackup === 'function') ? applyPatientMetaBackup(out) : out;
 }
 
 /* Current signed-in user + role */
@@ -8407,25 +8461,35 @@ function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigato
 
 async function pushOne(p){
   try{
-    // Attempt 1: full payload (new columns)
+    if(typeof mirrorPatientMeta === 'function') mirrorPatientMeta(p);
+    // Attempt 1: full payload
     let payload = toRemote(p, 'full');
     let { error } = await sb.from('patients').upsert(payload);
     if(error){
       const msg = (error.message || error.details || error.hint || JSON.stringify(error) || '');
       console.warn('pushOne full failed', p && p.id, msg, error);
-      // Attempt 2: core columns only (always retry on any 400/schema/check error)
+      // Attempt 2: core + custom_benefits (keeps T1/T2 by, system, dates)
       payload = toRemote(p, 'core');
       let retry = await sb.from('patients').upsert(payload);
       error = retry.error;
       if(error){
-        // Attempt 3: drop created_by/updated_by (UUID / RLS edge cases)
+        // Attempt 3: drop uuid cols
         delete payload.created_by;
         delete payload.updated_by;
         retry = await sb.from('patients').upsert(payload);
         error = retry.error;
       }
+      if(error && payload.custom_benefits){
+        // Attempt 4: last resort without custom_benefits (local backup still holds meta)
+        const cb = payload.custom_benefits;
+        delete payload.custom_benefits;
+        retry = await sb.from('patients').upsert(payload);
+        error = retry.error;
+        if(!error) console.warn('Synced without custom_benefits for', p.id, '— meta kept in device backup');
+        payload.custom_benefits = cb;
+      }
       if(!error){
-        console.warn('Synced core fields only for', p.id, '— add missing columns in Supabase if needed');
+        console.warn('Synced reduced payload for', p.id);
       }
     }
     if(error) throw error;
@@ -8530,7 +8594,11 @@ async function pullRemote(){
         if(local.dateT2) local.customBenefits.dateT2 = local.dateT2;
         if(!local.dateT1 && keepCb.dateT1) local.dateT1 = keepCb.dateT1;
         if(local.dateT1) local.customBenefits.dateT1 = local.dateT1;
-      } else state.patients.push(remote);
+        applyPatientMetaBackup(local);
+      } else {
+        applyPatientMetaBackup(remote);
+        state.patients.push(remote);
+      }
     });
     // Drop any local copies of purged IDs
     if(purgedIds.size){
@@ -8668,6 +8736,7 @@ function scheduleRenderAll(delay){
 
 /* Called after any local add/edit/delete */
 async function persistChange(p){
+  if(typeof mirrorPatientMeta === 'function') mirrorPatientMeta(p);
   if(!canEdit()){
     setSyncStatus('View only — changes not saved', 'err');
     renderAll();
