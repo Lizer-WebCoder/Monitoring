@@ -6901,6 +6901,95 @@ tbody td.name{ text-align: left !important; font-weight: 650 !important; }
   font-weight: 650 !important;
 }
 
+
+/* ========== Row actions — lock to patient row ========== */
+.team-group table tbody tr[data-id]{
+  height: 44px;
+}
+.team-group table tbody tr[data-id] > td{
+  vertical-align: middle !important;
+  height: 44px;
+  box-sizing: border-box;
+}
+.team-group table thead th:last-child,
+.team-group table tbody td.row-actions{
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+  padding: 0 6px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  position: sticky !important;
+  right: 0 !important;
+  background: var(--card) !important;
+  z-index: 3;
+  box-shadow: -4px 0 8px rgba(15, 54, 48, 0.06);
+}
+.team-group table thead th:last-child{
+  background: var(--table-head) !important;
+  z-index: 4;
+}
+.team-group table tbody tr[data-id]:hover > td.row-actions{
+  background: color-mix(in srgb, var(--table-head) 80%, var(--card)) !important;
+}
+.team-group td.row-actions{
+  display: table-cell !important; /* override flex from older rules */
+}
+.team-group td.row-actions .row-actions-inner,
+.team-group td.row-actions{
+  /* buttons sit in a flex center inside the cell via nested approach */
+}
+.team-group td.row-actions{
+  line-height: 0 !important;
+}
+.team-group td.row-actions .icon-btn{
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0 !important;
+  margin: 0 2px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+  color: var(--muted) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  font-size: 0 !important;
+  flex: none !important;
+}
+.team-group td.row-actions .icon-btn svg{
+  display: block !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+.team-group td.row-actions .icon-btn:hover{
+  color: var(--teal) !important;
+  border-color: var(--teal) !important;
+  background: var(--card) !important;
+}
+/* Prevent global .btn height rules from touching icon buttons */
+.team-group .icon-btn.btn,
+button.icon-btn{
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.team-group td.row-actions .row-actions-inner{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 100% !important;
+  min-height: 40px !important;
+  width: 100% !important;
+}
+
 </style>
 </head>
 <body>
@@ -8994,12 +9083,14 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
       <td class="row-actions">
-        <button class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
-        ${canEdit() ? (p.deleted
-          ? `<button class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>
-             <button class="icon-btn" data-purge="${p.id}" title="Delete" style="color:var(--red);">${icon('trash',14)}</button>`
-          : `<button class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
-        : ''}
+        <div class="row-actions-inner">
+          <button type="button" class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
+          ${canEdit() ? (p.deleted
+            ? `<button type="button" class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>
+               <button type="button" class="icon-btn" data-purge="${p.id}" title="Delete" style="color:var(--red);">${icon('trash',14)}</button>`
+            : `<button type="button" class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
+          : ''}
+        </div>
       </td>
     </tr>`;
 }
