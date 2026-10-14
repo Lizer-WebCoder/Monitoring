@@ -5445,6 +5445,45 @@ details.legend-wrap{
   white-space: nowrap;
 }
 
+
+/* ========== Facility select — centered ========== */
+.team-group td.fac-cell{
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 4px 6px !important;
+}
+.team-group .fac-select,
+.team-group select.fac-select.badge-select{
+  display: inline-block !important;
+  margin: 0 auto !important;
+  text-align: center !important;
+  text-align-last: center !important;
+  min-width: 96px !important;
+  max-width: 140px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 20px 0 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+.team-group .fac-select option{
+  text-align: center !important;
+  font-weight: 650;
+  padding: 6px 8px;
+}
+.team-group .fac-select.fac-home{
+  background: var(--green-bg, #d1fae5) !important;
+  color: var(--green, #047857) !important;
+}
+.team-group .fac-select.fac-other{
+  background: var(--purple-bg, #ede9fe) !important;
+  color: var(--purple, #6d28d9) !important;
+}
+
 </style>
 </head>
 <body>
@@ -7505,24 +7544,22 @@ function autosizeBadgeSelects(){
 }
 
 function facilityCellHtml(p){
-  // Colors match status: Registered/Abucay = green, other facility = purple
+  // Colors match status: home facility = green, other = purple
+  let opts, facClass;
   if(p.status === 'registered'){
-    // Registered can be any branch — show editable select like others
-    const optsR = loadFacilityOptions();
-    const facClassR = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
-    return `<td style="text-align:center"><select class="fac-select ${facClassR}" data-id="${p.id}" data-field="facility">${optsR.map(f=>`<option value="${f}" ${f===p.facility?'selected':''}>${f}</option>`).join('')}</select></td>`;
+    opts = loadFacilityOptions();
+    facClass = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
+  } else if(p.status === 'registered_other'){
+    opts = facilityOptionsOther;
+    facClass = 'fac-other';
+  } else {
+    opts = facilityOptionsAll;
+    facClass = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
   }
-  if(p.status === 'registered_other'){
-    const opts = facilityOptionsOther;
-    return `<td style="text-align:center"><select class="badge-select fac-select fac-other" data-field="facility">
-      ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
-    </select></td>`;
-  }
-  const opts = facilityOptionsAll;
-  const facClass = (p.facility === HOME_FACILITY) ? 'fac-home' : 'fac-other';
-  return `<td style="text-align:center"><select class="badge-select fac-select ${facClass}" data-field="facility">
-    ${opts.map(f=>`<option value="${f}" ${p.facility===f?'selected':''}>${f}</option>`).join('')}
-  </select></td>`;
+  const options = (opts || []).map(f =>
+    `<option value="${escapeAttr(f)}" ${f===p.facility?'selected':''}>${escapeHtml(f)}</option>`
+  ).join('');
+  return `<td class="fac-cell"><select class="badge-select fac-select ${facClass}" data-field="facility" title="Facility">${options}</select></td>`;
 }
 
 const selectedIds = new Set();
@@ -12561,8 +12598,6 @@ if(typeof renderAll === 'function'){
   renderAll = function(){
     _ra2();
     try{
-      // Checklist is rendered in team-head-bottom template (no second inject)
-      document.querySelectorAll('.team-head').forEach(()=>{});
       // zebra rows
       document.querySelectorAll('tbody tr[data-id]').forEach((tr,i)=>{
         tr.classList.toggle('zebra-alt', i % 2 === 1);
