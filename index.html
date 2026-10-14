@@ -5328,6 +5328,123 @@ details.legend-wrap{
     display: none !important;
   }
 
+
+/* ========== Roster table — even spacing & centered cells ========== */
+.team-group .table-wrap{
+  overflow-x: auto;
+}
+.team-group table{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.team-group thead th{
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 8px 6px !important;
+  white-space: nowrap;
+}
+.team-group thead th:nth-child(2),
+.team-group tbody td.name{
+  text-align: left !important;
+}
+.team-group thead th.col-select,
+.team-group tbody td.col-select{
+  width: 36px !important;
+  text-align: center !important;
+}
+.team-group tbody td{
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 6px 5px !important;
+}
+.team-group tbody td.name{
+  text-align: left !important;
+  padding-left: 10px !important;
+  font-weight: 650;
+  max-width: 160px;
+}
+.team-group tbody td.idcell{
+  text-align: left !important;
+  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+.team-group .datecell{
+  text-align: center !important;
+  padding: 4px 2px !important;
+}
+.team-group .datecell input[type=date]{
+  width: 118px !important;
+  max-width: 100%;
+  margin: 0 auto !important;
+  display: block;
+  text-align: center !important;
+  font-size: 11.5px !important;
+  height: 28px !important;
+  padding: 0 2px !important;
+}
+.team-group .badge-select,
+.team-group .sys-select{
+  margin: 0 auto !important;
+  display: inline-block !important;
+  max-width: 100%;
+  height: 28px !important;
+  min-height: 28px !important;
+  font-size: 11px !important;
+  padding: 0 18px 0 8px !important;
+}
+.team-group td input[type=checkbox]{
+  width: 15px;
+  height: 15px;
+  margin: 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+  accent-color: var(--teal);
+}
+.team-group .row-actions{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  min-width: 64px !important;
+  padding: 4px 6px !important;
+  vertical-align: middle !important;
+}
+.team-group .row-actions .icon-btn{
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+  color: var(--ink) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.team-group .row-actions .icon-btn:hover{
+  background: var(--card) !important;
+  border-color: var(--teal) !important;
+  color: var(--teal) !important;
+}
+.team-group .dup-tag{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px;
+  font-size: 10.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  white-space: nowrap;
+}
+
 </style>
 </head>
 <body>
