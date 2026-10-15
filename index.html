@@ -7921,6 +7921,70 @@ body.dark .ux-row-panel .ux-menu-item:hover {
   color: #dc2626 !important;
 }
 
+
+/* MCA file attachment card */
+.mca-file-card{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2, var(--table-head));
+}
+.mca-file-icon{
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--brand, var(--teal));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+}
+.mca-file-icon.is-pdf{ background: #b91c1c; }
+.mca-file-icon.is-img{ background: #0f766e; }
+.mca-file-icon.is-doc{ background: #1d4ed8; }
+.mca-file-meta{ flex: 1; min-width: 0; }
+.mca-file-name{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mca-file-sub{
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.mca-file-open{
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand, var(--teal));
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.mca-file-open:hover{ background: var(--table-head); }
+.mca-photo-preview{
+  margin-top: 10px;
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  object-fit: contain;
+  background: var(--table-head);
+}
+
 </style>
 </head>
 <body>
@@ -8231,14 +8295,22 @@ body.dark .ux-row-panel .ux-menu-item:hover {
         <input type="text" id="f_notes" placeholder="Optional remarks…">
       </div>
       <div class="full mca-photo-wrap">
-        <label>MCA photo / document</label>
+        <label>MCA file attachment</label>
         <div class="mca-photo-actions">
-          <input type="file" id="f_mcaPhoto" class="sr-only" accept="image/*" capture="environment">
-          <button type="button" class="btn btn-primary" id="f_mcaPhotoBtn">📷 Choose / take photo</button>
+          <input type="file" id="f_mcaPhoto" class="sr-only" accept="image/*,application/pdf,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <button type="button" class="btn btn-primary" id="f_mcaPhotoBtn">Attach MCA file</button>
           <button type="button" class="btn btn-ghost" id="f_mcaPhotoClear">Clear</button>
         </div>
+        <div id="f_mcaFileCard" class="mca-file-card" style="display:none;" aria-live="polite">
+          <div class="mca-file-icon" id="f_mcaFileIcon">FILE</div>
+          <div class="mca-file-meta">
+            <div class="mca-file-name" id="f_mcaFileName">—</div>
+            <div class="mca-file-sub" id="f_mcaFileSub">—</div>
+          </div>
+          <a class="mca-file-open" id="f_mcaFileOpen" href="#" target="_blank" rel="noopener">Open</a>
+        </div>
         <img id="f_mcaPhotoPreview" class="mca-photo-preview" alt="MCA preview" style="display:none;">
-        <div class="field-hint" id="mcaPhotoHint">Optional. Use camera or gallery. Stored on device; syncs when Supabase has an mca_photo column.</div>
+        <div class="field-hint" id="mcaPhotoHint">Optional. Attach a photo, PDF, or document. Stored on this device; large files stay local until cloud storage is configured.</div>
       </div>
       <div class="full" id="customBenefitsMount"></div>
       <div class="full" id="auditInfo" style="display:none;font-size:12px;color:var(--muted);padding:8px 10px;background:var(--table-head);border-radius:8px;line-height:1.5;"></div>
@@ -14335,15 +14407,34 @@ document.getElementById('tm_saveBtn')?.addEventListener('click', ()=>{
   }, 50);
 });
 
-/* ---------- MCA photo ---------- */
-let pendingMcaPhoto = null;
+/* ---------- MCA file attachment ---------- */
+let pendingMcaPhoto = null; // data URL or null
+let pendingMcaMeta = null;  // { name, mime, size, kind }
+
+function formatBytes(n){
+  n = Number(n) || 0;
+  if(n < 1024) return n + ' B';
+  if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/(1024*1024)).toFixed(2) + ' MB';
+}
+function mcaFileKind(mime, name){
+  const m = String(mime || '').toLowerCase();
+  const n = String(name || '').toLowerCase();
+  if(m.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp)$/.test(n)) return 'img';
+  if(m === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
+  if(m.includes('word') || /\.(docx?|rtf)$/.test(n)) return 'doc';
+  return 'file';
+}
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.onerror = ()=> reject(new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
 function compressImageFile(file, maxDim, quality){
   return new Promise((resolve, reject)=>{
-    if(file.type === 'application/pdf'){
-      // store small marker only — PDFs too large for row storage
-      resolve(null);
-      return;
-    }
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = ()=>{
@@ -14360,6 +14451,69 @@ function compressImageFile(file, maxDim, quality){
     img.src = url;
   });
 }
+function renderMcaFileCard(dataUrl, meta){
+  const card = document.getElementById('f_mcaFileCard');
+  const prev = document.getElementById('f_mcaPhotoPreview');
+  if(!card) return;
+  if(!dataUrl){
+    card.style.display = 'none';
+    if(prev){ prev.removeAttribute('src'); prev.style.display = 'none'; }
+    return;
+  }
+  const name = (meta && meta.name) || 'MCA attachment';
+  const mime = (meta && meta.mime) || '';
+  const size = (meta && meta.size) || 0;
+  const kind = (meta && meta.kind) || mcaFileKind(mime, name);
+  const icon = document.getElementById('f_mcaFileIcon');
+  const nameEl = document.getElementById('f_mcaFileName');
+  const subEl = document.getElementById('f_mcaFileSub');
+  const openEl = document.getElementById('f_mcaFileOpen');
+  if(icon){
+    icon.className = 'mca-file-icon is-' + kind;
+    icon.textContent = kind === 'pdf' ? 'PDF' : (kind === 'img' ? 'IMG' : (kind === 'doc' ? 'DOC' : 'FILE'));
+  }
+  if(nameEl) nameEl.textContent = name;
+  if(subEl) subEl.textContent = [kind === 'img' ? 'Image' : (kind === 'pdf' ? 'PDF document' : 'Document'), formatBytes(size)].filter(Boolean).join(' · ');
+  if(openEl){
+    openEl.href = dataUrl;
+    openEl.setAttribute('download', name);
+    openEl.textContent = kind === 'img' ? 'View' : 'Open / download';
+  }
+  card.style.display = 'flex';
+  if(prev){
+    if(kind === 'img' && String(dataUrl).startsWith('data:image')){
+      prev.src = dataUrl;
+      prev.style.display = 'block';
+    } else {
+      prev.removeAttribute('src');
+      prev.style.display = 'none';
+    }
+  }
+}
+function setPendingMcaFile(dataUrl, meta){
+  pendingMcaPhoto = dataUrl || null;
+  pendingMcaMeta = dataUrl ? (meta || null) : null;
+  renderMcaFileCard(pendingMcaPhoto, pendingMcaMeta);
+}
+function applyMcaMetaToPatient(p){
+  if(!p) return;
+  if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+  if(pendingMcaMeta){
+    p.mcaFileName = pendingMcaMeta.name || null;
+    p.mcaFileMime = pendingMcaMeta.mime || null;
+    p.mcaFileSize = pendingMcaMeta.size || null;
+    p.customBenefits.mcaFileName = p.mcaFileName;
+    p.customBenefits.mcaFileMime = p.mcaFileMime;
+    p.customBenefits.mcaFileSize = p.mcaFileSize;
+  } else if(pendingMcaPhoto === null){
+    p.mcaFileName = null;
+    p.mcaFileMime = null;
+    p.mcaFileSize = null;
+    delete p.customBenefits.mcaFileName;
+    delete p.customBenefits.mcaFileMime;
+    delete p.customBenefits.mcaFileSize;
+  }
+}
 
 document.getElementById('f_mcaPhotoBtn') && document.getElementById('f_mcaPhotoBtn').addEventListener('click', ()=>{
   const inp = document.getElementById('f_mcaPhoto');
@@ -14368,28 +14522,41 @@ document.getElementById('f_mcaPhotoBtn') && document.getElementById('f_mcaPhotoB
 document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
   const file = e.target.files && e.target.files[0];
   if(!file) return;
-  if(file.size > 8 * 1024 * 1024){ alert('File too large (max 8MB).'); return; }
+  const maxBytes = 8 * 1024 * 1024;
+  if(file.size > maxBytes){ alert('File too large (max 8MB).'); e.target.value = ''; return; }
+  const kind = mcaFileKind(file.type, file.name);
   try{
-    const dataUrl = await compressImageFile(file, 1280, 0.72);
+    let dataUrl = null;
+    if(kind === 'img'){
+      dataUrl = await compressImageFile(file, 1280, 0.72);
+    } else {
+      // PDF / documents stored as file data URL (capped)
+      if(file.size > 4 * 1024 * 1024){
+        alert('Document is over 4MB. Please use a smaller PDF or compress the file.');
+        e.target.value = '';
+        return;
+      }
+      dataUrl = await readFileAsDataURL(file);
+    }
     if(!dataUrl){
-      alert('PDF stored as “on file” flag only — attach a photo for an in-app preview.');
-      document.getElementById('f_mca').checked = true;
+      alert('Could not read that file.');
       return;
     }
-    pendingMcaPhoto = dataUrl;
-    const prev = document.getElementById('f_mcaPhotoPreview');
-    prev.src = dataUrl;
-    prev.style.display = 'block';
-    document.getElementById('f_mca').checked = true;
+    setPendingMcaFile(dataUrl, {
+      name: file.name || ('mca.' + (kind === 'pdf' ? 'pdf' : 'bin')),
+      mime: file.type || (kind === 'pdf' ? 'application/pdf' : 'application/octet-stream'),
+      size: file.size,
+      kind
+    });
+    const mcaCb = document.getElementById('f_mca');
+    if(mcaCb) mcaCb.checked = true;
   }catch(err){
-    alert('Could not read image.');
+    console.error(err);
+    alert('Could not attach file.');
   }
 });
 document.getElementById('f_mcaPhotoClear')?.addEventListener('click', ()=>{
-  pendingMcaPhoto = null;
-  const prev = document.getElementById('f_mcaPhotoPreview');
-  prev.removeAttribute('src');
-  prev.style.display = 'none';
+  setPendingMcaFile(null, null);
   const inp = document.getElementById('f_mcaPhoto');
   if(inp) inp.value = '';
 });
@@ -14862,11 +15029,19 @@ if(typeof openModal === 'function'){
     _om(id, presetTeam);
     const p = id ? state.patients.find(x=>x.id===id) : null;
     pendingMcaPhoto = p && p.mcaPhoto ? p.mcaPhoto : null;
-    const prev = document.getElementById('f_mcaPhotoPreview');
-    if(prev){
-      if(pendingMcaPhoto){ prev.src = pendingMcaPhoto; prev.style.display = 'block'; }
-      else { prev.removeAttribute('src'); prev.style.display = 'none'; }
+    pendingMcaMeta = null;
+    if(p && pendingMcaPhoto){
+      const cb = p.customBenefits || {};
+      pendingMcaMeta = {
+        name: p.mcaFileName || cb.mcaFileName || (String(pendingMcaPhoto).startsWith('data:application/pdf') ? 'mca.pdf' : 'mca-attachment'),
+        mime: p.mcaFileMime || cb.mcaFileMime || '',
+        size: p.mcaFileSize || cb.mcaFileSize || 0,
+        kind: mcaFileKind(p.mcaFileMime || cb.mcaFileMime || '', p.mcaFileName || cb.mcaFileName || '')
+      };
+      if(String(pendingMcaPhoto).startsWith('data:image')) pendingMcaMeta.kind = 'img';
+      if(String(pendingMcaPhoto).startsWith('data:application/pdf')) pendingMcaMeta.kind = 'pdf';
     }
+    if(typeof renderMcaFileCard === 'function') renderMcaFileCard(pendingMcaPhoto, pendingMcaMeta);
     const finp = document.getElementById('f_mcaPhoto');
     if(finp) finp.value = '';
     renderCustomBenefitsFields(p);
@@ -14913,13 +15088,14 @@ document.getElementById('saveBtn')?.addEventListener('click', ()=>{
       if(pendingMcaPhoto !== null){
         // null clear only if clear was pressed — pendingMcaPhoto set on load
         p.mcaPhoto = pendingMcaPhoto || null;
+        if(typeof applyMcaMetaToPatient === 'function') applyMcaMetaToPatient(p);
       }
       const cb = readCustomBenefitsFromForm();
       if(Object.keys(cb).length || (p.customBenefits && Object.keys(p.customBenefits).length)){
         p.customBenefits = cb;
       }
       const changes = [];
-      if(before.mcaPhoto !== (p.mcaPhoto || null)) changes.push({ field: 'mcaPhoto', from: before.mcaPhoto ? '(image)' : '(none)', to: p.mcaPhoto ? '(image)' : '(none)' });
+      if(before.mcaPhoto !== (p.mcaPhoto || null)) changes.push({ field: 'mcaPhoto', from: before.mcaPhoto ? '(file)' : '(none)', to: p.mcaPhoto ? '(file)' : '(none)' });
       if(before.customBenefits !== JSON.stringify(p.customBenefits || {})) changes.push({ field: 'customBenefits', from: before.customBenefits, to: JSON.stringify(p.customBenefits||{}) });
       // also log core-ish
       changes.push({ field: 'saved', from: '', to: 'ok' });
@@ -15570,9 +15746,18 @@ function printMcaPackets(ids){
     const benefitHtml = benefits.length
       ? benefits.map(b => `<span class="chip chip-ok">${b}</span>`).join('')
       : '<span class="muted">None marked</span>';
+    const isImg = p.mcaPhoto && String(p.mcaPhoto).startsWith('data:image');
+    const isPdf = p.mcaPhoto && (String(p.mcaPhoto).startsWith('data:application/pdf') || (p.mcaFileMime||'').includes('pdf'));
+    const fname = p.mcaFileName || (isPdf ? 'mca.pdf' : (isImg ? 'mca-photo.jpg' : 'mca-file'));
     const photo = p.mcaPhoto
-      ? `<div class="photo-wrap"><img src="${p.mcaPhoto}" alt="MCA photo"></div>`
-      : `<div class="photo-empty">No MCA photo on file</div>`;
+      ? (isImg
+          ? `<div class="photo-wrap"><img src="${p.mcaPhoto}" alt="MCA photo"></div>`
+          : `<div class="photo-empty" style="font-style:normal;">
+               <div style="font-weight:700;margin-bottom:6px;">${esc(fname)}</div>
+               <div style="margin-bottom:10px;color:#64748b;">${isPdf ? 'PDF document attached' : 'File attached'}</div>
+               <a href="${p.mcaPhoto}" download="${esc(fname)}" style="color:#0f766e;font-weight:700;">Open / download file</a>
+             </div>`)
+      : `<div class="photo-empty">No MCA file on file</div>`;
     return `
     <article class="packet">
       <header class="pkt-head">
@@ -15614,7 +15799,7 @@ function printMcaPackets(ids){
           <div class="notes">${esc(p.notes || '—')}</div>
         </div>
         <div class="block">
-          <div class="lbl">MCA photo</div>
+          <div class="lbl">MCA file</div>
           ${photo}
         </div>
       </div>
