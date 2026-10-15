@@ -18,33 +18,65 @@
 /* ==== BASE from css/app.css ==== */
 
 :root{
-    --ink:#12312b; --paper:#f6f4ef; --card:#ffffff; --line:#dcd6c8;
-    --teal:#14524a; --teal-deep:#0b3630;
-    --amber:#c8862b; --amber-bg:#fbeed9;
-    --blue:#2f5f8a; --blue-bg:#e4edf5;
-    --green:#3d7a4f; --green-bg:#e2efe3;
-    --red:#a8402f; --red-bg:#f6e3df;
-    --purple:#6b3fa0; --purple-bg:#efe3fb;
-    --muted:#6c7570;
-    --table-head:#eef0e8;
-    --row-hover:#fbfaf6;
-    --label-accent:#14524a;
-    --shadow: 0 1px 2px rgba(18,49,43,0.06), 0 6px 20px rgba(18,49,43,0.05);
+    /* Clinical light design system — 8h data-entry safe */
+    --ink: #0f172a;           /* slate-900 primary text */
+    --muted: #64748b;         /* slate-500 secondary text */
+    --paper: #f1f5f9;         /* slate-100 page bg */
+    --card: #ffffff;          /* surface */
+    --surface-2: #f8fafc;     /* slate-50 subtle section tint */
+    --line: #e2e8f0;          /* slate-200 hairline only */
+    --table-head: #f1f5f9;
+    --row-hover: #f8fafc;
+    --label-accent: #0f766e;
+
+    --teal: #0f766e;          /* brand / success primary */
+    --teal-deep: #115e59;
+    --brand: #0f766e;
+
+    /* Semantic statuses (strict meaning) */
+    --ok: #059669;            /* sync success, complete */
+    --ok-bg: #ecfdf5;
+    --warn: #d97706;          /* pending T1 / attention */
+    --warn-bg: #fffbeb;
+    --info: #0284c7;          /* T2 / in progress */
+    --info-bg: #f0f9ff;
+    --danger: #dc2626;        /* error, missing ID, missed */
+    --danger-bg: #fef2f2;
+    --neutral: #475569;       /* registered other / neutral */
+    --neutral-bg: #f1f5f9;
+
+    /* Legacy aliases (keep existing components working) */
+    --amber: var(--warn); --amber-bg: var(--warn-bg);
+    --blue: var(--info); --blue-bg: var(--info-bg);
+    --green: var(--ok); --green-bg: var(--ok-bg);
+    --red: var(--danger); --red-bg: var(--danger-bg);
+    --purple: #6366f1; --purple-bg: #eef2ff;
+
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06);
     --radius: 10px;
+    --radius-lg: 12px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body.dark{
-    --ink:#e7ede9; --paper:#101a17; --card:#182421; --line:#2b3a35;
-    --teal:#2f8a79; --teal-deep:#0d2e29;
-    --amber:#e0ab5c; --amber-bg:#3a2d16;
-    --blue:#82aed4; --blue-bg:#1c2c3c;
-    --green:#84c495; --green-bg:#1b3021;
-    --red:#e2907d; --red-bg:#3a221d;
-    --purple:#bda2e0; --purple-bg:#2a2038;
-    --muted:#9aa39c; --table-head:#1e2d28;
-    --row-hover:#1c2924; --label-accent:#8fd9c4;
-    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.3);
+    --ink:#e2e8f0; --muted:#94a3b8;
+    --paper:#0b1220; --card:#111827; --surface-2:#0f172a;
+    --line:#1e293b; --table-head:#0f172a; --row-hover:#1e293b;
+    --label-accent:#5eead4;
+    --teal:#2dd4bf; --teal-deep:#0f766e; --brand:#2dd4bf;
+    --ok:#34d399; --ok-bg:#064e3b;
+    --warn:#fbbf24; --warn-bg:#78350f;
+    --info:#38bdf8; --info-bg:#0c4a6e;
+    --danger:#f87171; --danger-bg:#7f1d1d;
+    --neutral:#94a3b8; --neutral-bg:#1e293b;
+    --amber: var(--warn); --amber-bg: var(--warn-bg);
+    --blue: var(--info); --blue-bg: var(--info-bg);
+    --green: var(--ok); --green-bg: var(--ok-bg);
+    --red: var(--danger); --red-bg: var(--danger-bg);
+    --purple:#a5b4fc; --purple-bg:#312e81;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
   }
   body.dark input, body.dark select{ color-scheme: dark; }
   body.dark #monthFilter{ color: var(--teal); }
@@ -7543,6 +7575,239 @@ body.dark .sm-enc, body.dark .lg-enc{ background: var(--teal) !important; }
   box-shadow: none !important;
 }
 
+
+.sm-wah, .lg-wah{ background: #0d9488 !important; }
+.sm-biz, .lg-biz{ background: #6366f1 !important; }
+.staff-metric-card .sm-label{ min-width: 0; }
+.staff-metric-card .sm-row{
+  grid-template-columns: 132px minmax(0, 1fr) 28px !important;
+}
+
+
+/* ========== CLINICAL DESIGN SYSTEM v2 ========== */
+html, body {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+/* Prefer light for encoding sessions */
+body:not(.dark) {
+  color-scheme: light;
+}
+
+/* --- Break box-in-a-box: tone + space, not frames --- */
+header {
+  background: var(--card) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.toolbar {
+  background: var(--surface-2, var(--table-head)) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  padding: 10px 16px !important;
+  gap: 8px !important;
+}
+.team-group {
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-lg, 12px) !important;
+  box-shadow: var(--shadow) !important;
+  margin: 12px 16px !important;
+  overflow: hidden;
+}
+.team-group + .team-group { margin-top: 10px !important; }
+.team-head {
+  background: var(--surface-2, var(--table-head)) !important;
+  border-bottom: 1px solid var(--line) !important;
+  padding: 10px 14px !important;
+}
+.vol-card, .staff-metric-card, .dash-modal .dash-body > div,
+.modal, .drawer {
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+/* Nested panels: no second heavy border — soft fill only */
+.vol-stat, .vol-explain, .vol-chart-wrap {
+  border: none !important;
+  background: var(--surface-2, var(--table-head)) !important;
+  box-shadow: none !important;
+}
+.vol-chart-wrap { border: 1px solid var(--line) !important; }
+
+/* --- Semantic status chips --- */
+.badge-ok, .status-ok, .dup-tag.dup-new,
+select.badge-select.claim-t2, .claim-chip-t2 {
+  background: var(--ok-bg) !important; color: var(--ok) !important;
+}
+.badge-warn, .status-pending, select.badge-select.claim-pending, .claim-chip-pending {
+  background: var(--warn-bg) !important; color: var(--warn) !important;
+}
+.badge-info, select.badge-select.claim-t1, .claim-chip-t1 {
+  background: var(--info-bg) !important; color: var(--info) !important;
+}
+.badge-danger, .status-error, .dup-tag.dup-flag,
+select.badge-select.claim-missed24, .claim-chip-missed24 {
+  background: var(--danger-bg) !important; color: var(--danger) !important;
+}
+.badge-neutral, .status-other {
+  background: var(--neutral-bg) !important; color: var(--neutral) !important;
+}
+
+/* Metric series: one brand + muted supports */
+.sm-enc, .lg-enc { background: var(--teal-deep) !important; }
+.sm-t1, .lg-t1 { background: var(--info) !important; }
+.sm-t2, .lg-t2 { background: #6366f1 !important; }
+.sm-wah, .lg-wah { background: var(--ok) !important; }
+.sm-biz, .lg-biz { background: #6366f1 !important; }
+
+/* --- Table liberation: sticky head, full width fluid --- */
+#groupsContainer {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 0 80px !important;
+  box-sizing: border-box;
+}
+.team-group .table-wrap {
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.team-group table {
+  width: 100% !important;
+  min-width: 960px;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+.team-group thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  background: var(--table-head) !important;
+  border-bottom: 1px solid var(--line) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--muted) !important;
+  text-transform: none !important;
+  letter-spacing: 0.01em;
+  padding: 8px 10px !important;
+}
+.team-group tbody td {
+  padding: 8px 10px !important;
+  border-bottom: 1px solid var(--line) !important;
+  font-size: 13px !important;
+  color: var(--ink) !important;
+}
+.team-group tbody tr:hover { background: var(--row-hover) !important; }
+
+/* Collapse static chrome density */
+.toolbar-row.toolbar-nav .btn:not(.btn-primary) {
+  background: transparent !important;
+}
+.btn {
+  border-radius: 8px !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+}
+.btn-primary {
+  background: var(--brand, var(--teal)) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+/* --- Batch action bar (floating, appears on selection) --- */
+#bulkBar {
+  position: fixed !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(120%) !important;
+  bottom: 20px !important;
+  z-index: 90 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
+  opacity: 0;
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+#bulkBar.open, #bulkBar.show, #bulkBar[data-open="1"], body.has-selection #bulkBar {
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+#bulkBar .bulk-count {
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+  color: var(--ink) !important;
+  white-space: nowrap;
+}
+
+/* --- Drawer: primary edit surface --- */
+.drawer-backdrop {
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+.drawer {
+  width: min(520px, 100vw) !important;
+  max-width: 520px !important;
+  background: var(--card) !important;
+  border-left: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 16px 18px !important;
+}
+.drawer h3 {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+.dv-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid var(--line) !important;
+}
+
+/* Dashboard: single scroll, calm cards */
+.dash-modal {
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+.dash-cards > * {
+  background: var(--surface-2, var(--table-head)) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.staff-metric-card {
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+/* Inputs: high contrast on light */
+input, select, textarea {
+  background: var(--card) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand, var(--teal)) 35%, transparent) !important;
+  border-color: var(--brand, var(--teal)) !important;
+}
+
+@media (max-width: 900px) {
+  .team-group { margin: 8px !important; }
+  .toolbar { padding: 8px !important; }
+}
+
 </style>
 </head>
 <body>
@@ -12122,14 +12387,23 @@ function buildStaffStats(scoped){
     if(!byUser[uid]){
       let name = (typeof displayNameFor === 'function' ? displayNameFor(uid) : null) || uid;
       if(String(uid).startsWith('name:')) name = String(uid).slice(5);
-      if(String(name).includes('[DECLINED]') || String(name).toLowerCase().includes('declined')) return; // skip declined accounts
-      byUser[uid] = { id: uid, name: String(name), encoded: 0, t1: 0, t2: 0, mca: 0, teams: {} };
+      if(String(name).includes('[DECLINED]') || String(name).toLowerCase().includes('declined')) return;
+      byUser[uid] = {
+        id: uid, name: String(name),
+        encoded: 0, t1: 0, t2: 0, mca: 0,
+        t1Wah: 0, t1Biz: 0, t2Wah: 0, t2Biz: 0,
+        teams: {}
+      };
     }
     if(!byUser[uid]) return;
     if(patch.encoded) byUser[uid].encoded++;
     if(patch.t1) byUser[uid].t1++;
     if(patch.t2) byUser[uid].t2++;
     if(patch.mca) byUser[uid].mca++;
+    if(patch.t1Wah) byUser[uid].t1Wah++;
+    if(patch.t1Biz) byUser[uid].t1Biz++;
+    if(patch.t2Wah) byUser[uid].t2Wah++;
+    if(patch.t2Biz) byUser[uid].t2Biz++;
     if(patch.team){
       byUser[uid].teams[patch.team] = (byUser[uid].teams[patch.team] || 0) + 1;
     }
@@ -12137,12 +12411,29 @@ function buildStaffStats(scoped){
   (scoped || []).forEach(p=>{
     const team = p.team || 'Unknown';
     const encUid = p.encodedBy || p.createdBy || null;
+    const sys = String(p.claimSystem || '').toUpperCase().trim();
     if(encUid) touch(encUid, { encoded: 1, mca: p.mca ? 1 : 0, team });
-    if(hasT1(p)) touch(p.t1By || encUid, { t1: 1, team });
-    if(hasT2(p)) touch(p.t2By || (p.claim === 't2' ? encUid : null), { t2: 1, team });
+    if(hasT1(p)){
+      const who = p.t1By || encUid;
+      const patch = { t1: 1, team };
+      if(sys === 'WAH') patch.t1Wah = 1;
+      else if(sys === 'BIZBOX' || sys === 'BIZ') patch.t1Biz = 1;
+      touch(who, patch);
+    }
+    if(hasT2(p)){
+      const who = p.t2By || (p.claim === 't2' ? encUid : null);
+      const patch = { t2: 1, team };
+      if(sys === 'WAH') patch.t2Wah = 1;
+      else if(sys === 'BIZBOX' || sys === 'BIZ') patch.t2Biz = 1;
+      touch(who, patch);
+    }
   });
   return Object.values(byUser)
-    .map(u => Object.assign(u, { activity: u.encoded + u.t1 + u.t2 }))
+    .map(u => Object.assign(u, {
+      activity: u.encoded + u.t1 + u.t2,
+      t1Wah: u.t1Wah || 0, t1Biz: u.t1Biz || 0,
+      t2Wah: u.t2Wah || 0, t2Biz: u.t2Biz || 0
+    }))
     .filter(u => u.activity > 0)
     .sort((a,b) => b.activity - a.activity || a.name.localeCompare(b.name));
 }
@@ -12575,7 +12866,7 @@ function renderTrendChart(mode){
       if(staffList.some(s => String(s.id)===String(id))) return;
       let name = (typeof displayNameFor==='function'?displayNameFor(id):id)||id;
       if(String(id).startsWith('name:')) name = String(id).slice(5);
-      staffList.push({ id, name, encoded:0, t1:0, t2:0, mca:0, teams:{}, activity:0 });
+      staffList.push({ id, name, encoded:0, t1:0, t2:0, mca:0, t1Wah:0, t1Biz:0, t2Wah:0, t2Biz:0, teams:{}, activity:0 });
     });
   }
 
@@ -12685,10 +12976,9 @@ function renderTrendChart(mode){
   // Staff horizontal metrics
   const maxAct = Math.max(...staffList.map(s=>s.activity), 1);
   const staffBars = staffList.length ? staffList.map(s=>{
-    const maxRow = Math.max(s.encoded, s.t1, s.t2, 1);
-    const pctE = Math.round((s.encoded/maxRow)*100);
-    const pct1 = Math.round((s.t1/maxRow)*100);
-    const pct2 = Math.round((s.t2/maxRow)*100);
+    const t1W = s.t1Wah || 0, t1B = s.t1Biz || 0, t2W = s.t2Wah || 0, t2B = s.t2Biz || 0;
+    const maxRow = Math.max(s.encoded, s.t1, s.t2, t1W, t1B, t2W, t2B, 1);
+    const pct = (n) => Math.round((n/maxRow)*100);
     return `<div class="staff-metric-card">
       <div class="sm-head">
         <div class="sm-name" title="${escapeAttr(s.name)}">${escapeHtml(s.name)}</div>
@@ -12696,18 +12986,38 @@ function renderTrendChart(mode){
       </div>
       <div class="sm-row">
         <span class="sm-label"><i class="lg lg-enc"></i> Inputted patients</span>
-        <div class="sm-track"><i class="sm-fill sm-enc" style="width:${pctE}%"></i></div>
+        <div class="sm-track"><i class="sm-fill sm-enc" style="width:${pct(s.encoded)}%"></i></div>
         <span class="sm-count">${s.encoded}</span>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-t1"></i> Submitted T1</span>
-        <div class="sm-track"><i class="sm-fill sm-t1" style="width:${pct1}%"></i></div>
+        <span class="sm-label"><i class="lg lg-t1"></i> Submitted T1 (all)</span>
+        <div class="sm-track"><i class="sm-fill sm-t1" style="width:${pct(s.t1)}%"></i></div>
         <span class="sm-count">${s.t1}</span>
       </div>
       <div class="sm-row">
-        <span class="sm-label"><i class="lg lg-t2"></i> Submitted T2</span>
-        <div class="sm-track"><i class="sm-fill sm-t2" style="width:${pct2}%"></i></div>
+        <span class="sm-label"><i class="lg lg-wah"></i> T1 on WAH</span>
+        <div class="sm-track"><i class="sm-fill sm-wah" style="width:${pct(t1W)}%"></i></div>
+        <span class="sm-count">${t1W}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-biz"></i> T1 on Bizbox</span>
+        <div class="sm-track"><i class="sm-fill sm-biz" style="width:${pct(t1B)}%"></i></div>
+        <span class="sm-count">${t1B}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-t2"></i> Submitted T2 (all)</span>
+        <div class="sm-track"><i class="sm-fill sm-t2" style="width:${pct(s.t2)}%"></i></div>
         <span class="sm-count">${s.t2}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-wah"></i> T2 on WAH</span>
+        <div class="sm-track"><i class="sm-fill sm-wah" style="width:${pct(t2W)}%"></i></div>
+        <span class="sm-count">${t2W}</span>
+      </div>
+      <div class="sm-row">
+        <span class="sm-label"><i class="lg lg-biz"></i> T2 on Bizbox</span>
+        <div class="sm-track"><i class="sm-fill sm-biz" style="width:${pct(t2B)}%"></i></div>
+        <span class="sm-count">${t2B}</span>
       </div>
     </div>`;
   }).join('') : `<div class="dash-empty" style="padding:12px;">No staff activity in this scope.</div>`;
@@ -15285,6 +15595,38 @@ function startPresence(){
     const tr = td.parentElement;
     if(tr && tr.dataset.id && typeof openDrawer === 'function') openDrawer(tr.dataset.id);
   });
+})();
+
+
+/* Clinical DS: floating bulk bar visibility */
+(function(){
+  function syncBulkBar(){
+    const bar = document.getElementById('bulkBar');
+    if(!bar) return;
+    const n = document.querySelectorAll('#groupsContainer input[type="checkbox"][data-id]:checked, #groupsContainer tbody input.row-select:checked, #groupsContainer input[type="checkbox"].patient-select:checked').length
+      || document.querySelectorAll('#groupsContainer tbody input[type="checkbox"]:checked:not(.select-all-page)').length;
+    const countEl = document.getElementById('bulkCount');
+    if(countEl && n >= 0) countEl.textContent = n + ' selected';
+    if(n > 0){ bar.classList.add('open'); document.body.classList.add('has-selection'); }
+    else { bar.classList.remove('open'); document.body.classList.remove('has-selection'); }
+  }
+  document.addEventListener('change', e=>{
+    if(e.target && e.target.matches && e.target.matches('input[type="checkbox"]')) syncBulkBar();
+  });
+  document.addEventListener('click', e=>{
+    if(e.target && e.target.id === 'bulkClear') setTimeout(syncBulkBar, 0);
+  });
+})();
+
+
+/* Default to light mode for clinical data entry (DS v2) */
+(function(){
+  try{
+    const k = localStorage.getItem('drcare_theme') || localStorage.getItem('theme');
+    if(!k){
+      document.body.classList.remove('dark');
+    }
+  }catch(e){}
 })();
 
 function showSwUpdateToast(reg){
