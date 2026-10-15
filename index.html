@@ -7404,6 +7404,145 @@ body.dark .vol-stat .vs-num{ color: var(--teal) !important; }
   .vol-stats{ grid-template-columns: 1fr !important; }
 }
 
+
+/* ========== UX ROADMAP 2026 — clinical density system ========== */
+:root{
+  --page: #f3f6f4;
+  --elev-1: 0 1px 2px rgba(15,40,35,0.04);
+  --elev-2: 0 8px 28px rgba(15,40,35,0.10);
+  --brand: #0f766e;
+  --brand-ink: #fff;
+  --radius-lg: 12px;
+}
+body{
+  background: var(--paper) !important;
+  font-size: 13.5px !important;
+  letter-spacing: 0.01em;
+}
+body.dark{
+  --page: #0e1614;
+}
+header{
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  background: color-mix(in srgb, var(--card) 92%, var(--paper)) !important;
+}
+.toolbar{
+  gap: 8px !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--line) !important;
+  background: var(--card) !important;
+}
+.toolbar-row{ gap: 8px !important; flex-wrap: wrap !important; }
+.tb-group{ gap: 6px !important; }
+.btn{
+  height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.btn-primary{
+  background: var(--brand, var(--teal)) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+.btn-secondary, #syncNowBtn{
+  background: var(--table-head) !important;
+}
+.btn-ghost{ background: transparent !important; }
+
+/* Actions overflow menu */
+.ux-menu{ position: relative; display: inline-flex; }
+.ux-menu-panel{
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 80;
+  min-width: 220px; max-width: 280px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--elev-2);
+  padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.ux-menu-panel[hidden]{ display: none !important; }
+.ux-menu-label{
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); padding: 8px 10px 4px;
+}
+.ux-menu-item{
+  display: block; width: 100%; text-align: left;
+  border: none; background: transparent; color: var(--ink);
+  padding: 8px 10px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer;
+}
+.ux-menu-item:hover{ background: var(--table-head); }
+.ux-menu-item.ux-danger{ color: var(--red); }
+
+/* Row ⋯ menu */
+.ux-row-menu{ position: relative; justify-content: center; }
+.ux-row-toggle{
+  min-width: 32px !important; font-weight: 800 !important; letter-spacing: 0.05em;
+}
+.ux-row-panel{
+  position: absolute; right: 0; top: calc(100% + 2px); z-index: 40;
+  min-width: 160px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--elev-2); padding: 4px;
+}
+.ux-row-panel[hidden]{ display: none !important; }
+
+/* Table density + progressive disclosure */
+.team-group table{ border-collapse: separate; border-spacing: 0; }
+.team-group table th{
+  font-size: 10.5px !important; font-weight: 700 !important;
+  color: var(--muted) !important; letter-spacing: .02em;
+  border-bottom: 1px solid var(--line) !important;
+  background: var(--table-head) !important;
+}
+.team-group table td{
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent) !important;
+  vertical-align: middle !important;
+}
+.team-group table tbody tr:hover{ background: var(--row-hover) !important; }
+.team-group table tbody tr{ cursor: pointer; }
+@media (max-width: 1200px){
+  .team-group table th.col-secondary,
+  .team-group table td.col-secondary{ display: none !important; }
+}
+
+/* Drawer — primary detail surface */
+.drawer-backdrop.open{ backdrop-filter: blur(2px); }
+.drawer{
+  border-left: 1px solid var(--line) !important;
+  box-shadow: var(--elev-2) !important;
+  max-width: 520px !important;
+}
+.drawer h3{ font-size: 16px !important; font-weight: 750 !important; }
+.dv-actions{ gap: 8px !important; padding-top: 10px !important; border-top: 1px solid var(--line); }
+
+/* Cards / sections — one elevation, soft borders */
+.team-group, .vol-card, .staff-metric-card, .dash-modal, .modal{
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--elev-1) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* Dashboard calm palette */
+.dash-cards .kpi, .dash-cards > div, .vol-stat .vs-num{
+  color: var(--teal-deep) !important;
+}
+body.dark .vol-stat .vs-num{ color: var(--teal) !important; }
+.sm-t1, .lg-t1{ background: #5b7c99 !important; } /* desaturated */
+.sm-t2, .lg-t2{ background: #7a6b8f !important; }
+.sm-enc, .lg-enc{ background: var(--teal-deep) !important; }
+body.dark .sm-enc, body.dark .lg-enc{ background: var(--teal) !important; }
+.dash-trend-grid{ gap: 14px !important; }
+.vol-chart-wrap, .staff-metric-list{ max-height: 300px; }
+
+/* Kill heavy nested chrome */
+.legend-wrap, .merge-banner{
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
 </style>
 </head>
 <body>
@@ -7536,19 +7675,26 @@ body.dark .vol-stat .vs-num{ color: var(--teal) !important; }
       <option value="unique-only">Unique only</option>
     </select>
   </div>
-  <!-- Row 3: data actions -->
+  <!-- Row 3: primary ops + overflow Actions menu (UX roadmap) -->
   <div class="toolbar-row toolbar-actions">
-    <button class="btn" id="syncNowBtn"></button>
-    <div class="tb-divider"></div>
-    <button class="btn" id="exportBtn"></button>
-    <button class="btn" id="dailyReportBtn" title="Download a daily summary CSV for the current month filter"></button>
-    <button class="btn" id="pdfReportBtn" title="Open a printable PDF-style daily summary"></button>
-    <button class="btn" id="sendReportBtn" title="Email or Slack the daily summary"></button>
-    <div class="tb-divider"></div>
-    <button class="btn" id="importBtn"></button>
-    <button class="btn btn-ghost btn-sm" id="csvTemplateBtn"></button>
-    <button class="btn btn-ghost btn-sm" id="xlsxTemplateBtn"></button>
-    <button class="btn btn-ghost btn-sm" id="installBtn" style="display:none;" title="Install DR CARE as an app"></button>
+    <button class="btn btn-secondary" id="syncNowBtn" type="button"></button>
+    <div class="ux-menu" id="uxActionsMenu">
+      <button type="button" class="btn" id="uxActionsToggle" aria-haspopup="true" aria-expanded="false">Actions ▾</button>
+      <div class="ux-menu-panel" id="uxActionsPanel" hidden>
+        <div class="ux-menu-label">Data</div>
+        <button type="button" class="ux-menu-item" id="exportBtn"></button>
+        <button type="button" class="ux-menu-item" id="importBtn"></button>
+        <div class="ux-menu-label">Reports</div>
+        <button type="button" class="ux-menu-item" id="dailyReportBtn" title="Download a daily summary CSV for the current month filter"></button>
+        <button type="button" class="ux-menu-item" id="pdfReportBtn" title="Open a printable PDF-style daily summary"></button>
+        <button type="button" class="ux-menu-item" id="sendReportBtn" title="Email or Slack the daily summary"></button>
+        <div class="ux-menu-label">Templates</div>
+        <button type="button" class="ux-menu-item" id="csvTemplateBtn"></button>
+        <button type="button" class="ux-menu-item" id="xlsxTemplateBtn"></button>
+        <div class="ux-menu-label">App</div>
+        <button type="button" class="ux-menu-item" id="installBtn" style="display:none;" title="Install DR CARE as an app"></button>
+      </div>
+    </div>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
 </div>
@@ -9462,10 +9608,10 @@ function renderAll(){
             <tr>
               <th class="col-select"><input type="checkbox" class="select-all-page" data-team="${escapeAttr(team)}" title="Select all on this page" aria-label="Select all on this page"></th>
               <th>Patient name</th><th>PhilHealth ID</th><th>Status</th><th>Facility</th>
-              <th>Digital MCA</th>
+              <th class="col-secondary" title="MCA on file">MCA</th>
               <th title="System used to encode / submit this patient">System</th>
-              <th>T1 submitted date</th><th>T2 submitted date</th>
-              <th>Within 24h</th><th>T1 submitted by</th><th>T2 submitted by</th><th>Duplicate tracker</th>
+              <th class="col-secondary">T1 date</th><th class="col-secondary">T2 date</th>
+              <th class="col-secondary">24h</th><th class="col-secondary">T1 by</th><th class="col-secondary">T2 by</th><th class="col-secondary">Duplicate</th>
               <th>Rice</th><th>Lab</th><th>Meds</th><th>Action</th>
             </tr>
           </thead>
@@ -9566,13 +9712,17 @@ function rowHtml(p){
       <td style="text-align:center"><input type="checkbox" data-field="lab" ${p.lab?'checked':''}></td>
       <td style="text-align:center"><input type="checkbox" data-field="medicine" ${p.medicine?'checked':''}></td>
       <td class="row-actions">
-        <div class="row-actions-inner">
-          <button type="button" class="icon-btn" data-edit="${p.id}" title="${canEdit()?'Edit':'View'}">${icon('edit',14)}</button>
-          ${canEdit() ? (p.deleted
-            ? `<button type="button" class="icon-btn" data-restore="${p.id}" title="Restore">${icon('restore',14)}</button>
-               <button type="button" class="icon-btn" data-purge="${p.id}" title="Delete" style="color:var(--red);">${icon('trash',14)}</button>`
-            : `<button type="button" class="icon-btn" data-remove="${p.id}" title="Archive">${icon('archive',14)}</button>`)
-          : ''}
+        <div class="row-actions-inner ux-row-menu">
+          <button type="button" class="icon-btn ux-row-toggle" data-row-menu="${p.id}" title="Actions" aria-haspopup="true">⋯</button>
+          <div class="ux-row-panel" hidden data-row-panel="${p.id}">
+            <button type="button" class="ux-menu-item" data-open-drawer="${p.id}">Open details</button>
+            <button type="button" class="ux-menu-item" data-edit="${p.id}">${canEdit()?'Edit full form':'View form'}</button>
+            ${canEdit() ? (p.deleted
+              ? `<button type="button" class="ux-menu-item" data-restore="${p.id}">Restore</button>
+                 <button type="button" class="ux-menu-item ux-danger" data-purge="${p.id}">Delete permanently</button>`
+              : `<button type="button" class="ux-menu-item ux-danger" data-remove="${p.id}">Archive</button>`)
+            : ''}
+          </div>
         </div>
       </td>
     </tr>`;
@@ -15082,6 +15232,59 @@ function startPresence(){
     fac.dataset.wired = '1';
     fac.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); openFacilitiesAdmin(); });
   }
+})();
+
+
+/* ========== UX ROADMAP — menus & drawer affordances ========== */
+(function(){
+  function closeAllUxMenus(except){
+    document.querySelectorAll('.ux-menu-panel, .ux-row-panel').forEach(p=>{
+      if(except && p === except) return;
+      p.hidden = true;
+    });
+    const t = document.getElementById('uxActionsToggle');
+    if(t) t.setAttribute('aria-expanded', 'false');
+  }
+  document.getElementById('uxActionsToggle')?.addEventListener('click', e=>{
+    e.stopPropagation();
+    const panel = document.getElementById('uxActionsPanel');
+    if(!panel) return;
+    const open = panel.hidden;
+    closeAllUxMenus();
+    panel.hidden = !open;
+    e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.getElementById('uxActionsPanel')?.addEventListener('click', e=>{
+    if(e.target.closest('.ux-menu-item')) setTimeout(()=>closeAllUxMenus(), 0);
+  });
+  document.addEventListener('click', e=>{
+    const toggle = e.target.closest('[data-row-menu]');
+    if(toggle){
+      e.preventDefault(); e.stopPropagation();
+      const id = toggle.getAttribute('data-row-menu');
+      const panel = document.querySelector('[data-row-panel="'+id+'"]');
+      const was = panel && !panel.hidden;
+      closeAllUxMenus();
+      if(panel && was) panel.hidden = true;
+      else if(panel) panel.hidden = false;
+      return;
+    }
+    if(e.target.closest('[data-open-drawer]')){
+      const id = e.target.closest('[data-open-drawer]').getAttribute('data-open-drawer');
+      closeAllUxMenus();
+      if(typeof openDrawer === 'function') openDrawer(id);
+      return;
+    }
+    if(!e.target.closest('.ux-menu') && !e.target.closest('.ux-row-menu')) closeAllUxMenus();
+  });
+  // Single-click patient name cell opens drawer (scan → details)
+  document.getElementById('groupsContainer')?.addEventListener('click', e=>{
+    if(e.target.closest('button,a,input,select,label,.ux-row-menu')) return;
+    const td = e.target.closest('tr[data-id] > td:nth-child(2)');
+    if(!td) return;
+    const tr = td.parentElement;
+    if(tr && tr.dataset.id && typeof openDrawer === 'function') openDrawer(tr.dataset.id);
+  });
 })();
 
 function showSwUpdateToast(reg){
