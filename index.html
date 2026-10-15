@@ -7875,6 +7875,52 @@ body.dark .ux-menu-item:hover {
   background: #1e293b !important;
 }
 
+
+/* Row ⋯ menu — fixed viewport positioning (not clipped by table) */
+.ux-row-panel {
+  position: fixed !important;
+  z-index: 400 !important;
+  min-width: 180px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 28px rgba(15,23,42,0.16) !important;
+  padding: 6px !important;
+  display: none !important;
+}
+.ux-row-panel:not([hidden]),
+.ux-row-panel.is-open {
+  display: block !important;
+}
+body.dark .ux-row-panel {
+  background: #111827 !important;
+  color: #e2e8f0 !important;
+  border-color: #1e293b !important;
+}
+.ux-row-panel .ux-menu-item {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  padding: 10px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  color: inherit !important;
+}
+.ux-row-panel .ux-menu-item:hover {
+  background: #f1f5f9 !important;
+}
+body.dark .ux-row-panel .ux-menu-item:hover {
+  background: #1e293b !important;
+}
+.ux-row-panel .ux-menu-item.ux-danger {
+  color: #dc2626 !important;
+}
+
 </style>
 </head>
 <body>
@@ -9358,6 +9404,53 @@ function setTeamType(name, type){
   teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { type: allowed[type] ? type : 'mobile' });
   saveTeamMeta();
 }
+function setTeamMonth(name, ym){
+  if(!name) return;
+  const m = String(ym || '').slice(0, 7);
+  if(!/^\d{4}-\d{2}$/.test(m)) return;
+  teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { month: m });
+  saveTeamMeta();
+}
+function getTeamMonth(name){
+  if(!name) return '';
+  const metaM = teamMeta[name] && teamMeta[name].month;
+  if(metaM && /^\d{4}-\d{2}$/.test(String(metaM))) return String(metaM);
+  const s = String(name);
+  let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1] + '-' + m[2];
+  m = s.match(/(\d{2})-(\d{2})-(\d{4})/);
+  if(m) return m[3] + '-' + m[2];
+  try{
+    const months = {};
+    (state.patients || []).forEach(p=>{
+      if(!p || p.deleted || p.team !== name) return;
+      const d = (p.dateEncoded || p.dateSubmitted || '').slice(0, 7);
+      if(/^\d{4}-\d{2}$/.test(d)) months[d] = (months[d] || 0) + 1;
+    });
+    const best = Object.keys(months).sort((a,b)=> months[b]-months[a])[0];
+    if(best){
+      teamMeta[name] = Object.assign({}, teamMeta[name] || {}, { month: best });
+      saveTeamMeta();
+      return best;
+    }
+  }catch(e){}
+  return '';
+}
+function teamVisibleInMonth(team, monthVal){
+  if(!monthVal) return true;
+  try{
+    const hit = (state.patients || []).some(p=>{
+      if(!p || p.deleted || p.team !== team) return false;
+      const enc = (p.dateEncoded || '').trim();
+      const sub = (p.dateSubmitted || '').trim();
+      return enc.startsWith(monthVal) || sub.startsWith(monthVal);
+    });
+    if(hit) return true;
+  }catch(e){}
+  const tm = getTeamMonth(team);
+  if(tm) return tm === monthVal;
+  return false;
+}
 function teamTypeLabel(t){
   if(t === 'walkin') return 'Walk-in';
   if(t === 'profiling') return 'Profiling';
@@ -9823,17 +9916,17 @@ function renderAll(){
   }catch(e){}
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team).filter(Boolean));
-    const knownLower = new Set((knownTeams || []).map(t => String(t).toLowerCase()));
     const pendingLower = new Set([...pendingEmptyTeams].map(t => String(t).toLowerCase()));
     teamsToShow = teams.filter(t => {
       const tl = String(t).toLowerCase();
       if([...removedTeams].some(r => String(r).toLowerCase() === tl)) return false;
-      return teamsWithPatients.has(t) || knownLower.has(tl) || pendingLower.has(tl);
+      if(pendingLower.has(tl)){
+        const pm = (typeof getTeamMonth === 'function') ? getTeamMonth(t) : '';
+        return !pm || pm === monthVal;
+      }
+      if(teamsWithPatients.has(t)) return true;
+      return (typeof teamVisibleInMonth === 'function') ? teamVisibleInMonth(t, monthVal) : false;
     });
-    // If filter still empty but we have known teams, show them
-    if(!teamsToShow.length && knownTeams.length){
-      teamsToShow = knownTeams.filter(t => ![...removedTeams].some(r => String(r).toLowerCase() === String(t).toLowerCase()));
-    }
   }
   const typeFilter = (document.getElementById('filterType') || {}).value || '';
   if(typeFilter === 'mobile' || typeFilter === 'walkin' || typeFilter === 'profiling'){
@@ -11106,6 +11199,17 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
     delete teamMeta[editingTeamOriginalName];
   }
   setTeamType(name, typ);
+  // Bind empty/new groups to the currently selected month so they don't appear on other months
+  (function(){
+    var mf = document.getElementById('monthFilter');
+    var ym = (mf && mf.value) ? mf.value.slice(0,7) : new Date().toISOString().slice(0,7);
+    if(typeof setTeamMonth === 'function') setTeamMonth(name, ym);
+    // Keep month when renaming
+    if(editingTeamOriginalName && editingTeamOriginalName !== name && teamMeta[name] && !teamMeta[name].month){
+      var prev = teamMeta[editingTeamOriginalName] && teamMeta[editingTeamOriginalName].month;
+      if(prev && typeof setTeamMonth === 'function') setTeamMonth(name, prev);
+    }
+  })();
   pushTeamStaff();
   pushTeamMeta();
   pushKnownTeams();
@@ -15627,6 +15731,14 @@ function startPresence(){
       if(except && p === except) return;
       p.hidden = true;
       p.classList.remove('is-open');
+      if(p.classList.contains('ux-row-panel')){
+        p.style.position = '';
+        p.style.left = '';
+        p.style.top = '';
+        p.style.right = '';
+        p.style.visibility = '';
+        p.style.display = '';
+      }
     });
     const t = document.getElementById('uxActionsToggle');
     if(t) t.setAttribute('aria-expanded', 'false');
@@ -15651,16 +15763,53 @@ function startPresence(){
   document.getElementById('uxActionsPanel')?.addEventListener('click', e=>{
     if(e.target.closest('.ux-menu-item')) setTimeout(()=>closeAllUxMenus(), 50);
   });
+  function positionRowPanel(toggle, panel){
+    if(!toggle || !panel) return;
+    panel.hidden = false;
+    panel.classList.add('is-open');
+    // Escape table overflow: fixed to viewport
+    panel.style.position = 'fixed';
+    panel.style.zIndex = '400';
+    panel.style.right = 'auto';
+    panel.style.left = '0';
+    panel.style.top = '0';
+    panel.style.visibility = 'hidden';
+    panel.style.display = 'block';
+    const rect = toggle.getBoundingClientRect();
+    const pw = panel.offsetWidth || 180;
+    const ph = panel.offsetHeight || 120;
+    const gap = 6;
+    let left = rect.right - pw;
+    if(left < 8) left = 8;
+    if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    let top;
+    if(spaceBelow < ph + gap && spaceAbove > spaceBelow){
+      top = rect.top - ph - gap; // open upward
+    } else {
+      top = rect.bottom + gap;
+    }
+    if(top < 8) top = 8;
+    if(top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+    panel.style.left = left + 'px';
+    panel.style.top = top + 'px';
+    panel.style.visibility = 'visible';
+  }
   document.addEventListener('click', e=>{
     const toggle = e.target.closest('[data-row-menu]');
     if(toggle){
       e.preventDefault(); e.stopPropagation();
       const id = toggle.getAttribute('data-row-menu');
       const panel = document.querySelector('[data-row-panel="'+id+'"]');
-      const was = panel && !panel.hidden;
+      const was = panel && !panel.hidden && panel.classList.contains('is-open');
       closeAllUxMenus();
-      if(panel && was) panel.hidden = true;
-      else if(panel) panel.hidden = false;
+      if(panel && was){
+        panel.hidden = true;
+        panel.classList.remove('is-open');
+      } else if(panel){
+        positionRowPanel(toggle, panel);
+      }
       return;
     }
     if(e.target.closest('[data-open-drawer]')){
