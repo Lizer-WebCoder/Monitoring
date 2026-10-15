@@ -14591,6 +14591,65 @@ function pushHistory(p, changes){
   });
   if(p.history.length > 40) p.history = p.history.slice(-40);
 }
+const HISTORY_META_KEYS = {
+  t1By:'T1 submitted by', t2By:'T2 submitted by', t1At:'T1 time', t2At:'T2 time',
+  dateT1:'T1 date', dateT2:'T2 date', claimSystem:'System', encodedBy:'Encoded by',
+  mcaFileName:'MCA file', mcaFileMime:'MCA type', mcaFileSize:'MCA size',
+  labTests:'Lab tests'
+};
+function formatHistoryField(field){
+  const f = String(field || '');
+  if(f === 'customBenefits') return 'Details';
+  if(f === 'mcaPhoto') return 'MCA file';
+  if(f === 'saved') return 'Saved';
+  if(HISTORY_META_KEYS[f]) return HISTORY_META_KEYS[f];
+  return f.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+}
+function formatHistoryValue(field, raw){
+  if(raw == null || raw === '') return '—';
+  const s = String(raw);
+  if(field === 'mcaPhoto'){
+    if(s === '(file)' || s === '(image)') return 'Attached';
+    if(s === '(none)') return 'None';
+    return s;
+  }
+  if(field === 'saved') return 'OK';
+  // customBenefits JSON → readable summary
+  if(field === 'customBenefits' || (s.startsWith('{') && s.endsWith('}'))){
+    try{
+      const o = JSON.parse(s);
+      if(!o || typeof o !== 'object') return s;
+      const parts = [];
+      const skip = new Set(['t1At','t2At','mcaFileMime','mcaFileSize']);
+      Object.keys(o).forEach(k=>{
+        if(skip.has(k)) return;
+        const v = o[k];
+        if(v == null || v === '' || v === false) return;
+        if(k === 'labTests' && Array.isArray(v)){
+          if(v.length) parts.push('Labs: ' + v.join(', '));
+          return;
+        }
+        if(k === 'claimSystem'){ parts.push('System: ' + v); return; }
+        if(k === 't1By' || k === 't2By' || k === 'encodedBy'){
+          const label = HISTORY_META_KEYS[k] || k;
+          let name = v;
+          try{ if(typeof displayNameFor === 'function') name = displayNameFor(v) || v; }catch(e){}
+          if(String(name).startsWith('name:')) name = String(name).slice(5);
+          parts.push(label + ': ' + name);
+          return;
+        }
+        if(k === 'dateT1' || k === 'dateT2'){ parts.push((HISTORY_META_KEYS[k]||k) + ': ' + v); return; }
+        if(k === 'mcaFileName'){ parts.push('MCA file: ' + v); return; }
+        // actual custom benefit flags
+        if(v === true) parts.push(k);
+        else parts.push(k + ': ' + v);
+      });
+      return parts.length ? parts.join(' · ') : '—';
+    }catch(e){ return s.length > 80 ? s.slice(0, 80) + '…' : s; }
+  }
+  if(s.length > 120) return s.slice(0, 120) + '…';
+  return s;
+}
 function renderHistory(p){
   const panel = document.getElementById('historyPanel');
   const list = document.getElementById('historyList');
@@ -14603,7 +14662,14 @@ function renderHistory(p){
   panel.style.display = 'block';
   list.innerHTML = p.history.slice().reverse().map(h=>{
     const when = (()=>{ try{ return new Date(h.at).toLocaleString(); }catch(e){ return h.at; }})();
-    return `<div class="hist-row"><b>${escapeHtml(h.field)}</b>: ${escapeHtml(String(h.from))} → ${escapeHtml(String(h.to))}
+    const label = formatHistoryField(h.field);
+    const from = formatHistoryValue(h.field, h.from);
+    const to = formatHistoryValue(h.field, h.to);
+    let change;
+    if(h.field === 'saved') change = 'Record saved';
+    else if(from === to) change = escapeHtml(to);
+    else change = escapeHtml(from) + ' → ' + escapeHtml(to);
+    return `<div class="hist-row"><b>${escapeHtml(label)}</b>: ${change}
       <span style="opacity:.75"> · ${escapeHtml(h.by||'')} · ${escapeHtml(when)}</span></div>`;
   }).join('');
 }
