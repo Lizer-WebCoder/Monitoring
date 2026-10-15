@@ -8830,16 +8830,27 @@ function ensureTeamsFromPatients(){
 
 async function saveLocalCache(){
   try{
-    // Strip bulky MCA data-URLs from roster cache — keep photos in a side store
-    const photoMap = {};
+    // Scale: roster cache is lean — MCA blobs only in side store; prefer mcaPath
+    let photoMap = {};
+    try{
+      const existing = await idbGet('roster_photos');
+      if(existing && typeof existing === 'object') photoMap = existing;
+    }catch(e){}
     const slim = state.patients.map(p=>{
-      if(p.mcaPhoto && String(p.mcaPhoto).startsWith('data:')){
-        photoMap[p.id] = p.mcaPhoto;
-        const { mcaPhoto, ...rest } = p;
-        return { ...rest, mcaPhoto: p.mca ? '__local__' : null };
+      const row = Object.assign({}, p);
+      if(row.mcaPhoto && String(row.mcaPhoto).startsWith('data:')){
+        photoMap[row.id] = row.mcaPhoto;
+        row.mcaPhoto = row.mca ? '__local__' : null;
       }
-      return p;
+      // drop heavy history from cache beyond tail
+      if(Array.isArray(row.history) && row.history.length > 15){
+        row.history = row.history.slice(-15);
+      }
+      return row;
     });
+    // Cap side photo map entries (keep most recent keys by patient still in roster)
+    const idSet = new Set(slim.map(p=>p.id));
+    Object.keys(photoMap).forEach(k=>{ if(!idSet.has(k)) delete photoMap[k]; });
     await idbSet('roster', slim);
     await idbSet('roster_photos', photoMap);
     return true;
@@ -8955,6 +8966,10 @@ function toRemote(p, mode){
   if(p.claimSystem) custom.claimSystem = p.claimSystem;
   if(p.dateT1 || p.dateSubmitted) custom.dateT1 = p.dateT1 || p.dateSubmitted;
   if(p.dateT2) custom.dateT2 = p.dateT2;
+  if(p.mcaPath) custom.mcaPath = p.mcaPath;
+  if(p.mcaFileName) custom.mcaFileName = p.mcaFileName;
+  if(p.mcaFileMime) custom.mcaFileMime = p.mcaFileMime;
+  if(p.mcaFileSize) custom.mcaFileSize = p.mcaFileSize;
 
   const core = {
     id: p.id,
@@ -8981,6 +8996,9 @@ function toRemote(p, mode){
   }
   if(mode === 'core' || mode === 'core_meta'){
     if(claim === 't2') core.claim = 't1';
+    // Soft-include path fields; ignored if columns not migrated yet
+    core.mca_path = p.mcaPath || custom.mcaPath || null;
+    core.mca_file_name = p.mcaFileName || custom.mcaFileName || null;
     return core;
   }
   return Object.assign({}, core, {
@@ -8990,8 +9008,13 @@ function toRemote(p, mode){
     vitamins: !!p.vitamins,
     referral: !!p.referral,
     lab_tests: labs.length ? labs.join('|') : null,
-    mca_photo: p.mcaPhoto ? String(p.mcaPhoto).slice(0, 350000) : null,
-    history: Array.isArray(p.history) ? p.history.slice(-40) : []
+    // Scale: never push base64 blobs to PostgREST — use Storage path
+    mca_photo: null,
+    mca_path: p.mcaPath || (p.customBenefits && p.customBenefits.mcaPath) || null,
+    mca_file_name: p.mcaFileName || (p.customBenefits && p.customBenefits.mcaFileName) || null,
+    mca_file_mime: p.mcaFileMime || (p.customBenefits && p.customBenefits.mcaFileMime) || null,
+    mca_file_size: p.mcaFileSize || (p.customBenefits && p.customBenefits.mcaFileSize) || null,
+    history: Array.isArray(p.history) ? p.history.slice(-20) : []
   });
 }
 function fromRemote(r){
@@ -9013,7 +9036,12 @@ function fromRemote(r){
     labTests: labTests,
     medicine: !!r.medicine, vitamins: !!r.vitamins, referral: !!r.referral,
     notes: r.notes || '',
-    mcaPhoto: r.mca_photo || null,
+    mcaPath: r.mca_path || cb.mcaPath || null,
+    mcaFileName: r.mca_file_name || cb.mcaFileName || null,
+    mcaFileMime: r.mca_file_mime || cb.mcaFileMime || null,
+    mcaFileSize: r.mca_file_size || cb.mcaFileSize || null,
+    // Only keep remote mca_photo if it's a short URL/path — never hydrate multi-MB base64
+    mcaPhoto: (r.mca_photo && String(r.mca_photo).length < 500 && !String(r.mca_photo).startsWith('data:')) ? r.mca_photo : null,
     customBenefits: cb,
     history: Array.isArray(r.history) ? r.history : [],
     deleted: !!r.deleted,
@@ -9028,12 +9056,130 @@ function fromRemote(r){
     t2At: cb.t2At || null,
     claimSystem: cb.claimSystem || null
   };
+  if(out.mcaPath){
+    if(!out.customBenefits || typeof out.customBenefits !== 'object') out.customBenefits = {};
+    out.customBenefits.mcaPath = out.mcaPath;
+  }
   return (typeof applyPatientMetaBackup === 'function') ? applyPatientMetaBackup(out) : out;
 }
 
 /* Current signed-in user + role */
 let currentUser = null; // { id, email, fullName, role }
 const profileCache = {}; // uid -> { full_name, email, role }
+
+
+/* ========== SCALE LAYER (10k+ readiness) ========== */
+const MCA_BUCKET = 'mca';
+const PATIENT_LEAN_SELECT = [
+  'id','team','name','phid','status','facility','mca','date_encoded','date_submitted',
+  'date_t1','date_t2','within24','claim','rice','lab','medicine','vitamins','referral',
+  'notes','custom_benefits','lab_tests','deleted','created_by','updated_by','created_at','updated_at',
+  'mca_path','mca_file_name','mca_file_mime','mca_file_size'
+].join(',');
+// Fallback if new columns missing
+const PATIENT_LEAN_SELECT_CORE = [
+  'id','team','name','phid','status','facility','mca','date_encoded','date_submitted',
+  'within24','claim','rice','lab','notes','custom_benefits','deleted','created_by','updated_by','created_at','updated_at'
+].join(',');
+
+function dataUrlToBlob(dataUrl){
+  const parts = String(dataUrl).split(',');
+  const meta = parts[0] || '';
+  const data = parts[1] || '';
+  const mime = (meta.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream';
+  const bin = atob(data);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+async function uploadMcaToStorage(p){
+  if(!p || !p.id) return false;
+  if(!p.mcaPhoto || !String(p.mcaPhoto).startsWith('data:')) return !!p.mcaPath;
+  if(!navigator.onLine) return false;
+  try{
+    const safeName = String(p.mcaFileName || p.customBenefits?.mcaFileName || 'mca-file')
+      .replace(/[^\w.\-]+/g, '_').slice(0, 80);
+    const path = `${p.id}/${Date.now()}_${safeName}`;
+    const blob = dataUrlToBlob(p.mcaPhoto);
+    const { error } = await sb.storage.from(MCA_BUCKET).upload(path, blob, {
+      upsert: true,
+      contentType: p.mcaFileMime || blob.type || 'application/octet-stream'
+    });
+    if(error){
+      console.warn('MCA storage upload', error);
+      return false;
+    }
+    p.mcaPath = path;
+    p.mcaFileName = p.mcaFileName || safeName;
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.mcaPath = path;
+    p.customBenefits.mcaFileName = p.mcaFileName;
+    // Keep local data URL only in photo side-cache; clear from row for lean memory
+    try{
+      const photos = (await idbGet('roster_photos')) || {};
+      photos[p.id] = p.mcaPhoto;
+      await idbSet('roster_photos', photos);
+    }catch(e){}
+    p.mcaPhoto = null; // path is source of truth when online
+    p.mca = true;
+    return true;
+  }catch(e){
+    console.warn('uploadMcaToStorage', e);
+    return false;
+  }
+}
+
+async function resolveMcaViewUrl(p){
+  if(!p) return null;
+  if(p.mcaPhoto && String(p.mcaPhoto).startsWith('data:')) return p.mcaPhoto;
+  // local offline cache
+  try{
+    const photos = await idbGet('roster_photos');
+    if(photos && photos[p.id]) return photos[p.id];
+  }catch(e){}
+  const path = p.mcaPath || (p.customBenefits && p.customBenefits.mcaPath);
+  if(path && navigator.onLine){
+    try{
+      const { data, error } = await sb.storage.from(MCA_BUCKET).createSignedUrl(path, 3600);
+      if(!error && data && data.signedUrl) return data.signedUrl;
+    }catch(e){ console.warn('signed url', e); }
+  }
+  // legacy remote column (short URLs only)
+  if(p.mcaPhoto && String(p.mcaPhoto).startsWith('http')) return p.mcaPhoto;
+  return null;
+}
+
+function currentMonthFilterValue(){
+  const el = document.getElementById('monthFilter');
+  return el && el.value ? String(el.value).slice(0, 7) : '';
+}
+
+function monthDateBounds(ym){
+  if(!/^\d{4}-\d{2}$/.test(ym)) return null;
+  const [y, m] = ym.split('-').map(Number);
+  const start = `${ym}-01`;
+  const last = new Date(y, m, 0).getDate();
+  const end = `${ym}-${String(last).padStart(2,'0')}`;
+  return { start, end };
+}
+
+/** Cap in-memory roster: prefer active month, drop old deleted rows first */
+function prunePatientsMemory(maxKeep){
+  maxKeep = maxKeep || 8000;
+  if(!Array.isArray(state.patients) || state.patients.length <= maxKeep) return;
+  const month = currentMonthFilterValue();
+  const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds : new Set();
+  const scored = state.patients.map((p, idx)=>({
+    p, idx,
+    keep: pending.has(p.id) ? 3 : (month && String(p.dateEncoded||'').startsWith(month) ? 2 : (p.deleted ? 0 : 1))
+  }));
+  scored.sort((a,b)=> b.keep - a.keep || b.idx - a.idx);
+  const kept = scored.slice(0, maxKeep).map(x=>x.p);
+  state.patients = kept;
+  console.info('[scale] pruned roster memory to', kept.length);
+}
+
 
 function isAdmin(){ return currentUser && currentUser.role === 'admin'; }
 function canEdit(){ return currentUser && (currentUser.role === 'admin' || currentUser.role === 'encoder'); }
@@ -9271,6 +9417,10 @@ function updateOfflineBanner(){ offlineBanner.classList.toggle('show', !navigato
 async function pushOne(p){
   try{
     if(typeof mirrorPatientMeta === 'function') mirrorPatientMeta(p);
+    // Scale: upload MCA blob to Storage before row upsert
+    if(p.mcaPhoto && String(p.mcaPhoto).startsWith('data:') && typeof uploadMcaToStorage === 'function'){
+      await uploadMcaToStorage(p);
+    }
     // Attempt 1: full payload
     let payload = toRemote(p, 'full');
     let { error } = await sb.from('patients').upsert(payload);
@@ -9350,17 +9500,39 @@ async function pullRemote(){
   if(!navigator.onLine){ setSyncStatus('Offline — saved on this device', 'err'); return; }
   setSyncStatus('Syncing…', 'busy');
   try{
-    // Page through all remote rows (Supabase/PostgREST can cap a single request)
-    const pageSize = 1000;
+    // Scale: page remote rows; prefer current month + lean columns (no mca_photo blobs)
+    const pageSize = 500;
     let from = 0;
     const remoteRows = [];
+    const month = (typeof currentMonthFilterValue === 'function') ? currentMonthFilterValue() : '';
+    const bounds = month && typeof monthDateBounds === 'function' ? monthDateBounds(month) : null;
+    let selectCols = (typeof PATIENT_LEAN_SELECT !== 'undefined') ? PATIENT_LEAN_SELECT : '*';
+    let usedCoreSelect = false;
+
+    async function fetchPage(start){
+      let q = sb.from('patients').select(selectCols).order('id', { ascending: true }).range(start, start + pageSize - 1);
+      // Prefer month window when filter is set (keeps browser under control at 10k+)
+      if(bounds){
+        // date_encoded in month OR date_submitted in month
+        q = q.or(`and(date_encoded.gte.${bounds.start},date_encoded.lte.${bounds.end}),and(date_submitted.gte.${bounds.start},date_submitted.lte.${bounds.end})`);
+      }
+      return await q;
+    }
+
     while(true){
-      const { data, error } = await sb.from('patients').select('*').range(from, from + pageSize - 1);
+      let { data, error } = await fetchPage(from);
+      if(error && !usedCoreSelect && /mca_path|mca_file|column/i.test(error.message || '')){
+        selectCols = PATIENT_LEAN_SELECT_CORE;
+        usedCoreSelect = true;
+        ({ data, error } = await fetchPage(from));
+      }
       if(error) throw error;
       if(!data || data.length === 0) break;
       remoteRows.push(...data);
       if(data.length < pageSize) break;
       from += pageSize;
+      // safety: never pull more than 20k in one session
+      if(remoteRows.length >= 20000) break;
     }
     const stillOnServer = [];
     remoteRows.forEach(r=>{
@@ -9634,14 +9806,14 @@ const expandedTeams = new Set();
 let pageSizePreference = (function(){
   try{
     const v = localStorage.getItem('roster_page_size');
-    // "all" retired — too heavy at scale; map to 100
-    if(v === 'all') return '100';
-    if(v === '10' || v === '20' || v === '50' || v === '100') return v;
+    // Scale: never allow unbounded pages
+    if(v === 'all' || v === '100') return '50';
+    if(v === '10' || v === '20' || v === '50') return v;
   }catch(e){}
   return '20';
 })();
 const teamPageIndex = {}; // teamName -> 0-based page
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 50; // hard cap for 10k+ readiness
 function getPageSize(){
   const n = parseInt(pageSizePreference, 10);
   if(!(n > 0)) return 20;
@@ -10063,7 +10235,7 @@ function renderAll(){
     const rows = allRows.slice(start, end);
     const showingFrom = totalFiltered === 0 ? 0 : start + 1;
     const showingTo = end;
-    const sizeOpts = ['10','20','50','100'].map(v=>{
+    const sizeOpts = ['10','20','50'].map(v=>{
       const selected = String(pageSizePreference) === v ? 'selected' : '';
       return `<option value="${v}" ${selected}>${v}</option>`;
     }).join('');
@@ -11343,6 +11515,10 @@ monthFilterEl.addEventListener('change', ()=>{
   // Empty mobiles belong only to the month they were created in.
   pendingEmptyTeams.clear();
   renderAll();
+  // Scale: refresh only this month from server when online
+  if(navigator.onLine && typeof pullRemote === 'function'){
+    pullRemote().catch(()=>{});
+  }
 });
 document.getElementById('clearMonthBtn').addEventListener('click', ()=>{
   monthFilterEl.value = '';
@@ -12065,7 +12241,7 @@ function populateDashboardControls(){
   const preferredMonth = (document.getElementById('monthFilter') && document.getElementById('monthFilter').value) || (months[0] || '');
   if(dashMonthSelect){
     const prevMonthVal = dashMonthSelect.value || preferredMonth || 'all';
-    dashMonthSelect.innerHTML = `<option value="all">All months</option>` +
+    dashMonthSelect.innerHTML = `` +
       months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
     dashMonthSelect.value = (months.includes(prevMonthVal) || prevMonthVal === 'all') ? prevMonthVal : (preferredMonth || 'all');
   }
@@ -14012,7 +14188,8 @@ async function initApp(){
   await pullTeamStaff();
   try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
   try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
-  try{ ensureTeamsFromPatients(); }catch(e){}
+  try{ ensureTeamsFromPatients();
+    if(typeof prunePatientsMemory==='function') prunePatientsMemory(8000); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
@@ -15129,6 +15306,22 @@ if(typeof openModal === 'function'){
     if(typeof renderMcaFileCard === 'function') renderMcaFileCard(pendingMcaPhoto, pendingMcaMeta);
     const finp = document.getElementById('f_mcaPhoto');
     if(finp) finp.value = '';
+    // Scale: if path-only, resolve signed/local URL for preview
+    if(p && !pendingMcaPhoto && typeof resolveMcaViewUrl === 'function'){
+      resolveMcaViewUrl(p).then(url=>{
+        if(!url) return;
+        pendingMcaPhoto = url.startsWith('data:') ? url : url;
+        if(!pendingMcaMeta){
+          pendingMcaMeta = {
+            name: p.mcaFileName || 'MCA file',
+            mime: p.mcaFileMime || '',
+            size: p.mcaFileSize || 0,
+            kind: (typeof mcaFileKind==='function') ? mcaFileKind(p.mcaFileMime||'', p.mcaFileName||'') : 'file'
+          };
+        }
+        if(typeof renderMcaFileCard === 'function') renderMcaFileCard(url, pendingMcaMeta);
+      }).catch(()=>{});
+    }
     renderCustomBenefitsFields(p);
     renderHistory(p);
   };
