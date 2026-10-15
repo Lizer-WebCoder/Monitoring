@@ -14475,9 +14475,28 @@ function renderMcaFileCard(dataUrl, meta){
   if(nameEl) nameEl.textContent = name;
   if(subEl) subEl.textContent = [kind === 'img' ? 'Image' : (kind === 'pdf' ? 'PDF document' : 'Document'), formatBytes(size)].filter(Boolean).join(' · ');
   if(openEl){
-    openEl.href = dataUrl;
-    openEl.setAttribute('download', name);
-    openEl.textContent = kind === 'img' ? 'View' : 'Open / download';
+    openEl.href = dataUrl || '#';
+    openEl.removeAttribute('download'); // avoid OS "Save as" dialog
+    openEl.textContent = kind === 'img' ? 'View' : 'Open';
+    openEl.onclick = function(ev){
+      ev.preventDefault();
+      if(!dataUrl) return;
+      // Open in new tab for viewing (images + PDFs). Download is optional via long-press/save in browser.
+      const win = window.open('');
+      if(!win){ alert('Allow pop-ups to view the MCA file.'); return; }
+      if(kind === 'img' || String(dataUrl).startsWith('data:image')){
+        win.document.write('<!DOCTYPE html><html><head><title>' + String(name).replace(/</g,'') + '</title>' +
+          '<style>html,body{margin:0;background:#0f172a;height:100%;display:grid;place-items:center}' +
+          'img{max-width:100%;max-height:100vh;object-fit:contain}</style></head><body>' +
+          '<img src="' + dataUrl + '" alt=""></body></html>');
+        win.document.close();
+      } else if(kind === 'pdf' || String(dataUrl).startsWith('data:application/pdf')){
+        win.location.href = dataUrl;
+      } else {
+        // other docs: open data URL; user can save from browser if needed
+        win.location.href = dataUrl;
+      }
+    };
   }
   card.style.display = 'flex';
   if(prev){
