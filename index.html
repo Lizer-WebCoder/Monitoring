@@ -7808,6 +7808,73 @@ input:focus, select:focus, textarea:focus {
   .toolbar { padding: 8px !important; }
 }
 
+
+/* Actions menu — fixed visibility (overflow + z-index) */
+.toolbar, .toolbar-row, .toolbar-actions, .toolbar-nav, .tb-group {
+  overflow: visible !important;
+}
+.ux-menu {
+  position: relative !important;
+  display: inline-flex !important;
+  z-index: 100 !important;
+}
+.ux-menu-panel {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  z-index: 300 !important;
+  min-width: 240px !important;
+  width: max-content !important;
+  max-width: min(320px, 90vw) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+  padding: 8px !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.ux-menu-panel:not([hidden]),
+.ux-menu-panel.is-open {
+  display: flex !important;
+}
+body.dark .ux-menu-panel {
+  background: #111827 !important;
+  color: #e2e8f0 !important;
+  border-color: #1e293b !important;
+}
+.ux-menu-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+  padding: 8px 10px 4px !important;
+}
+.ux-menu-item {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  border: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  line-height: 1.3 !important;
+  white-space: nowrap !important;
+}
+.ux-menu-item:hover {
+  background: #f1f5f9 !important;
+}
+body.dark .ux-menu-item:hover {
+  background: #1e293b !important;
+}
+
 </style>
 </head>
 <body>
@@ -7945,20 +8012,21 @@ input:focus, select:focus, textarea:focus {
     <button class="btn btn-secondary" id="syncNowBtn" type="button"></button>
     <div class="ux-menu" id="uxActionsMenu">
       <button type="button" class="btn" id="uxActionsToggle" aria-haspopup="true" aria-expanded="false">Actions ▾</button>
-      <div class="ux-menu-panel" id="uxActionsPanel" hidden>
+      <div class="ux-menu-panel" id="uxActionsPanel" hidden role="menu">
         <div class="ux-menu-label">Data</div>
-        <button type="button" class="ux-menu-item" id="exportBtn"></button>
-        <button type="button" class="ux-menu-item" id="importBtn"></button>
+        <button type="button" class="ux-menu-item" id="exportBtn" role="menuitem">Export CSV</button>
+        <button type="button" class="ux-menu-item" id="importBtn" role="menuitem">Import CSV</button>
         <div class="ux-menu-label">Reports</div>
-        <button type="button" class="ux-menu-item" id="dailyReportBtn" title="Download a daily summary CSV for the current month filter"></button>
-        <button type="button" class="ux-menu-item" id="pdfReportBtn" title="Open a printable PDF-style daily summary"></button>
-        <button type="button" class="ux-menu-item" id="sendReportBtn" title="Email or Slack the daily summary"></button>
+        <button type="button" class="ux-menu-item" id="dailyReportBtn" role="menuitem" title="Download a daily summary CSV for the current month filter">Daily report</button>
+        <button type="button" class="ux-menu-item" id="pdfReportBtn" role="menuitem" title="Open a printable PDF-style daily summary">PDF report</button>
+        <button type="button" class="ux-menu-item" id="sendReportBtn" role="menuitem" title="Email or Slack the daily summary">Send report</button>
         <div class="ux-menu-label">Templates</div>
-        <button type="button" class="ux-menu-item" id="csvTemplateBtn"></button>
-        <button type="button" class="ux-menu-item" id="xlsxTemplateBtn"></button>
+        <button type="button" class="ux-menu-item" id="csvTemplateBtn" role="menuitem">CSV template</button>
+        <button type="button" class="ux-menu-item" id="xlsxTemplateBtn" role="menuitem">Excel template</button>
         <div class="ux-menu-label">App</div>
-        <button type="button" class="ux-menu-item" id="installBtn" style="display:none;" title="Install DR CARE as an app"></button>
+        <button type="button" class="ux-menu-item" id="installBtn" role="menuitem" style="display:none;" title="Install DR CARE as an app">Install app</button>
       </div>
+    </div>
     </div>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
@@ -11138,6 +11206,13 @@ document.getElementById('importBtn').innerHTML = `${icon('upload')} Import CSV`;
 document.getElementById('csvTemplateBtn').innerHTML = `${icon('file')} CSV template`;
 document.getElementById('xlsxTemplateBtn').innerHTML = `${icon('file')} Excel template`;
 document.getElementById('installBtn').innerHTML = `${icon('download')} Install app`;
+try{
+  const _pdf = document.getElementById('pdfReportBtn');
+  const _send = document.getElementById('sendReportBtn');
+  if(_pdf && !_pdf.textContent.trim()) _pdf.textContent = 'PDF report';
+  if(_send && !_send.textContent.trim()) _send.textContent = 'Send report';
+}catch(_e){}
+
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
 const __logWorkBtn = document.getElementById('logWorkBtn');
 if(__logWorkBtn && typeof icon === 'function') __logWorkBtn.innerHTML = `${icon('file')} Log task`;
@@ -15551,21 +15626,30 @@ function startPresence(){
     document.querySelectorAll('.ux-menu-panel, .ux-row-panel').forEach(p=>{
       if(except && p === except) return;
       p.hidden = true;
+      p.classList.remove('is-open');
     });
     const t = document.getElementById('uxActionsToggle');
     if(t) t.setAttribute('aria-expanded', 'false');
   }
+  function openActionsPanel(){
+    const panel = document.getElementById('uxActionsPanel');
+    const btn = document.getElementById('uxActionsToggle');
+    if(!panel) return;
+    panel.hidden = false;
+    panel.classList.add('is-open');
+    if(btn) btn.setAttribute('aria-expanded', 'true');
+  }
   document.getElementById('uxActionsToggle')?.addEventListener('click', e=>{
+    e.preventDefault();
     e.stopPropagation();
     const panel = document.getElementById('uxActionsPanel');
     if(!panel) return;
-    const open = panel.hidden;
+    const willOpen = panel.hidden || !panel.classList.contains('is-open');
     closeAllUxMenus();
-    panel.hidden = !open;
-    e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(willOpen) openActionsPanel();
   });
   document.getElementById('uxActionsPanel')?.addEventListener('click', e=>{
-    if(e.target.closest('.ux-menu-item')) setTimeout(()=>closeAllUxMenus(), 0);
+    if(e.target.closest('.ux-menu-item')) setTimeout(()=>closeAllUxMenus(), 50);
   });
   document.addEventListener('click', e=>{
     const toggle = e.target.closest('[data-row-menu]');
