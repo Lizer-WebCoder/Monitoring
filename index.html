@@ -8053,26 +8053,36 @@ body.dark .ux-row-panel .ux-menu-item:hover {
       <option value="unique-only">Unique only</option>
     </select>
   </div>
-  <!-- Row 3: primary ops + overflow Actions menu (UX roadmap) -->
+  <!-- Row 3: Sync + category dropdowns -->
   <div class="toolbar-row toolbar-actions">
     <button class="btn btn-secondary" id="syncNowBtn" type="button"></button>
-    <div class="ux-menu" id="uxActionsMenu">
-      <button type="button" class="btn" id="uxActionsToggle" aria-haspopup="true" aria-expanded="false">Actions ▾</button>
-      <div class="ux-menu-panel" id="uxActionsPanel" hidden role="menu">
-        <div class="ux-menu-label">Data</div>
+    <div class="ux-menu" data-ux-menu="data">
+      <button type="button" class="btn ux-menu-toggle" aria-haspopup="true" aria-expanded="false">Data ▾</button>
+      <div class="ux-menu-panel" hidden role="menu">
         <button type="button" class="ux-menu-item" id="exportBtn" role="menuitem">Export CSV</button>
         <button type="button" class="ux-menu-item" id="importBtn" role="menuitem">Import CSV</button>
-        <div class="ux-menu-label">Reports</div>
+      </div>
+    </div>
+    <div class="ux-menu" data-ux-menu="reports">
+      <button type="button" class="btn ux-menu-toggle" aria-haspopup="true" aria-expanded="false">Reports ▾</button>
+      <div class="ux-menu-panel" hidden role="menu">
         <button type="button" class="ux-menu-item" id="dailyReportBtn" role="menuitem" title="Download a daily summary CSV for the current month filter">Daily report</button>
         <button type="button" class="ux-menu-item" id="pdfReportBtn" role="menuitem" title="Open a printable PDF-style daily summary">PDF report</button>
         <button type="button" class="ux-menu-item" id="sendReportBtn" role="menuitem" title="Email or Slack the daily summary">Send report</button>
-        <div class="ux-menu-label">Templates</div>
-        <button type="button" class="ux-menu-item" id="csvTemplateBtn" role="menuitem">CSV template</button>
-        <button type="button" class="ux-menu-item" id="xlsxTemplateBtn" role="menuitem">Excel template</button>
-        <div class="ux-menu-label">App</div>
-        <button type="button" class="ux-menu-item" id="installBtn" role="menuitem" style="display:none;" title="Install DR CARE as an app">Install app</button>
       </div>
     </div>
+    <div class="ux-menu" data-ux-menu="templates">
+      <button type="button" class="btn ux-menu-toggle" aria-haspopup="true" aria-expanded="false">Templates ▾</button>
+      <div class="ux-menu-panel" hidden role="menu">
+        <button type="button" class="ux-menu-item" id="csvTemplateBtn" role="menuitem">CSV template</button>
+        <button type="button" class="ux-menu-item" id="xlsxTemplateBtn" role="menuitem">Excel template</button>
+      </div>
+    </div>
+    <div class="ux-menu" data-ux-menu="app" id="uxAppMenu" style="display:none;">
+      <button type="button" class="btn ux-menu-toggle" aria-haspopup="true" aria-expanded="false">App ▾</button>
+      <div class="ux-menu-panel" hidden role="menu">
+        <button type="button" class="ux-menu-item" id="installBtn" role="menuitem" title="Install DR CARE as an app">Install app</button>
+      </div>
     </div>
     <input type="file" id="importFile" accept=".csv,.xlsx">
   </div>
@@ -15740,29 +15750,53 @@ function startPresence(){
         p.style.display = '';
       }
     });
-    const t = document.getElementById('uxActionsToggle');
-    if(t) t.setAttribute('aria-expanded', 'false');
+    document.querySelectorAll('.ux-menu-toggle').forEach(t => t.setAttribute('aria-expanded', 'false'));
   }
-  function openActionsPanel(){
-    const panel = document.getElementById('uxActionsPanel');
-    const btn = document.getElementById('uxActionsToggle');
+  function openUxMenu(menuRoot){
+    if(!menuRoot) return;
+    const panel = menuRoot.querySelector('.ux-menu-panel');
+    const btn = menuRoot.querySelector('.ux-menu-toggle');
     if(!panel) return;
     panel.hidden = false;
     panel.classList.add('is-open');
     if(btn) btn.setAttribute('aria-expanded', 'true');
   }
-  document.getElementById('uxActionsToggle')?.addEventListener('click', e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    const panel = document.getElementById('uxActionsPanel');
-    if(!panel) return;
-    const willOpen = panel.hidden || !panel.classList.contains('is-open');
-    closeAllUxMenus();
-    if(willOpen) openActionsPanel();
+  document.addEventListener('click', e=>{
+    const toggle = e.target.closest('.ux-menu-toggle');
+    if(toggle && toggle.closest('.ux-menu') && !toggle.closest('.ux-row-menu')){
+      e.preventDefault();
+      e.stopPropagation();
+      const root = toggle.closest('.ux-menu');
+      const panel = root && root.querySelector('.ux-menu-panel');
+      const wasOpen = panel && !panel.hidden && panel.classList.contains('is-open');
+      closeAllUxMenus();
+      if(panel && !wasOpen) openUxMenu(root);
+      return;
+    }
+  }, true);
+  document.addEventListener('click', e=>{
+    if(e.target.closest('.ux-menu-item') && e.target.closest('.ux-menu-panel')){
+      setTimeout(()=>closeAllUxMenus(), 50);
+    }
   });
-  document.getElementById('uxActionsPanel')?.addEventListener('click', e=>{
-    if(e.target.closest('.ux-menu-item')) setTimeout(()=>closeAllUxMenus(), 50);
-  });
+  // Show App menu only when install is available
+  try{
+    const installBtn = document.getElementById('installBtn');
+    const appMenu = document.getElementById('uxAppMenu');
+    if(installBtn && appMenu){
+      const obs = new MutationObserver(()=>{
+        appMenu.style.display = (installBtn.style.display === 'none' || !installBtn.offsetParent && installBtn.style.display === 'none') ? 'none' : '';
+        if(installBtn.getAttribute('style') && installBtn.style.display === 'none') appMenu.style.display = 'none';
+        else if(installBtn.style.display && installBtn.style.display !== 'none') appMenu.style.display = '';
+      });
+      // simpler: poll once after labels
+      setTimeout(()=>{
+        if(installBtn.style.display !== 'none' && installBtn.getAttribute('style') !== 'display:none;'){
+          /* keep hidden until beforeinstallprompt shows button */
+        }
+      }, 0);
+    }
+  }catch(_e){}
   function positionRowPanel(toggle, panel){
     if(!toggle || !panel) return;
     panel.hidden = false;
@@ -15860,6 +15894,21 @@ function startPresence(){
       document.body.classList.remove('dark');
     }
   }catch(e){}
+})();
+
+
+/* Reveal App dropdown when PWA install becomes available */
+(function(){
+  const btn = document.getElementById('installBtn');
+  const menu = document.getElementById('uxAppMenu');
+  if(!btn || !menu) return;
+  const sync = ()=>{
+    const visible = btn.style.display !== 'none' && btn.getAttribute('hidden') == null;
+    menu.style.display = visible ? '' : 'none';
+  };
+  sync();
+  const mo = new MutationObserver(sync);
+  mo.observe(btn, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
 })();
 
 function showSwUpdateToast(reg){
