@@ -9639,6 +9639,99 @@ async function flushPending(){
   } else setSyncStatus('Synced ' + timeNow());
 }
 
+
+/* ===== Live multi-user: Supabase Realtime on patients ===== */
+let _patientsChannel = null;
+let _realtimeToastAt = 0;
+
+function applyRemotePatientRow(r, eventType){
+  if(!r || !r.id) return false;
+  if(typeof purgedIds !== 'undefined' && purgedIds.has(r.id)) return false;
+  // Never clobber an unsynced local edit
+  if(typeof pendingIds !== 'undefined' && pendingIds.has(r.id)) return false;
+
+  if(eventType === 'DELETE'){
+    const before = (state.patients || []).length;
+    state.patients = (state.patients || []).filter(p => p.id !== r.id);
+    return state.patients.length !== before;
+  }
+
+  const remote = fromRemote(r);
+  const local = (state.patients || []).find(p => p.id === r.id);
+  if(local){
+    const keepLabs = Array.isArray(local.labTests) ? local.labTests.slice() : [];
+    const keepEnc = local.encodedBy || null;
+    const keepT1 = local.t1By || null;
+    const keepT2 = local.t2By || null;
+    const keepT1At = local.t1At || null;
+    const keepT2At = local.t2At || null;
+    const keepCb = (local.customBenefits && typeof local.customBenefits === 'object') ? Object.assign({}, local.customBenefits) : {};
+    Object.assign(local, remote);
+    if((!local.labTests || !local.labTests.length) && keepLabs.length) local.labTests = keepLabs;
+    if(!local.encodedBy && keepEnc) local.encodedBy = keepEnc;
+    if(!local.t1By && keepT1) local.t1By = keepT1;
+    if(!local.t2By && keepT2) local.t2By = keepT2;
+    if(!local.t1At && keepT1At) local.t1At = keepT1At;
+    if(!local.t2At && keepT2At) local.t2At = keepT2At;
+    if(keepCb && Object.keys(keepCb).length){
+      local.customBenefits = Object.assign({}, keepCb, local.customBenefits || {});
+    }
+  } else {
+    if(!Array.isArray(state.patients)) state.patients = [];
+    state.patients.push(remote);
+  }
+  try{ if(typeof markPatientIndexesDirty === 'function') markPatientIndexesDirty(); }catch(e){}
+  return true;
+}
+
+function stopPatientsRealtime(){
+  try{
+    if(_patientsChannel){
+      sb.removeChannel(_patientsChannel);
+    }
+  }catch(e){}
+  _patientsChannel = null;
+}
+
+function startPatientsRealtime(){
+  if(!navigator.onLine || !sb || !sb.channel) return;
+  stopPatientsRealtime();
+  try{
+    _patientsChannel = sb.channel('dr-care-patients-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
+        try{
+          const eventType = payload.eventType || payload.event || '';
+          const row = (eventType === 'DELETE')
+            ? (payload.old || payload.old_record || {})
+            : (payload.new || payload.record || {});
+          if(!row || !row.id) return;
+          // Ignore echoes of our own pending pushes when still pending
+          const changed = applyRemotePatientRow(row, eventType === 'DELETE' ? 'DELETE' : eventType);
+          if(!changed) return;
+          try{ if(typeof saveLocalCache === 'function') saveLocalCache(); }catch(e){}
+          if(typeof scheduleRenderAll === 'function') scheduleRenderAll(80);
+          else if(typeof renderAll === 'function') renderAll();
+          const now = Date.now();
+          if(now - _realtimeToastAt > 8000 && typeof softToast === 'function'){
+            _realtimeToastAt = now;
+            softToast(eventType === 'DELETE' ? 'Roster updated (live)' : 'New data from another user (live)');
+          }
+        }catch(err){
+          console.warn('realtime patients handler', err);
+        }
+      })
+      .subscribe((status) => {
+        if(status === 'SUBSCRIBED'){
+          console.info('[realtime] patients channel live');
+        } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+          console.warn('[realtime] patients channel', status, '— falling back to 20s poll');
+        }
+      });
+  }catch(e){
+    console.warn('startPatientsRealtime failed', e);
+  }
+}
+
 async function pullRemote(){
   if(!navigator.onLine){ setSyncStatus('Offline — saved on this device', 'err'); return; }
   setSyncStatus('Syncing…', 'busy');
@@ -14487,6 +14580,7 @@ async function doLogin(){
 })();
 
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  try{ if(typeof stopPatientsRealtime === 'function') stopPatientsRealtime(); }catch(e){}
   try{ await sb.auth.signOut(); }catch(e){}
   location.reload();
 });
@@ -14602,10 +14696,13 @@ async function initApp(){
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
 
+  try{ if(typeof startPatientsRealtime === 'function') startPatientsRealtime(); }catch(e){}
+
+  // Poll remains as backup if Realtime is off / RLS / replication not enabled
   setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
   setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
-  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
-  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
+  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); try{ startPatientsRealtime(); }catch(e){} });
+  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); try{ stopPatientsRealtime(); }catch(e){} });
 }
 
 /* Login liquid canvas background — slow organic mesh (~20s drift) */
