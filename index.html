@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="app-version" content="8.1.0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
@@ -7772,7 +7773,26 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
   color: #fff !important;
 }
 
+
+.app-version-badge{
+  display:inline-flex; align-items:center; font-size:10.5px; font-weight:800;
+  letter-spacing:0.02em; padding:3px 8px; border-radius:999px;
+  background:rgba(15,118,110,0.12); color:var(--teal-deep, #0f766e);
+  border:1px solid rgba(15,118,110,0.2); margin-right:8px; white-space:nowrap;
+}
+body.dark .app-version-badge{
+  background:rgba(45,212,160,0.12); color:#9ee7cb; border-color:rgba(45,212,160,0.25);
+}
+.sync-pill.live{ background:rgba(34,197,94,0.15) !important; color:#15803d !important; border-color:rgba(34,197,94,0.35) !important; }
+body.dark .sync-pill.live{ background:rgba(34,197,94,0.2) !important; color:#86efac !important; }
+.empty-roster-hint{ font-size:13px; color:var(--muted); max-width:42ch; margin:8px auto 0; line-height:1.45; }
+.kbd-hint{ font-size:11px; color:var(--muted); margin-left:8px; }
+.kbd-hint kbd{
+  font:600 10px ui-monospace,monospace; padding:1px 5px; border-radius:4px;
+  border:1px solid var(--line); background:var(--card);
+}
 /* --- Batch action bar (floating, appears on selection) --- */
+/* Single authoritative bulk bar style (panel, not pill — avoids clipping wrapped actions) */
 #bulkBar {
   position: fixed !important;
   left: 50% !important;
@@ -7780,7 +7800,7 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
   transform: translateX(-50%) translateY(120%) !important;
   bottom: 16px !important;
   z-index: 90 !important;
-  display: none !important; /* shown via .show / .open */
+  display: none !important;
   flex-direction: row !important;
   flex-wrap: wrap !important;
   align-items: center !important;
@@ -7793,7 +7813,6 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
   max-width: min(920px, calc(100vw - 24px)) !important;
   background: var(--card) !important;
   border: 1px solid var(--line) !important;
-  /* Rounded panel — NOT a pill (999px clips multi-line actions) */
   border-radius: 18px !important;
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.16) !important;
   transition: transform 0.2s ease, opacity 0.2s ease !important;
@@ -7836,9 +7855,6 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
   line-height: 1.2 !important;
   max-width: 100% !important;
 }
-#bulkBar #bulkPrintMca {
-  border-radius: 999px !important;
-}
 body.dark #bulkBar {
   background: #15201d !important;
   border-color: #2a3a35 !important;
@@ -7852,7 +7868,6 @@ body.dark #bulkBar .bulk-count { color: #eef5f2 !important; }
     width: auto !important;
     max-width: none !important;
     transform: translateY(120%) !important;
-    justify-content: flex-start !important;
   }
   #bulkBar.open, #bulkBar.show, #bulkBar[data-open="1"] {
     transform: translateY(0) !important;
@@ -8217,7 +8232,7 @@ body.has-selection .team-merge-bar{
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.1.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -8356,14 +8371,14 @@ body.has-selection .team-merge-bar{
     <button class="btn" type="button" id="bulkLabYes">Lab ✓</button>
     <button class="btn" type="button" id="bulkMedYes">Meds ✓</button>
     <button class="btn" type="button" id="bulkMcaYes">MCA ✓</button>
-    <select id="bulkClaim" aria-label="Set claim">
+    <select id="bulkClaim">
       <option value="">Set claim…</option>
       <option value="pending">Pending</option>
       <option value="t1">T1 Submitted</option>
       <option value="t2">T2 Submitted</option>
       <option value="missed24">Missed 24h</option>
     </select>
-    <select id="bulkStatus" aria-label="Set status">
+    <select id="bulkStatus">
       <option value="">Set status…</option>
       <option value="registered">Registered</option>
       <option value="registered_other">Other facility</option>
@@ -8851,6 +8866,7 @@ body.has-selection .team-merge-bar{
       <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
     </div>
     <div class="activity-toolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px;padding:0 2px;">
+      <button type="button" class="btn btn-ghost btn-sm" id="activityExportBtn" title="Download activity log as CSV">Export CSV</button>
       <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
         Show
         <select id="activityPageSize" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
@@ -8891,6 +8907,9 @@ if(!window.supabase){
   throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const APP_VERSION = '8.1.0';
+window.APP_VERSION = APP_VERSION;
+
 
 /* Facility lists */
 const HOME_FACILITY = "Abucay";
@@ -9486,6 +9505,7 @@ async function tryOfflinePasswordLogin(email, password){
 }
 async function enterOfflineApp(){
   loginOverlay.classList.add('hidden');
+  try{ document.body.dataset.appVersion = window.APP_VERSION || '8.1.0'; }catch(e){}
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
   if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel} · offline`;
   const adminBtn = document.getElementById('adminBtn');
@@ -9596,17 +9616,23 @@ async function loadAllProfiles(){
 
 const syncPill = document.getElementById('syncPill');
 function setSyncStatus(text, mode){
-  // Always surface pending count when there are unsynced local changes
+  if(!syncPill) return;
   const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
-  let display = text;
-  if(pending > 0 && !/uploading|Syncing|Offline|failed|Connecting|Loading/i.test(text || '')){
-    display = `${text} · ${pending} unsynced`;
+  let display = text || '';
+  let m = mode || '';
+  // Richer status labels for multi-user / offline clarity
+  if(m === 'live') display = display || 'Live';
+  if(m === 'busy') display = display || 'Syncing…';
+  if(!m && pending > 0 && navigator.onLine) display = (display ? display + ' · ' : '') + pending + ' pending';
+  if(!navigator.onLine && m !== 'busy'){
+    display = display || 'Offline — saved on this device';
+    m = m || 'err';
   }
   syncPill.textContent = display;
-  syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '') + (pending > 0 && mode !== 'busy' ? ' err' : '');
+  syncPill.className = 'sync-pill' + (m ? ' ' + m : '') + (pending > 0 && m !== 'busy' && m !== 'live' ? ' err' : '');
   syncPill.title = pending > 0
-    ? `${pending} change(s) saved on this device and waiting to upload`
-    : (text || '');
+    ? (pending + ' change(s) not yet on server. Tap Sync now if this persists.')
+    : (m === 'live' ? 'Realtime connected — updates from other users appear automatically.' : (display || 'Sync status'));
 }
 function timeNow(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
@@ -9704,7 +9730,10 @@ function applyRemotePatientRow(r, eventType){
   if(!r || !r.id) return false;
   if(typeof purgedIds !== 'undefined' && purgedIds.has(r.id)) return false;
   // Never clobber an unsynced local edit
-  if(typeof pendingIds !== 'undefined' && pendingIds.has(r.id)) return false;
+  if(typeof pendingIds !== 'undefined' && pendingIds.has(r.id)){
+    // Keep local unsynced edit; remote change arrives after we push
+    return false;
+  }
 
   if(eventType === 'DELETE'){
     const before = (state.patients || []).length;
@@ -9779,6 +9808,7 @@ function startPatientsRealtime(){
       .subscribe((status) => {
         if(status === 'SUBSCRIBED'){
           console.info('[realtime] patients channel live');
+          try{ setSyncStatus('Live · multi-user', 'live'); }catch(e){}
         } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
           console.warn('[realtime] patients channel', status, '— falling back to 20s poll');
         }
@@ -12096,7 +12126,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 document.getElementById('installBtn').addEventListener('click', async () => {
   if(!deferredInstallPrompt){
-    alert('Install is available from your browser menu (Add to Home Screen / Install app), or after visiting this site a few times over HTTPS.');
+    showAppAlert('Install app', 'Install is available from your browser menu (Add to Home Screen / Install app), or after visiting this site a few times over HTTPS.');
     return;
   }
   deferredInstallPrompt.prompt();
@@ -12232,7 +12262,7 @@ document.getElementById('csvTemplateBtn').addEventListener('click', ()=>{
 
 document.getElementById('xlsxTemplateBtn').addEventListener('click', ()=>{
   if(!window.XLSX){
-    alert('Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
+    showAppAlert('Excel library missing', 'Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
     return;
   }
   const data = [
@@ -12343,7 +12373,7 @@ async function processImportRows(allRows, targetTeam){
   }
   // Minimal import needs at least Patient Name (or PhilHealth ID)
   if(colIndex && colIndex.name === undefined && colIndex.phid === undefined){
-    alert('Could not find a Patient Name or PhilHealth ID column in the header row.\\n\\nUse headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
+    showAppAlert('Import headers', 'Could not find a Patient Name or PhilHealth ID column in the header row. Use headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
     return;
   }
 
@@ -12482,7 +12512,7 @@ async function processImportRows(allRows, targetTeam){
     msg += `\\n\\n${badDates} row(s) had a date that could not be read. Those dates were left blank.`;
   }
   msg += viewNote;
-  alert(msg);
+  showAppAlert('Notice', msg);
 }
 
 document.getElementById('importBtn').addEventListener('click', ()=>{ importTargetTeam = null; document.getElementById('importFile').click(); });
@@ -12495,7 +12525,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
 
   if(isXlsx){
     if(!window.XLSX){
-      alert("Excel (.xlsx) import needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. In the meantime, save your workbook as CSV (File > Save As > CSV) and import that instead.");
+      showAppAlert('Excel library missing', 'Excel (.xlsx) import needs xlsx.full.min.js next to this file. Save as CSV and import that instead, or add the library (see STEP 0b in page source).');
       e.target.value = ''; importTargetTeam = null; return;
     }
     reader.onload = evt=>{
@@ -12504,8 +12534,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
         const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
-      }catch(err){ alert("Could not read that Excel file. Make sure it matches the DR CARE import format (see the Excel template button)."); console.error(err); }
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); showAppAlert('Import failed', String(err.message||err)); });
+      }catch(err){ showAppAlert('Could not read Excel', 'Make sure it matches the DR CARE import format (see the Excel template button).'); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
     };
@@ -12514,8 +12544,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
     reader.onload = evt=>{
       try{
         const allRows = parseCsvRows(evt.target.result);
-        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
-      }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the CSV template button)."); console.error(err); }
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); showAppAlert('Import failed', String(err.message||err)); });
+      }catch(err){ showAppAlert('Could not read CSV', 'Make sure it matches the DR CARE import format (see the CSV template button).'); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
     };
@@ -14091,6 +14121,7 @@ document.getElementById('dashWeekInput')?.addEventListener('change', renderDashb
 
 /* ---------------- Recent Activity (admin-only log) ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
+document.getElementById('activityExportBtn')?.addEventListener('click', exportActivityCsv);
 if(document.getElementById('activityCloseBtn')) document.getElementById('activityCloseBtn').innerHTML = icon('x', 15);
 
 const ACTIVITY_KEY = 'drcare_activity_v1';
@@ -14369,7 +14400,7 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }catch(e){
         console.error(e);
-        alert('Could not update role: ' + (e.message || e));
+        showAppAlert('Role update failed', String(e.message || e));
         await renderAdminUsers();
       }finally{
         sel.disabled = false;
@@ -14390,7 +14421,7 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }catch(e){
         console.error(e);
-        alert('Could not update approval: ' + (e.message || e));
+        showAppAlert('Approval update failed', String(e.message || e));
         await renderAdminUsers();
       }finally{
         cb.disabled = false;
@@ -14712,6 +14743,7 @@ async function onSignedIn(session){
       if(typeof pullExtraEncoders==='function') await withTimeout(pullExtraEncoders(), 8000, 'Encoders').catch(()=>{});
     }
     if(typeof startPresence === 'function') startPresence();
+  try{ wireKeyboardShortcuts(); }catch(e){}
   }catch(e){ console.warn('post-login', e); }
 }
 
@@ -15045,7 +15077,7 @@ function readCustomBenefitsFromForm(){
 
 function openBenefitsAdmin(){
   const list = document.getElementById('benefitsAdminList');
-  if(!list){ alert('Benefits panel missing — re-upload index.html'); return; }
+  if(!list){ showAppAlert('Panel missing', 'Benefits panel missing — re-upload index.html'); return; }
   const defs = loadCustomBenefits();
   list.innerHTML = defs.length ? defs.map((d,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
@@ -15111,7 +15143,7 @@ document.getElementById('tm_geoBtn')?.addEventListener('click', ()=>{
     document.getElementById('tm_lng').value = pos.coords.longitude.toFixed(6);
     updateTeamMapLink();
   }, err=>{
-    alert('Could not get location: ' + (err.message || 'permission denied'));
+    showAppAlert('Location failed', String(err.message || 'permission denied'));
   }, { enableHighAccuracy: true, timeout: 15000 });
 });
 
@@ -15835,7 +15867,7 @@ document.getElementById('reportCfgSend')?.addEventListener('click', async ()=>{
       if(!res.ok) throw new Error('HTTP ' + res.status);
       showAppAlert('Sent', 'Message sent to Slack.');
     }catch(e){
-      alert('Slack send failed (check webhook URL and CORS). Email may still have opened.');
+      showAppAlert('Slack failed', 'Check webhook URL and CORS. Email may still have opened.');
     }
   }
   if(!email && !slack){
@@ -16036,7 +16068,7 @@ setInterval(()=>{
 /* Facilities admin */
 function openFacilitiesAdmin(){
   const list = document.getElementById('facilitiesAdminList');
-  if(!list){ alert('Facilities panel missing — re-upload index.html'); return; }
+  if(!list){ showAppAlert('Panel missing', 'Facilities panel missing — re-upload index.html'); return; }
   const defs = loadFacilityOptions();
   list.innerHTML = defs.map((f,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
@@ -16888,6 +16920,79 @@ setTimeout(()=>{
 }, 800);
 
 /* ========== DR CARE unique UX features ========== */
+
+function wireKeyboardShortcuts(){
+  if(window.__drcareKbd) return;
+  window.__drcareKbd = true;
+  document.addEventListener('keydown', (e)=>{
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable);
+    // / focuses search
+    if(e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey){
+      const s = document.getElementById('search');
+      if(s){ e.preventDefault(); s.focus(); s.select(); }
+      return;
+    }
+    // N new patient (encoders)
+    if((e.key === 'n' || e.key === 'N') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey){
+      if(typeof canEdit === 'function' && canEdit()){
+        const btn = document.getElementById('addPatientBtn') || document.querySelector('[data-action="add-patient"]');
+        // open first team's add or global add if exists
+        const addBtns = document.querySelectorAll('.team-add-patient, #addPatientBtn, button[id^="addPt"]');
+        if(addBtns.length){ e.preventDefault(); addBtns[0].click(); }
+      }
+      return;
+    }
+    // Escape closes topmost backdrop
+    if(e.key === 'Escape'){
+      const open = document.querySelector('.modal-backdrop.open, .dash-backdrop.open, #appConfirmBackdrop.open');
+      if(open){
+        const cancel = open.querySelector('#appConfirmCancel, .dash-close, #cancelBtn, #tm_cancelBtn');
+        if(cancel) cancel.click();
+      }
+    }
+  });
+}
+
+function exportActivityCsv(){
+  try{
+    const key = 'drcare_activity_log_v1';
+    let rows = [];
+    try{ rows = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ rows = []; }
+    if(!Array.isArray(rows) || !rows.length){
+      // try alternate keys used by app
+      for(const k of Object.keys(localStorage)){
+        if(/activity/i.test(k)){
+          try{
+            const v = JSON.parse(localStorage.getItem(k) || '[]');
+            if(Array.isArray(v) && v.length){ rows = v; break; }
+          }catch(e){}
+        }
+      }
+    }
+    if(!rows.length){
+      if(typeof showAppAlert === 'function') showAppAlert('Nothing to export', 'No activity log entries on this device yet.');
+      else alert('No activity log entries yet.');
+      return;
+    }
+    const headers = ['at','action','detail','user','team','patient'];
+    const esc = (v)=> '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+    const lines = [headers.join(',')];
+    rows.forEach(r=>{
+      lines.push([r.at||r.ts||r.time||'', r.action||r.type||'', r.detail||r.message||r.msg||'', r.user||r.by||r.email||'', r.team||'', r.patient||r.name||r.patientName||''].map(esc).join(','));
+    });
+    const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dr-care-activity-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    if(typeof softToast === 'function') softToast('Activity CSV downloaded');
+  }catch(e){
+    console.error(e);
+    if(typeof showAppAlert === 'function') showAppAlert('Export failed', String(e.message||e));
+  }
+}
 function softToast(msg, ms){
   const el = document.getElementById('softToast');
   if(!el) return;
