@@ -1,43 +1,83 @@
-# DR CARE — Divine Rays Patient Care Tracker
+DR CARE — Divine Rays Patient Care Tracker
 
 Offline-first patient care tracker (roster, PhilHealth, claims, benefits, multi-user Supabase sync).
 
-**Version:** `8.0.0` · **Service worker cache:** `dr-care-v8`  
-**Live:** https://dr-care-monitoring.vercel.app
+Version: 8.1.0 · Service worker cache: dr-care-v8
+Live: https://dr-care-monitoring.vercel.app
 
-## Layout (current)
+Layout (intentional monolith)
 
-The app ships as a **monolith**. CSS and application logic live inside `index.html`.
+CSS and application logic live inside index.html on purpose (simpler field deploy). Do not half-split into modular js/ without finishing the cut.
 
-```
-index.html          → markup + embedded CSS + app logic (~single page)
-supabase.js         → vendor (auth/db client)
-xlsx.full.min.js    → vendor (Excel import/export)
-sw.js               → PWA service worker (CACHE_NAME = dr-care-v8)
-manifest.json       → PWA manifest
-favicon.svg
-GO_LIVE.md          → Supabase SQL + deploy checklist
-```
+index.html          → markup + CSS + app logic
+supabase.js         → vendor
+xlsx.full.min.js    → vendor
+sw.js               → PWA (CACHE_NAME = dr-care-v8)
+manifest.json
+GO_LIVE.md          → schema, Realtime, RLS, smoke test
 
-There is no separate `css/` or modular `js/app.js` on `main`. An incomplete modular split was abandoned; do not rely on `js/core.js` placeholders.
+Multi-user
 
-## Versioning
 
-- UI constant: `window.APP_VERSION` / meta `app-version` (currently `8.0.0`)
-- PWA cache name in `sw.js`: `dr-care-v8` — bump both when you intentionally invalidate client caches
-- Header shows a small **v8.0.0** tag next to “Patient Tracker”
 
-## Deploy (Vercel / static host)
 
-- Framework: **Other** (static)
-- Root: repo root (folder with `index.html`)
-- No build command
-- After deploy: hard-refresh so the service worker picks up **dr-care-v8** (or the new cache name if you bumped it)
 
-## Supabase
+Realtime on patients (when publication enabled) + 20s poll backup
 
-See `GO_LIVE.md` for SQL columns (`custom_benefits`, `date_t2`, etc.).
 
-## Dev
 
-Edit `index.html` (and `sw.js` / `manifest.json` as needed), commit, push. Vercel redeploys from `main`.
+Unsynced local edits are not overwritten by live events
+
+
+
+Staff: keep month filter on for large rosters
+
+Shortcuts
+
+
+
+
+
+
+
+Key
+
+
+
+Action
+
+
+
+
+
+/
+
+
+
+Focus search
+
+
+
+
+
+Esc
+
+
+
+Close top dialog
+
+
+
+
+
+N
+
+
+
+Add patient (when available)
+
+Deploy
+
+Vercel: Framework Other, no build, root = repo root. Hard-refresh after deploy.
+
+See GO_LIVE.md for SQL (columns, Realtime, RLS) and smoke tests.
