@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="app-version" content="8.1.0">
+  <meta name="app-version" content="8.2.0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
@@ -7774,6 +7774,88 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
 }
 
 
+
+/* ===== Design tokens (v8.2) ===== */
+:root{
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --shadow-float: 0 12px 40px rgba(15, 23, 42, 0.14);
+}
+/* Field mode: encoder-focused chrome */
+body.field-mode #dashboardBtn,
+body.field-mode #logWorkBtn,
+body.field-mode #activityBtn,
+body.field-mode #adminBtn,
+body.field-mode #manageEncodersBtn,
+body.field-mode #recycleBtn,
+body.field-mode .legend-wrap,
+body.field-mode #statStrip{
+  display: none !important;
+}
+body.field-mode .toolbar-nav .tb-group:nth-child(2) .btn:not(#addTeamBtn):not(#todayMissionBtn):not(#fieldModeBtn):not(#claimDueBtn):not(#dupAssistBtn){
+  /* keep core */
+}
+body.field-mode header{ padding-bottom: 8px !important; }
+body.field-mode .brand-title .tag{ font-size: 11px; }
+#fieldModeBtn.active, #claimDueBtn.has-due{
+  background: rgba(15, 118, 110, 0.12) !important;
+  border-color: rgba(15, 118, 110, 0.35) !important;
+}
+#claimDueBtn.has-due{ color: #b45309 !important; border-color: rgba(180, 83, 9, 0.4) !important; background: rgba(251, 191, 36, 0.15) !important; }
+.pending-queue-chip{
+  display:none; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px;
+  background:rgba(239,68,68,0.12); color:#b91c1c; border:1px solid rgba(239,68,68,0.25);
+  margin-right:6px; white-space:nowrap;
+}
+.pending-queue-chip.show{ display:inline-flex; align-items:center; }
+/* Mobile patient cards */
+@media (max-width: 720px){
+  body.field-mode .team-group table thead{ display:none !important; }
+  body.field-mode .team-group table,
+  body.field-mode .team-group tbody,
+  body.field-mode .team-group tr,
+  body.field-mode .team-group td{
+    display: block !important;
+    width: 100% !important;
+  }
+  body.field-mode .team-group tr{
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius-md) !important;
+    margin: 0 0 10px !important;
+    padding: 10px 12px !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+  }
+  body.field-mode .team-group td{
+    border: none !important;
+    padding: 4px 0 !important;
+    text-align: left !important;
+  }
+  body.field-mode .team-group td.col-select{ display:flex !important; align-items:center; gap:8px; }
+  body.field-mode .team-group td.name{ font-size: 15px !important; font-weight: 800 !important; }
+  body.field-mode .team-head{ position: sticky; top: 0; z-index: 5; background: var(--card); }
+}
+.claim-due-list{ list-style:none; margin:0; padding:0; max-height:50vh; overflow:auto; }
+.claim-due-list li{
+  display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center;
+  padding:10px 12px; border-bottom:1px solid var(--line); font-size:13px;
+}
+.claim-due-list li:hover{ background: rgba(15,118,110,0.05); }
+.claim-due-list .cd-name{ font-weight:700; flex:1 1 140px; }
+.claim-due-list .cd-meta{ color:var(--muted); font-size:12px; }
+.dup-assist-list{ list-style:none; margin:0; padding:0; max-height:50vh; overflow:auto; }
+.dup-assist-list li{
+  padding:12px; border:1px solid var(--line); border-radius:var(--radius-md); margin:0 0 10px;
+  background:var(--card);
+}
+.site-check-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; font-size:12px; }
+.site-check-row label{ display:inline-flex; gap:4px; align-items:center; font-weight:600; color:var(--muted); cursor:pointer; }
+
 .app-version-badge{
   display:inline-flex; align-items:center; font-size:10.5px; font-weight:800;
   letter-spacing:0.02em; padding:3px 8px; border-radius:999px;
@@ -8231,8 +8313,8 @@ body.has-selection .team-merge-bar{
       </h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
-        <div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.1.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <span class="pending-queue-chip" id="pendingQueueChip" title="Local changes waiting to upload">0 pending</span><div class="sync-pill" id="syncPill">Connecting…</div>
+        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.2.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -8249,6 +8331,9 @@ body.has-selection .team-merge-bar{
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / walk-in day</button>
       <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
+      <button class="btn" type="button" id="fieldModeBtn" title="Hide admin chrome — encoder field layout">Field mode</button>
+      <button class="btn" type="button" id="claimDueBtn" title="Claims due or missed">Claims due</button>
+      <button class="btn" type="button" id="dupAssistBtn" title="Review duplicate PhilHealth IDs">Duplicates</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="logWorkBtn" title="Log accomplishment"></button>
       <button class="btn" id="activityBtn"></button>
@@ -8835,6 +8920,40 @@ body.has-selection .team-merge-bar{
   </div>
 </div>
 
+
+<!-- Claims due -->
+<div class="dash-backdrop" id="claimDueBackdrop">
+  <div class="dash-modal" style="max-width:560px;">
+    <div class="dash-head">
+      <div>
+        <h3>Claims due</h3>
+        <div class="modal-sub">Pending claims past deadline and Missed 24h in the current filter.</div>
+      </div>
+      <button class="dash-close" id="claimDueCloseBtn" type="button" title="Close">✕</button>
+    </div>
+    <ul class="claim-due-list" id="claimDueList"></ul>
+    <div class="modal-foot" style="margin-top:12px;display:flex;justify-content:flex-end;">
+      <button type="button" class="btn btn-ghost" id="claimDueCloseBtn2">Close</button>
+    </div>
+  </div>
+</div>
+<!-- Duplicate PHID assistant -->
+<div class="dash-backdrop" id="dupAssistBackdrop">
+  <div class="dash-modal" style="max-width:560px;">
+    <div class="dash-head">
+      <div>
+        <h3>Duplicate PhilHealth IDs</h3>
+        <div class="modal-sub">Same PHID on more than one active patient in the current month/filter. Review and open records to fix.</div>
+      </div>
+      <button class="dash-close" id="dupAssistCloseBtn" type="button" title="Close">✕</button>
+    </div>
+    <div id="dupAssistList" class="dup-assist-list"></div>
+    <div class="modal-foot" style="margin-top:12px;display:flex;justify-content:flex-end;">
+      <button type="button" class="btn btn-ghost" id="dupAssistCloseBtn2">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- App confirm dialog -->
 <div class="dash-backdrop" id="appConfirmBackdrop">
   <div class="app-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
@@ -8907,7 +9026,7 @@ if(!window.supabase){
   throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const APP_VERSION = '8.1.0';
+const APP_VERSION = '8.2.0';
 window.APP_VERSION = APP_VERSION;
 
 
@@ -9505,7 +9624,7 @@ async function tryOfflinePasswordLogin(email, password){
 }
 async function enterOfflineApp(){
   loginOverlay.classList.add('hidden');
-  try{ document.body.dataset.appVersion = window.APP_VERSION || '8.1.0'; }catch(e){}
+  try{ document.body.dataset.appVersion = window.APP_VERSION || '8.2.0'; }catch(e){}
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
   if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel} · offline`;
   const adminBtn = document.getElementById('adminBtn');
@@ -10087,7 +10206,7 @@ function scheduleRenderAll(delay){
   }
   _renderAllTimer = setTimeout(()=>{
     _renderAllTimer = null;
-    if(_renderAllPending){ _renderAllPending = false; renderAll(); }
+    if(_renderAllPending){ _renderAllPending = false; renderAll(); try{ updatePendingQueueChip(); refreshClaimDueBadge(); }catch(e){} }
   }, d);
 }
 
@@ -14744,6 +14863,7 @@ async function onSignedIn(session){
     }
     if(typeof startPresence === 'function') startPresence();
   try{ wireKeyboardShortcuts(); }catch(e){}
+  try{ wireV82Features(); }catch(e){}
   }catch(e){ console.warn('post-login', e); }
 }
 
@@ -16993,6 +17113,150 @@ function exportActivityCsv(){
     if(typeof showAppAlert === 'function') showAppAlert('Export failed', String(e.message||e));
   }
 }
+
+/* ===== v8.2 field mode, claims due, duplicate assistant, pending chip ===== */
+function updatePendingQueueChip(){
+  const el = document.getElementById('pendingQueueChip');
+  if(!el) return;
+  const n = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
+  if(n > 0){
+    el.textContent = n + ' pending';
+    el.classList.add('show');
+    el.title = n + ' local change(s) waiting to upload — tap Sync now';
+  } else {
+    el.classList.remove('show');
+  }
+}
+const _setSyncStatusOrig = typeof setSyncStatus === 'function' ? setSyncStatus : null;
+// Hook pending chip onto existing status updates via periodic + render
+function applyFieldMode(on){
+  document.body.classList.toggle('field-mode', !!on);
+  try{ localStorage.setItem('drcare_field_mode', on ? '1' : '0'); }catch(e){}
+  const btn = document.getElementById('fieldModeBtn');
+  if(btn){
+    btn.classList.toggle('active', !!on);
+    btn.textContent = on ? 'Field mode · ON' : 'Field mode';
+  }
+}
+function loadFieldMode(){
+  let on = false;
+  try{ on = localStorage.getItem('drcare_field_mode') === '1'; }catch(e){}
+  // Default field mode for non-admins
+  if(!on && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'encoder'){
+    on = true;
+  }
+  applyFieldMode(on);
+}
+function getClaimDuePatients(){
+  const list = (typeof filteredPatients === 'function') ? filteredPatients() : (state.patients||[]).filter(p=>!p.deleted);
+  const now = new Date();
+  const due = [];
+  list.forEach(p=>{
+    if(p.deleted) return;
+    if(p.claim === 'missed24'){
+      due.push({ p, reason: 'Missed 24h' });
+      return;
+    }
+    if(p.claim === 'pending' || !p.claim){
+      const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
+      if(!base) return;
+      let deadline = null;
+      try{ if(typeof claimDeadline === 'function') deadline = claimDeadline(base); }catch(e){}
+      if(deadline && now >= deadline){
+        due.push({ p, reason: 'Past claim deadline' });
+      } else if(p.claim === 'pending'){
+        due.push({ p, reason: 'Pending claim' });
+      }
+    }
+  });
+  // unique by id
+  const seen = new Set();
+  return due.filter(x=>{
+    if(seen.has(x.p.id)) return false;
+    seen.add(x.p.id);
+    return true;
+  });
+}
+function openClaimDue(){
+  const backdrop = document.getElementById('claimDueBackdrop');
+  const ul = document.getElementById('claimDueList');
+  if(!backdrop || !ul) return;
+  const due = getClaimDuePatients();
+  const btn = document.getElementById('claimDueBtn');
+  if(btn){
+    btn.classList.toggle('has-due', due.length > 0);
+    btn.textContent = due.length ? ('Claims due · ' + due.length) : 'Claims due';
+  }
+  if(!due.length){
+    ul.innerHTML = '<li class="cd-meta">No due or missed claims in the current filter. Nice work.</li>';
+  } else {
+    ul.innerHTML = due.map(({p, reason})=>
+      '<li data-id="'+p.id+'">'
+      + '<span class="cd-name">'+escapeHtml(p.name||'—')+'</span>'
+      + '<span class="cd-meta">'+escapeHtml(p.team||'')+'</span>'
+      + '<span class="cd-meta">'+escapeHtml(p.phid||'')+'</span>'
+      + '<span class="cd-meta">'+escapeHtml(reason)+'</span>'
+      + '</li>'
+    ).join('');
+  }
+  backdrop.classList.add('open');
+}
+function openDupAssist(){
+  const backdrop = document.getElementById('dupAssistBackdrop');
+  const box = document.getElementById('dupAssistList');
+  if(!backdrop || !box) return;
+  try{ if(typeof rebuildPhidIndex === 'function') rebuildPhidIndex(); }catch(e){}
+  const groups = [];
+  if(typeof phidIndex !== 'undefined' && phidIndex){
+    phidIndex.forEach((arr, phid)=>{
+      if(!arr || arr.length < 2) return;
+      const patients = arr.map(x => (state.patients||[]).find(p=>p.id===x.id)).filter(p=>p && !p.deleted);
+      if(patients.length < 2) return;
+      groups.push({ phid, patients });
+    });
+  }
+  groups.sort((a,b)=> b.patients.length - a.patients.length);
+  if(!groups.length){
+    box.innerHTML = '<p class="modal-sub">No duplicate PhilHealth IDs in the current filter.</p>';
+  } else {
+    box.innerHTML = groups.map(g=>
+      '<li><div style="font-weight:800;margin-bottom:6px;">PHID '+escapeHtml(g.phid)+' · '+g.patients.length+' records</div>'
+      + g.patients.map(p=>'<div class="cd-meta">'+escapeHtml(p.name||'—')+' · '+escapeHtml(p.team||'')+' · '+escapeHtml(claimLabel[p.claim]||p.claim||'')+'</div>').join('')
+      + '</li>'
+    ).join('');
+  }
+  backdrop.classList.add('open');
+}
+function refreshClaimDueBadge(){
+  const btn = document.getElementById('claimDueBtn');
+  if(!btn) return;
+  try{
+    const n = getClaimDuePatients().length;
+    btn.classList.toggle('has-due', n > 0);
+    btn.textContent = n ? ('Claims due · ' + n) : 'Claims due';
+  }catch(e){}
+}
+function wireV82Features(){
+  if(window.__v82wired) return;
+  window.__v82wired = true;
+  document.getElementById('fieldModeBtn')?.addEventListener('click', ()=>{
+    applyFieldMode(!document.body.classList.contains('field-mode'));
+  });
+  document.getElementById('claimDueBtn')?.addEventListener('click', openClaimDue);
+  document.getElementById('dupAssistBtn')?.addEventListener('click', openDupAssist);
+  ['claimDueCloseBtn','claimDueCloseBtn2'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('click', ()=> document.getElementById('claimDueBackdrop')?.classList.remove('open'));
+  });
+  ['dupAssistCloseBtn','dupAssistCloseBtn2'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('click', ()=> document.getElementById('dupAssistBackdrop')?.classList.remove('open'));
+  });
+  document.getElementById('claimDueBackdrop')?.addEventListener('click', e=>{ if(e.target.id==='claimDueBackdrop') e.currentTarget.classList.remove('open'); });
+  document.getElementById('dupAssistBackdrop')?.addEventListener('click', e=>{ if(e.target.id==='dupAssistBackdrop') e.currentTarget.classList.remove('open'); });
+  loadFieldMode();
+  updatePendingQueueChip();
+  refreshClaimDueBadge();
+}
+
 function softToast(msg, ms){
   const el = document.getElementById('softToast');
   if(!el) return;
