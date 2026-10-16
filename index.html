@@ -9274,8 +9274,41 @@ function monthDateBounds(ym){
 }
 
 /** Cap in-memory roster: prefer active month, drop old deleted rows first */
+
+/* ===== Scale pack: indexes + cheaper filters for 10k+ ===== */
+let _monthIndex = null;
+let _monthIndexDirty = true;
+let _phidIndexDirty = true;
+
+function markPatientIndexesDirty(){
+  _monthIndexDirty = true;
+  _phidIndexDirty = true;
+}
+
+function rebuildMonthIndex(){
+  const map = new Map();
+  const pts = state.patients || [];
+  for(let i = 0; i < pts.length; i++){
+    const p = pts[i];
+    if(!p) continue;
+    const enc = (p.dateEncoded || '').trim();
+    const key = enc.length >= 7 ? enc.slice(0, 7) : '__none__';
+    let arr = map.get(key);
+    if(!arr){ arr = []; map.set(key, arr); }
+    arr.push(p);
+  }
+  _monthIndex = map;
+  _monthIndexDirty = false;
+  return map;
+}
+
+function ensureMonthIndex(){
+  if(_monthIndexDirty || !_monthIndex) rebuildMonthIndex();
+  return _monthIndex;
+}
+
 function prunePatientsMemory(maxKeep){
-  maxKeep = maxKeep || 8000;
+  maxKeep = maxKeep || 6000;
   if(!Array.isArray(state.patients) || state.patients.length <= maxKeep) return;
   const month = currentMonthFilterValue();
   const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds : new Set();
@@ -9287,6 +9320,7 @@ function prunePatientsMemory(maxKeep){
   const kept = scored.slice(0, maxKeep).map(x=>x.p);
   state.patients = kept;
   console.info('[scale] pruned roster memory to', kept.length);
+  markPatientIndexesDirty();
 }
 
 
@@ -9709,6 +9743,7 @@ async function pullRemote(){
       state.patients.forEach(p=>{ if(p && p.team && !p.deleted) registerKnownTeam(p.team); });
       if(typeof pushKnownTeams === 'function') pushKnownTeams();
     }catch(e){}
+    markPatientIndexesDirty();
     saveLocalCache();
     renderAll();
     const pendingCount = prunePendingIds();
@@ -9865,14 +9900,21 @@ function scheduleRenderAll(delay){
   if(typeof renderAll !== 'function') return;
   _renderAllPending = true;
   if(_renderAllTimer) return;
+  // Larger rosters: coalesce paints a bit longer to avoid thrashing during typing/sync
+  let d = delay;
+  if(d == null){
+    const n = (state.patients && state.patients.length) || 0;
+    d = n >= 3000 ? 120 : (n >= 1000 ? 80 : 50);
+  }
   _renderAllTimer = setTimeout(()=>{
     _renderAllTimer = null;
     if(_renderAllPending){ _renderAllPending = false; renderAll(); }
-  }, delay == null ? 50 : delay);
+  }, d);
 }
 
 /* Called after any local add/edit/delete */
 async function persistChange(p){
+  try{ markPatientIndexesDirty(); }catch(e){}
   if(typeof mirrorPatientMeta === 'function') mirrorPatientMeta(p);
   if(!canEdit()){
     setSyncStatus('View only — changes not saved', 'err');
@@ -10055,18 +10097,31 @@ function monthLabel(ym){
 let showArchived = false;
 
 function monthPatients(){
-  const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
+  const monthEl = document.getElementById('monthFilter');
+  const month = monthEl ? monthEl.value : '';
   const wantDeleted = showArchived;
-  // Fast path: no month filter
-  if(!month){
-    return state.patients.filter(p => wantDeleted ? p.deleted : !p.deleted);
+  if(month){
+    const idx = ensureMonthIndex();
+    const primary = idx.get(month) || [];
+    const undated = idx.get('__none__') || [];
+    const out = [];
+    for(let i = 0; i < primary.length; i++){
+      const p = primary[i];
+      if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
+    }
+    for(let i = 0; i < undated.length; i++){
+      const p = undated[i];
+      if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
+    }
+    return out;
   }
-  return state.patients.filter(p=>{
-    if(wantDeleted ? !p.deleted : p.deleted) return false;
-    const enc = (p.dateEncoded||'').trim();
-    if(!enc) return true; // undated stay visible
-    return enc.slice(0,7) === month;
-  });
+  const pts = state.patients || [];
+  const out = [];
+  for(let i = 0; i < pts.length; i++){
+    const p = pts[i];
+    if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
+  }
+  return out;
 }
 
 function defaultEncodedDate(){
@@ -10108,14 +10163,20 @@ let phidIndex = new Map(); // cleanPhid -> [{id, team}]
 
 function rebuildPhidIndex(){
   phidIndex = new Map();
-  state.patients.forEach(p=>{
-    if(p.deleted) return;
-    const clean = (p.phid||'').trim();
-    if(!clean) return;
+  // Prefer month-scoped set when a filter is active (much cheaper at 10k+)
+  const monthEl = document.getElementById('monthFilter');
+  const month = monthEl ? monthEl.value : '';
+  const source = month ? monthPatients() : (state.patients || []);
+  for(let i = 0; i < source.length; i++){
+    const p = source[i];
+    if(!p || p.deleted) continue;
+    const clean = (p.phid || '').trim();
+    if(!clean) continue;
     let arr = phidIndex.get(clean);
     if(!arr){ arr = []; phidIndex.set(clean, arr); }
     arr.push({ id: p.id, team: p.team });
-  });
+  }
+  _phidIndexDirty = false;
 }
 
 function isDuplicate(phid, excludeId){
@@ -10158,7 +10219,7 @@ function claimDeadline(dateStr){
 function autoFlagMissedClaims(){
   const now = new Date();
   let changed = false;
-  state.patients.forEach(p=>{
+  monthPatients().forEach(p=>{
     if(p.deleted) return;
     if(p.claim !== 'pending') return;
     // Already marked within 24h — do not force Missed 24h
@@ -10250,16 +10311,19 @@ function restoreScrollPositions(positions){
 /* DR CARE — UI: render roster, rows, filters, stats */
 function renderAll(){
   const savedScroll = captureScrollPositions();
-  autoFlagMissedClaims();
-  rebuildPhidIndex();
   try{ preferMonthIfLarge(); updateScaleWarn(); }catch(e){}
-  // rebuildPhidIndex is O(n) once — used by duplicate checks instead of O(n²) scans
-  state.patients.forEach(normalizeFacility);
+  // Scale: only flag missed claims on the visible month set (not entire 10k history)
+  try{ autoFlagMissedClaims(); }catch(e){}
+  rebuildPhidIndex();
+  // normalizeFacility only on the working set for this paint
+  const monthList = monthPatients();
+  for(let i = 0; i < monthList.length; i++){
+    try{ normalizeFacility(monthList[i]); }catch(e){}
+  }
   renderStats();
   renderLegend();
   updateOfflineBanner();
   const teams = getTeams();
-  const monthList = monthPatients();
   let list = filteredPatients();
   if(window.__todayMission){
     const td = (typeof isoToday === 'function' ? isoToday() : new Date().toISOString().slice(0,10));
@@ -10271,11 +10335,14 @@ function renderAll(){
 
   // Month filter: show groups with patients in that month, plus known/empty groups (never hide saved sites)
   let teamsToShow = teams;
-  // Re-register every patient team so groups never "disappear" after refresh
+  // Scale: only re-register teams from the current working set (not full history every paint)
   try{
-    state.patients.forEach(p=>{
+    const regSrc = monthVal ? monthList : (state.patients || []);
+    const limit = Math.min(regSrc.length, monthVal ? regSrc.length : 3000);
+    for(let i = 0; i < limit; i++){
+      const p = regSrc[i];
       if(p && p.team && !p.deleted) registerKnownTeam(p.team);
-    });
+    }
   }catch(e){}
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team).filter(Boolean));
@@ -14530,7 +14597,7 @@ async function initApp(){
   try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
   try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
   try{ ensureTeamsFromPatients();
-    if(typeof prunePatientsMemory==='function') prunePatientsMemory(8000); }catch(e){}
+    if(typeof prunePatientsMemory==='function') prunePatientsMemory(6000); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
@@ -16936,10 +17003,11 @@ setInterval(applyMissionMood, 30*60*1000);
 function updateScaleWarn(){
   const el = document.getElementById('scaleWarnBanner');
   if(!el) return;
-  const n = state.patients.filter(p=>!p.deleted).length;
+  const n = (state.patients || []).length;
   const month = document.getElementById('monthFilter')?.value;
   const dismissed = sessionStorage.getItem('scaleWarnDismissed') === '1';
-  el.style.display = (!dismissed && n >= 800 && !month) ? 'block' : 'none';
+  // Warn earlier; hide when a month is selected
+  el.style.display = (!dismissed && n >= 400 && !month) ? 'block' : 'none';
 }
 document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
   sessionStorage.setItem('scaleWarnDismissed', '1');
@@ -16948,11 +17016,12 @@ document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
 
 let _didPreferMonth = false;
 function preferMonthIfLarge(){
-  if(_didPreferMonth) return;
   try{
-    const n = (state.patients || []).filter(p=>!p.deleted).length;
+    const n = (state.patients || []).length;
     const mf = document.getElementById('monthFilter');
-    if(mf && n >= 500 && !mf.value){
+    if(!mf) return;
+    // Auto-select current month once when roster is non-trivial (keeps UI responsive at 10k+)
+    if(!_didPreferMonth && n >= 200 && !mf.value){
       const now = new Date();
       mf.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
       _didPreferMonth = true;
