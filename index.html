@@ -7985,6 +7985,54 @@ body.dark .ux-row-panel .ux-menu-item:hover {
   background: var(--table-head);
 }
 
+
+/* Site / walk-in merge */
+.team-merge-check{
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  flex: none;
+}
+.team-merge-check input{
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--brand, var(--teal));
+}
+.team-merge-bar{
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 999px;
+  box-shadow: 0 8px 28px rgba(15,23,42,0.14);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  max-width: calc(100vw - 24px);
+}
+.team-merge-bar.show, .team-merge-bar.open{
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.team-merge-count{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+body.has-selection .team-merge-bar{
+  bottom: 78px; /* sit above patient bulk bar when both open */
+}
+
 </style>
 </head>
 <body>
@@ -8177,6 +8225,12 @@ body.dark .ux-row-panel .ux-menu-item:hover {
 
 <div id="softToast" role="status" aria-live="polite"></div>
 <div class="kb-hint" id="kbHint" title="Keyboard shortcuts">/ search · N new patient · Esc close</div>
+
+<div id="teamMergeBar" class="team-merge-bar" aria-live="polite">
+  <span class="team-merge-count" id="teamMergeCount">No sites selected</span>
+  <button type="button" class="btn btn-primary" id="teamMergeBtn" disabled>Merge selected</button>
+  <button type="button" class="btn" id="teamMergeClear">Clear</button>
+</div>
 <div id="groupsContainer"></div>
 <details class="legend-wrap">
   <summary class="legend-summary">How to use this tracker</summary>
@@ -10216,7 +10270,12 @@ function renderAll(){
     return;
   }
   teamsToShow.forEach(team=>{
-    const allRows = list.filter(p=>p.team === team);
+    const allRows = list.filter(p=>p.team === team).slice().sort((a,b)=>{
+      const ta = (typeof patientEncodeTs === 'function') ? patientEncodeTs(a) : 0;
+      const tb = (typeof patientEncodeTs === 'function') ? patientEncodeTs(b) : 0;
+      if(ta !== tb) return ta - tb; // earliest encoded first
+      return String(a.name||'').localeCompare(String(b.name||''));
+    });
     const totalInTeam = monthList.filter(p=>p.team===team).length;
     const staffList = (teamStaff[team] || []).map(staffEntryToText).filter(Boolean);
     const wrap = document.createElement('div');
@@ -10256,6 +10315,9 @@ function renderAll(){
     wrap.innerHTML = `
       <div class="team-head ${collapsed?'collapsed':''}" data-team="${escapeAttr(team)}" title="Click to ${collapsed?'expand':'collapse'}">
         <div class="team-head-top">
+          ${canEdit() && !showArchived ? `<label class="team-merge-check" title="Select to merge sites / walk-in days" onclick="event.stopPropagation()">
+            <input type="checkbox" class="team-select" data-team-select="${escapeAttr(team)}" ${selectedTeams.has(team)?'checked':''}>
+          </label>` : ''}
           <span class="chev" aria-hidden="true">▾</span>
           <div class="team-title-block">
             <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
@@ -10365,6 +10427,133 @@ function facilityCellHtml(p){
 }
 
 const selectedIds = new Set();
+const selectedTeams = new Set(); // sites / walk-in days checked for merge
+
+function patientEncodeTs(p){
+  if(!p) return 0;
+  if(p.createdAt){
+    const t = Date.parse(p.createdAt);
+    if(!isNaN(t)) return t;
+  }
+  const d = (p.dateEncoded || '').trim();
+  if(d){
+    // date only → start of day local
+    const t = Date.parse(d.length === 10 ? d + 'T00:00:00' : d);
+    if(!isNaN(t)) return t;
+  }
+  if(p.updatedAt){
+    const t = Date.parse(p.updatedAt);
+    if(!isNaN(t)) return t;
+  }
+  return 0;
+}
+
+function updateTeamMergeBar(){
+  const bar = document.getElementById('teamMergeBar');
+  const countEl = document.getElementById('teamMergeCount');
+  if(!bar) return;
+  const n = selectedTeams.size;
+  if(countEl) countEl.textContent = n === 0 ? 'No sites selected' : (n === 1 ? '1 site selected — pick at least one more' : n + ' sites selected');
+  bar.classList.toggle('show', n > 0);
+  bar.classList.toggle('open', n > 0);
+  const mergeBtn = document.getElementById('teamMergeBtn');
+  if(mergeBtn) mergeBtn.disabled = n < 2;
+}
+
+function mergeSelectedTeams(){
+  if(typeof canEdit === 'function' && !canEdit()){
+    alert('Only encoders and admins can merge sites.');
+    return;
+  }
+  const teams = [...selectedTeams];
+  if(teams.length < 2){
+    alert('Check at least 2 sites / walk-in days to merge.');
+    return;
+  }
+  const suggested = teams.slice().sort((a,b)=>{
+    // prefer the one with earliest patient encode time as default name base
+    const minTs = (name)=>{
+      let m = Infinity;
+      (state.patients||[]).forEach(p=>{
+        if(p.deleted || p.team !== name) return;
+        m = Math.min(m, patientEncodeTs(p));
+      });
+      return m === Infinity ? 0 : m;
+    };
+    return minTs(a) - minTs(b);
+  })[0];
+  const dest = prompt(
+    'Merge into one site / walk-in day.\n\nSelected:\n• ' + teams.join('\n• ') +
+    '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name:',
+    suggested
+  );
+  if(dest == null) return;
+  const target = String(dest).trim();
+  if(!target){ alert('Name is required.'); return; }
+  if(!confirm('Merge ' + teams.length + ' sites into "' + target + '"?\nThis cannot be undone except by editing patients manually.')) return;
+
+  const sources = teams.filter(t => t !== target);
+  // Move patients
+  let moved = 0;
+  (state.patients || []).forEach(p=>{
+    if(p.deleted) return;
+    if(sources.includes(p.team) || (teams.includes(p.team) && p.team !== target && target)){
+      if(p.team !== target){
+        p.team = target;
+        pendingIds.add(p.id);
+        moved++;
+      }
+    }
+  });
+  // Also rename if one of the selected is already named target — patients already there stay
+
+  // Merge staff lists
+  if(typeof teamStaff === 'object'){
+    const seen = new Set();
+    const mergedStaff = [];
+    [target, ...sources].forEach(t=>{
+      (teamStaff[t] || []).forEach(s=>{
+        const key = (typeof staffEntryToText === 'function' ? staffEntryToText(s) : String(s)).toLowerCase();
+        if(!key || seen.has(key)) return;
+        seen.add(key);
+        mergedStaff.push(s);
+      });
+      if(t !== target) delete teamStaff[t];
+    });
+    teamStaff[target] = mergedStaff;
+    try{ if(typeof saveTeamStaffCache === 'function') saveTeamStaffCache(); }catch(e){}
+    try{ if(typeof pushTeamStaff === 'function') pushTeamStaff(); }catch(e){}
+  }
+
+  // Meta / known teams
+  sources.forEach(t=>{
+    if(typeof teamMeta === 'object' && teamMeta[t]){
+      teamMeta[target] = Object.assign({}, teamMeta[t], teamMeta[target] || {});
+      delete teamMeta[t];
+    }
+    try{ if(typeof unregisterKnownTeam === 'function') unregisterKnownTeam(t); }catch(e){}
+    try{ pendingEmptyTeams.delete(t); }catch(e){}
+    try{ expandedTeams.delete(t); }catch(e){}
+  });
+  try{ if(typeof registerKnownTeam === 'function') registerKnownTeam(target); }catch(e){}
+  try{ if(typeof setTeamMonth === 'function'){
+    const mf = document.getElementById('monthFilter');
+    const ym = (mf && mf.value) ? mf.value.slice(0,7) : '';
+    if(ym) setTeamMonth(target, ym);
+  }}catch(e){}
+  try{ if(typeof saveTeamMeta === 'function') saveTeamMeta(); }catch(e){}
+  try{ if(typeof pushTeamMeta === 'function') pushTeamMeta(); }catch(e){}
+  try{ if(typeof pushKnownTeams === 'function') pushKnownTeams(); }catch(e){}
+
+  selectedTeams.clear();
+  try{ if(typeof savePending === 'function') savePending(); }catch(e){}
+  try{ if(typeof saveLocalCache === 'function') saveLocalCache(); }catch(e){}
+  try{ if(typeof flushPending === 'function') flushPending(); }catch(e){}
+  updateTeamMergeBar();
+  renderAll();
+  alert('Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
+}
+
 
 function rowHtml(p){
   const dupTeam = duplicateTeam(p.phid, p.id);
@@ -10714,6 +10903,16 @@ async function permanentlyDeletePatients(ids){
 }
 
 groupsContainer.addEventListener('change', e=>{
+  // Site / walk-in day selection for merge
+  if(e.target.classList.contains('team-select')){
+    const t = e.target.getAttribute('data-team-select');
+    if(t){
+      if(e.target.checked) selectedTeams.add(t);
+      else selectedTeams.delete(t);
+      updateTeamMergeBar();
+    }
+    return;
+  }
   // Row selection / select-all
   if(e.target.classList.contains('row-select')){
     const id = e.target.dataset.id;
@@ -10884,6 +11083,14 @@ document.getElementById('bulkStatus').addEventListener('change', e=>{
   applyBulkChange(p => { p.status = v; normalizeFacility(p); });
   e.target.value = '';
 });
+
+document.getElementById('teamMergeBtn')?.addEventListener('click', ()=> mergeSelectedTeams());
+document.getElementById('teamMergeClear')?.addEventListener('click', ()=>{
+  selectedTeams.clear();
+  document.querySelectorAll('input.team-select').forEach(cb=>{ cb.checked = false; });
+  updateTeamMergeBar();
+});
+
 document.getElementById('bulkClear').addEventListener('click', ()=>{
   selectedIds.clear();
   document.querySelectorAll('.row-select').forEach(cb => { cb.checked = false; });
