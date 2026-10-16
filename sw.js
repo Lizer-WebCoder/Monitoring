@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dr-care-v8';
+const CACHE_NAME = 'dr-care-v10';
 const APP_SHELL = [
   './',
   './index.html',
