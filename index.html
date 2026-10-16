@@ -4876,6 +4876,61 @@ body.dark #appConfirmMessage{ color: #b7c4bf !important; }
 
 #appConfirmExtra.show{ display: flex !important; }
 
+.app-confirm-input{
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(143, 217, 196, 0.28) !important;
+  background: rgba(0,0,0,0.22) !important;
+  color: #eef5f2 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.18) !important;
+}
+.app-confirm-input:focus{
+  border-color: rgba(45, 212, 160, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(45, 212, 160, 0.18), inset 0 1px 2px rgba(0,0,0,0.18) !important;
+}
+.app-confirm-input::placeholder{ color: rgba(168, 190, 182, 0.7) !important; font-weight: 500 !important; }
+body:not(.dark) .app-confirm-input{
+  background: #fff !important;
+  border-color: rgba(20, 82, 74, 0.2) !important;
+  color: #0f2e28 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+body:not(.dark) .app-confirm-input:focus{
+  border-color: rgba(15, 118, 110, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14) !important;
+}
+.app-confirm-list{
+  text-align: left !important;
+  margin: 12px 0 0 !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  background: rgba(0,0,0,0.18) !important;
+  border: 1px solid rgba(143, 217, 196, 0.14) !important;
+  max-height: 160px !important;
+  overflow: auto !important;
+}
+body:not(.dark) .app-confirm-list{
+  background: rgba(15, 118, 110, 0.06) !important;
+  border-color: rgba(20, 82, 74, 0.12) !important;
+}
+.app-confirm-list li{
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: inherit !important;
+  line-height: 1.4 !important;
+}
+.app-confirm-list li:last-child{ margin-bottom: 0 !important; }
+
+
 #appConfirmExtra .btn{
     width: 100% !important;
     justify-content: center !important;
@@ -10460,18 +10515,17 @@ function updateTeamMergeBar(){
   if(mergeBtn) mergeBtn.disabled = n < 2;
 }
 
-function mergeSelectedTeams(){
+async function mergeSelectedTeams(){
   if(typeof canEdit === 'function' && !canEdit()){
-    alert('Only encoders and admins can merge sites.');
+    await showAppAlert('Permission needed', 'Only encoders and admins can merge sites.');
     return;
   }
   const teams = [...selectedTeams];
   if(teams.length < 2){
-    alert('Check at least 2 sites / walk-in days to merge.');
+    await showAppAlert('Select more sites', 'Check at least 2 sites / walk-in days to merge.');
     return;
   }
   const suggested = teams.slice().sort((a,b)=>{
-    // prefer the one with earliest patient encode time as default name base
     const minTs = (name)=>{
       let m = Infinity;
       (state.patients||[]).forEach(p=>{
@@ -10482,18 +10536,30 @@ function mergeSelectedTeams(){
     };
     return minTs(a) - minTs(b);
   })[0];
-  const dest = prompt(
-    'Merge into one site / walk-in day.\n\nSelected:\n• ' + teams.join('\n• ') +
-    '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name:',
-    suggested
-  );
+
+  const listLines = teams.map(t => '• ' + t).join('\n');
+  const dest = await showAppPrompt({
+    title: 'Merge sites / walk-in days',
+    message: 'Selected:\n' + listLines + '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name for the merged site:',
+    defaultValue: suggested,
+    confirmLabel: 'Continue',
+    placeholder: 'e.g. DAILY WALK-IN 10-09-2026'
+  });
   if(dest == null) return;
   const target = String(dest).trim();
-  if(!target){ alert('Name is required.'); return; }
-  if(!confirm('Merge ' + teams.length + ' sites into "' + target + '"?\nThis cannot be undone except by editing patients manually.')) return;
+  if(!target){
+    await showAppAlert('Name required', 'Enter a final name for the merged site / walk-in day.');
+    return;
+  }
+  const ok = await showAppConfirm({
+    title: 'Confirm merge',
+    message: 'Merge ' + teams.length + ' sites into "' + target + '"?\n\nThis cannot be undone except by editing patients manually.',
+    confirmLabel: 'Merge sites',
+    danger: true
+  });
+  if(!ok) return;
 
   const sources = teams.filter(t => t !== target);
-  // Move patients
   let moved = 0;
   (state.patients || []).forEach(p=>{
     if(p.deleted) return;
@@ -10505,16 +10571,14 @@ function mergeSelectedTeams(){
       }
     }
   });
-  // Also rename if one of the selected is already named target — patients already there stay
 
-  // Merge staff lists
   if(typeof teamStaff === 'object'){
     const seen = new Set();
     const mergedStaff = [];
-    [target, ...sources].forEach(t=>{
+    teams.forEach(t=>{
       (teamStaff[t] || []).forEach(s=>{
-        const key = (typeof staffEntryToText === 'function' ? staffEntryToText(s) : String(s)).toLowerCase();
-        if(!key || seen.has(key)) return;
+        const key = (s.name || '') + '|' + (s.role || '');
+        if(seen.has(key)) return;
         seen.add(key);
         mergedStaff.push(s);
       });
@@ -10525,7 +10589,6 @@ function mergeSelectedTeams(){
     try{ if(typeof pushTeamStaff === 'function') pushTeamStaff(); }catch(e){}
   }
 
-  // Meta / known teams
   sources.forEach(t=>{
     if(typeof teamMeta === 'object' && teamMeta[t]){
       teamMeta[target] = Object.assign({}, teamMeta[t], teamMeta[target] || {});
@@ -10551,7 +10614,7 @@ function mergeSelectedTeams(){
   try{ if(typeof flushPending === 'function') flushPending(); }catch(e){}
   updateTeamMergeBar();
   renderAll();
-  alert('Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
+  await showAppAlert('Merge complete', 'Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
 }
 
 
@@ -10829,7 +10892,12 @@ groupsContainer.addEventListener('click', e=>{
       showAppAlert('Nothing to delete', 'No archived patients left in this group. The live site on the main roster was not changed.');
       return;
     }
-    if(confirm('Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.')){
+    showAppConfirm({
+      title: 'Delete archived patients',
+      message: 'Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.',
+      confirmLabel: 'Delete permanently',
+      danger: true
+    }).then(ok => { if(!ok) return;
       permanentlyDeletePatients(ids).then(() => {
         // Keep site on Active roster
         if(team && !knownTeams.some(t => String(t).toLowerCase() === String(team).toLowerCase())){
@@ -11385,7 +11453,7 @@ function toDateInputValue(v){
 }
 function openModal(id, presetTeam){
   if(!id && !canEdit()){
-    alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
+    showAppAlert('Viewers cannot edit', 'Viewers cannot add patients. Ask an admin to change your role to Encoder.');
     return;
   }
   editingId = id ? String(id) : null;
@@ -11625,9 +11693,9 @@ function closeTeamModal(){ teamModalBackdrop.classList.remove('open'); editingTe
 document.getElementById('tm_cancelBtn').addEventListener('click', closeTeamModal);
 teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop) closeTeamModal(); });
 
-document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
+document.getElementById('tm_saveBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('tm_name').value.trim();
-  if(!name){ alert("Name is required (e.g. mobile site or walk-in day)."); return; }
+  if(!name){ await showAppAlert('Name required', 'Enter a name (e.g. mobile site or walk-in day).'); return; }
   const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
     name: row.querySelector('.tm-staff-input').value.trim(),
     position: row.querySelector('.tm-staff-position').value
@@ -11638,11 +11706,16 @@ document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
 
   if(!editingTeamOriginalName && collidesWith){
-    alert(`A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
+    await showAppAlert('Name already used', `A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
     return;
   }
   if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
-    const proceed = confirm(`A mobile named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
+    const proceed = await showAppConfirm({
+      title: 'Merge into existing site?',
+      message: `A site named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form.`,
+      confirmLabel: 'Merge & continue',
+      danger: true
+    });
     if(!proceed) return;
   }
 
@@ -12042,7 +12115,7 @@ function rowLooksLikeHeader(cols){
 
 async function processImportRows(allRows, targetTeam){
   if(!allRows || !allRows.length){
-    alert('No rows found in that file.');
+    showAppAlert('Empty file', 'No rows found in that file.');
     return;
   }
   let start = 0;
@@ -12383,6 +12456,67 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
 }
 function showAppAlert(title, message){
   return showAppConfirm({ title: title || 'Notice', message: message || '', confirmLabel: 'OK', hideCancel: true, info: true });
+}
+
+/** Styled prompt — returns string on OK, null on cancel (same contract as window.prompt). */
+function showAppPrompt({ title, message, defaultValue, confirmLabel, cancelLabel, placeholder, danger, inputType }){
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('appConfirmBackdrop');
+    const titleEl = document.getElementById('appConfirmTitle');
+    const msgEl = document.getElementById('appConfirmMessage');
+    const okBtn = document.getElementById('appConfirmOk');
+    const cancelBtn = document.getElementById('appConfirmCancel');
+    const icon = document.getElementById('appConfirmIcon');
+    const extra = document.getElementById('appConfirmExtra');
+    if(!backdrop || !okBtn){
+      resolve(window.prompt(message || title || '', defaultValue == null ? '' : String(defaultValue)));
+      return;
+    }
+    titleEl.textContent = title || 'Enter value';
+    msgEl.textContent = message || '';
+    okBtn.textContent = confirmLabel || 'OK';
+    okBtn.style.display = '';
+    cancelBtn.textContent = cancelLabel || 'Cancel';
+    cancelBtn.style.display = '';
+    icon.className = 'app-confirm-icon' + (danger ? ' danger' : ' info');
+    icon.textContent = danger ? '⚠' : '✎';
+    okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+    backdrop.classList.remove('has-choices');
+    if(extra){
+      const val = defaultValue == null ? '' : String(defaultValue);
+      const ph = (placeholder || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+      const type = inputType || 'text';
+      extra.innerHTML = '<input type="' + type + '" id="appConfirmInput" class="app-confirm-input" autocomplete="off" spellcheck="false" placeholder="' + ph + '">';
+      extra.classList.add('show');
+      const inp = document.getElementById('appConfirmInput');
+      if(inp) inp.value = val;
+    }
+    const onKey = (e) => {
+      if(e.key === 'Enter'){ e.preventDefault(); okBtn.click(); }
+      if(e.key === 'Escape'){ e.preventDefault(); finish(null); }
+    };
+    function finish(val){
+      document.removeEventListener('keydown', onKey);
+      backdrop.classList.remove('open', 'has-choices');
+      if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      backdrop.onclick = null;
+      resolve(val);
+    }
+    okBtn.onclick = () => {
+      const inp = document.getElementById('appConfirmInput');
+      finish(inp ? inp.value : '');
+    };
+    cancelBtn.onclick = () => finish(null);
+    backdrop.onclick = (e) => { if(e.target === backdrop) finish(null); };
+    document.addEventListener('keydown', onKey);
+    backdrop.classList.add('open');
+    setTimeout(() => {
+      const inp = document.getElementById('appConfirmInput');
+      if(inp){ inp.focus(); inp.select(); }
+    }, 40);
+  });
 }
 function showAppChoice({ title, message, choices }){
   // choices: [{ id, label, primary?, danger? }]
@@ -13855,7 +13989,7 @@ function renderActivityPage(){
 
 function openActivity(){
   if(!isAdminUser()){
-    alert('Recent Activity is available to admins only.');
+    showAppAlert('Admins only', 'Recent Activity is available to admins only.');
     return;
   }
   activityPage = 0;
@@ -13903,7 +14037,7 @@ document.getElementById('adminCloseBtn').innerHTML = icon('x', 15);
 
 async function openAdmin(){
   if(!isAdmin()){
-    alert('Admin access only.');
+    showAppAlert('Admins only', 'Admin access only.');
     return;
   }
   adminBackdrop.classList.add('open');
@@ -14751,7 +14885,7 @@ function updateTeamMapLink(){
 document.getElementById('tm_lat')?.addEventListener('input', updateTeamMapLink);
 document.getElementById('tm_lng')?.addEventListener('input', updateTeamMapLink);
 document.getElementById('tm_geoBtn')?.addEventListener('click', ()=>{
-  if(!navigator.geolocation){ alert('Geolocation not available on this device.'); return; }
+  if(!navigator.geolocation){ showAppAlert('Location unavailable', 'Geolocation is not available on this device.'); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     document.getElementById('tm_lat').value = pos.coords.latitude.toFixed(6);
     document.getElementById('tm_lng').value = pos.coords.longitude.toFixed(6);
@@ -14867,7 +15001,7 @@ function renderMcaFileCard(dataUrl, meta){
       if(!dataUrl) return;
       // Open in new tab for viewing (images + PDFs). Download is optional via long-press/save in browser.
       const win = window.open('');
-      if(!win){ alert('Allow pop-ups to view the MCA file.'); return; }
+      if(!win){ showAppAlert('Pop-up blocked', 'Allow pop-ups to view the MCA file.'); return; }
       if(kind === 'img' || String(dataUrl).startsWith('data:image')){
         win.document.write('<!DOCTYPE html><html><head><title>' + String(name).replace(/</g,'') + '</title>' +
           '<style>html,body{margin:0;background:#0f172a;height:100%;display:grid;place-items:center}' +
@@ -14926,7 +15060,7 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
   const file = e.target.files && e.target.files[0];
   if(!file) return;
   const maxBytes = 8 * 1024 * 1024;
-  if(file.size > maxBytes){ alert('File too large (max 8MB).'); e.target.value = ''; return; }
+  if(file.size > maxBytes){ showAppAlert('File too large', 'Maximum size is 8MB.'); e.target.value = ''; return; }
   const kind = mcaFileKind(file.type, file.name);
   try{
     let dataUrl = null;
@@ -14935,14 +15069,14 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
     } else {
       // PDF / documents stored as file data URL (capped)
       if(file.size > 4 * 1024 * 1024){
-        alert('Document is over 4MB. Please use a smaller PDF or compress the file.');
+        showAppAlert('File too large', 'Document is over 4MB. Use a smaller PDF or compress the file.');
         e.target.value = '';
         return;
       }
       dataUrl = await readFileAsDataURL(file);
     }
     if(!dataUrl){
-      alert('Could not read that file.');
+      showAppAlert('Could not read file', 'Could not read that file.');
       return;
     }
     setPendingMcaFile(dataUrl, {
@@ -14955,7 +15089,7 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
     if(mcaCb) mcaCb.checked = true;
   }catch(err){
     console.error(err);
-    alert('Could not attach file.');
+    showAppAlert('Attach failed', 'Could not attach file.');
   }
 });
 document.getElementById('f_mcaPhotoClear')?.addEventListener('click', ()=>{
@@ -15167,7 +15301,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
   const scope = monthVal && typeof monthLabel === 'function' ? monthLabel(monthVal) : 'All months';
   const org = document.getElementById('orgName')?.value || 'DR CARE';
   const w = window.open('', '_blank');
-  if(!w){ alert('Pop-up blocked — allow pop-ups to print the PDF report.'); return; }
+  if(!w){ showAppAlert('Pop-up blocked', 'Allow pop-ups to print the PDF report.'); return; }
 
   const esc = (s)=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const display = (uid)=>{
@@ -15479,13 +15613,13 @@ document.getElementById('reportCfgSend')?.addEventListener('click', async ()=>{
         body: JSON.stringify({ text: '```' + text + '```' })
       });
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      alert('Sent to Slack.');
+      showAppAlert('Sent', 'Message sent to Slack.');
     }catch(e){
       alert('Slack send failed (check webhook URL and CORS). Email may still have opened.');
     }
   }
   if(!email && !slack){
-    alert('Enter an email and/or Slack webhook URL.');
+    showAppAlert('Missing destination', 'Enter an email and/or Slack webhook URL.');
     return;
   }
   document.getElementById('reportCfgBackdrop').classList.remove('open');
@@ -15724,7 +15858,7 @@ function openFacilitiesAdmin(){
     const label = document.getElementById('newFacilityLabel')?.value.trim();
     if(!label) return;
     const defs = loadFacilityOptions();
-    if(defs.some(f => f.toLowerCase() === label.toLowerCase())){ alert('Already in the list'); return; }
+    if(defs.some(f => f.toLowerCase() === label.toLowerCase())){ showAppAlert('Already added', 'That item is already in the list.'); return; }
     defs.push(label);
     saveFacilityOptions(defs);
     facilityOptionsAll = defs;
@@ -16052,7 +16186,7 @@ document.getElementById('mergeBtn')?.addEventListener('click', ()=>{
   if(typeof persistChange === 'function') persistChange(master);
   if(typeof renderAll === 'function') renderAll();
   document.getElementById('mergeBanner')?.classList.remove('show');
-  alert(`Merged ${others.length + 1} records into one patient.`);
+  showAppAlert('Patients merged', `Merged ${others.length + 1} records into one patient.`);
 });
 document.addEventListener('change', e=>{
   if(e.target && e.target.classList && e.target.classList.contains('row-check')) updateMergeBanner();
@@ -16172,18 +16306,24 @@ if(typeof allTeams === 'function'){
       btn.type = 'button';
       btn.className = 'btn btn-ghost btn-sm assign-teams-btn';
       btn.textContent = 'Assign mobiles';
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', async ()=>{
         const map = loadAssignedTeams();
         const current = (map[id] || []).join(', ');
         const teams = (typeof allTeams === 'function' ? allTeams() : []);
         // Temporarily unfilter for admin listing all team names from patients
         const allNames = [...new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team).filter(Boolean))].sort();
-        const ans = prompt(`Mobiles for this user (comma-separated).\nAvailable: ${allNames.join(', ') || '(none yet)'}\nLeave blank = all mobiles.`, current);
+        const ans = await showAppPrompt({
+          title: 'Assign mobiles',
+          message: 'Comma-separated mobile / site names.\nAvailable: ' + (allNames.join(', ') || '(none yet)') + '\nLeave blank = all mobiles.',
+          defaultValue: current,
+          confirmLabel: 'Save',
+          placeholder: 'e.g. Tacloban Mobile, DAILY WALK-IN'
+        });
         if(ans === null) return;
         const list = ans.split(',').map(s=>s.trim()).filter(Boolean);
         map[id] = list;
         saveAssignedTeams(map);
-        alert(list.length ? `Assigned: ${list.join(', ')}` : 'No restriction (sees all mobiles)');
+        await showAppAlert('Mobiles updated', list.length ? ('Assigned: ' + list.join(', ')) : 'No restriction (sees all mobiles)');
       });
       row.appendChild(btn);
     });
@@ -16197,9 +16337,9 @@ function addToPrintQueue(id){
 }
 function printMcaPackets(ids){
   const pts = ids.map(id => state.patients.find(p => p.id === id)).filter(Boolean);
-  if(!pts.length){ alert('No patients to print'); return; }
+  if(!pts.length){ showAppAlert('Nothing to print', 'No patients to print.'); return; }
   const w = window.open('', '_blank');
-  if(!w){ alert('Allow pop-ups to print'); return; }
+  if(!w){ showAppAlert('Pop-up blocked', 'Allow pop-ups to print.'); return; }
   const esc = (typeof escapeHtml === 'function')
     ? escapeHtml
     : (s)=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -16503,7 +16643,7 @@ function printMcaPackets(ids){
   btn.textContent = 'Print MCA packets';
   btn.addEventListener('click', ()=>{
     const ids = selectedPatientIds();
-    if(!ids.length){ alert('Select patients first'); return; }
+    if(!ids.length){ showAppAlert('Nothing selected', 'Select patients first.'); return; }
     ids.forEach(addToPrintQueue);
     printMcaPackets(ids);
   });
