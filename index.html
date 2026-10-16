@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="app-version" content="8.3.0">
+  <meta name="app-version" content="8.3.1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
@@ -8321,7 +8321,7 @@ body.has-selection .team-merge-bar{
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <span class="pending-queue-chip" id="pendingQueueChip" title="Local changes waiting to upload">0 pending</span><div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.3.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.3.1</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -8987,7 +8987,7 @@ body.has-selection .team-merge-bar{
     <div class="dash-head">
       <div>
         <h3>Recent Activity</h3>
-        <div class="modal-sub">Admin-only log of adds, edits, archives, and deletes on this device.</div>
+        <div class="modal-sub">Shared log of adds, edits, archives, and deletes across all staff — updates in real time.</div>
       </div>
       <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
     </div>
@@ -9033,7 +9033,7 @@ if(!window.supabase){
   throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const APP_VERSION = '8.3.0';
+const APP_VERSION = '8.3.1';
 window.APP_VERSION = APP_VERSION;
 
 
@@ -14263,6 +14263,8 @@ const ACTIVITY_KEY = 'drcare_activity_v1';
 let activityLog = [];
 let activityPage = 0;
 let activityPageSize = 20;
+let activityCloudOk = null; // null=unknown, true=table works, false=missing
+let activityRealtimeCh = null;
 
 function loadActivityLog(){
   try{
@@ -14274,6 +14276,113 @@ function saveActivityLog(){
   try{ localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityLog.slice(0, 500))); }catch(e){}
 }
 loadActivityLog();
+
+function activityEntryToRemote(e){
+  return {
+    id: e.id,
+    at: e.at,
+    who: e.who || null,
+    who_name: e.whoName || '',
+    action: e.action || '',
+    name: e.name || '',
+    team: e.team || '',
+    extra: e.extra || ''
+  };
+}
+function activityEntryFromRemote(r){
+  return {
+    id: r.id,
+    at: r.at,
+    who: r.who || null,
+    whoName: r.who_name || r.whoName || '',
+    action: r.action || '',
+    name: r.name || '',
+    team: r.team || '',
+    extra: r.extra || ''
+  };
+}
+function mergeActivityEntry(entry){
+  if(!entry || !entry.id) return;
+  const i = activityLog.findIndex(x => x.id === entry.id);
+  if(i >= 0) activityLog[i] = entry;
+  else activityLog.push(entry);
+  activityLog.sort((a,b) => String(b.at||'').localeCompare(String(a.at||'')));
+  if(activityLog.length > 500) activityLog = activityLog.slice(0, 500);
+  saveActivityLog();
+}
+
+async function pushActivityToCloud(entry){
+  if(!sb || activityCloudOk === false) return;
+  try{
+    const { error } = await sb.from('activity_log').upsert(activityEntryToRemote(entry), { onConflict: 'id' });
+    if(error){
+      // Table missing or RLS — fall back to local only
+      if(/relation|does not exist|permission|policy|42501|42P01/i.test(String(error.message||error.code||''))){
+        activityCloudOk = false;
+        console.warn('activity_log unavailable — using device log only:', error.message || error);
+      }
+      return;
+    }
+    activityCloudOk = true;
+  }catch(e){
+    console.warn('pushActivityToCloud', e);
+  }
+}
+
+async function fetchActivityFromCloud(){
+  if(!sb || activityCloudOk === false) return activityLog;
+  try{
+    const { data, error } = await sb.from('activity_log')
+      .select('id, at, who, who_name, action, name, team, extra')
+      .order('at', { ascending: false })
+      .limit(500);
+    if(error){
+      if(/relation|does not exist|permission|policy|42501|42P01/i.test(String(error.message||error.code||''))){
+        activityCloudOk = false;
+      }
+      return activityLog;
+    }
+    activityCloudOk = true;
+    const remote = (data || []).map(activityEntryFromRemote);
+    // Merge remote + local (local may have offline entries not yet pushed)
+    const map = new Map();
+    remote.forEach(e => map.set(e.id, e));
+    activityLog.forEach(e => {
+      if(!map.has(e.id)) map.set(e.id, e);
+    });
+    activityLog = [...map.values()].sort((a,b) => String(b.at||'').localeCompare(String(a.at||''))).slice(0, 500);
+    saveActivityLog();
+    // Push any local-only entries up
+    for(const e of activityLog){
+      if(!remote.find(r => r.id === e.id)) pushActivityToCloud(e);
+    }
+    return activityLog;
+  }catch(e){
+    console.warn('fetchActivityFromCloud', e);
+    return activityLog;
+  }
+}
+
+function subscribeActivityRealtime(){
+  if(!sb || activityCloudOk === false || activityRealtimeCh) return;
+  try{
+    activityRealtimeCh = sb.channel('activity_log_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, (payload) => {
+        try{
+          if(payload.eventType === 'DELETE' && payload.old){
+            activityLog = activityLog.filter(x => x.id !== payload.old.id);
+            saveActivityLog();
+          } else if(payload.new){
+            mergeActivityEntry(activityEntryFromRemote(payload.new));
+          }
+          if(typeof activityBackdrop !== 'undefined' && activityBackdrop && activityBackdrop.classList.contains('open')){
+            renderActivityPage();
+          }
+        }catch(e){ console.warn('activity realtime', e); }
+      })
+      .subscribe();
+  }catch(e){ console.warn('subscribeActivityRealtime', e); }
+}
 
 function logActivity(action, detail){
   try{
@@ -14290,6 +14399,7 @@ function logActivity(action, detail){
     activityLog.unshift(entry);
     if(activityLog.length > 500) activityLog = activityLog.slice(0, 500);
     saveActivityLog();
+    pushActivityToCloud(entry);
   }catch(e){ console.warn('logActivity', e); }
 }
 
@@ -14369,14 +14479,19 @@ function renderActivityPage(){
   }).join('');
 }
 
-function openActivity(){
+async function openActivity(){
   if(!isAdminUser()){
     showAppAlert('Admins only', 'Recent Activity is available to admins only.');
     return;
   }
   activityPage = 0;
-  renderActivityPage();
   activityBackdrop.classList.add('open');
+  renderActivityPage(); // show local immediately
+  try{
+    await fetchActivityFromCloud();
+    subscribeActivityRealtime();
+    renderActivityPage();
+  }catch(e){ console.warn('openActivity cloud', e); }
 }
 function closeActivity(){ activityBackdrop.classList.remove('open'); }
 
@@ -14391,25 +14506,38 @@ document.getElementById('activityClearAll')?.addEventListener('click', () => {
   if(!activityLog.length){ showAppAlert('Activity log', 'The log is already empty.'); return; }
   showAppConfirm({
     title: 'Clear activity log?',
-    message: 'Clear the entire activity log on this device? This cannot be undone.',
+    message: 'Clear the shared activity log for everyone? This cannot be undone.',
     confirmLabel: 'Clear all',
     danger: true
-  }).then(ok => {
+  }).then(async ok => {
     if(!ok) return;
+    const ids = activityLog.map(x => x.id);
     activityLog = [];
     saveActivityLog();
     try{ localStorage.removeItem(ACTIVITY_KEY); }catch(e){}
     activityPage = 0;
     renderActivityPage();
+    if(sb && activityCloudOk !== false){
+      try{
+        // Delete in batches
+        for(let i = 0; i < ids.length; i += 50){
+          const chunk = ids.slice(i, i+50);
+          await sb.from('activity_log').delete().in('id', chunk);
+        }
+      }catch(e){ console.warn('clear cloud activity', e); }
+    }
   });
 });
-document.getElementById('activityBody')?.addEventListener('click', e => {
+document.getElementById('activityBody')?.addEventListener('click', async e => {
   const btn = e.target.closest('[data-del-activity]');
   if(!btn || !isAdminUser()) return;
   const id = btn.getAttribute('data-del-activity');
   activityLog = activityLog.filter(x => x.id !== id);
   saveActivityLog();
   renderActivityPage();
+  if(sb && activityCloudOk !== false && id){
+    try{ await sb.from('activity_log').delete().eq('id', id); }catch(err){ console.warn(err); }
+  }
 });
 
 /* ---------------- Admin panel ---------------- */
@@ -15130,7 +15258,7 @@ async function initApp(){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=10').then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=11').then(reg=>{
       // New version waiting → show a small update toast
       if(reg.waiting){
         showSwUpdateToast(reg);
