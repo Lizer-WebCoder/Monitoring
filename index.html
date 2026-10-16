@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="app-version" content="8.2.0">
+  <meta name="app-version" content="8.3.0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
@@ -1114,7 +1114,14 @@
   .admin-user-info{ flex:1 1 140px; min-width:0; }
   .admin-user-info .nm{ font-weight:700; font-size:14px; }
   .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
-  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .admin-decline-btn{
+    font-size:11px !important; font-weight:700 !important;
+    padding:5px 12px !important; border-radius:8px !important;
+    background:transparent !important; color:var(--red) !important;
+    border:1px solid var(--red) !important; cursor:pointer;
+  }
+  .admin-decline-btn:hover{ background:var(--red-bg) !important; }
   .presence-dot{
     width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
     background:#94a3b8;
@@ -8314,7 +8321,7 @@ body.has-selection .team-merge-bar{
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
         <span class="pending-queue-chip" id="pendingQueueChip" title="Local changes waiting to upload">0 pending</span><div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.2.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.3.0</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -8862,7 +8869,7 @@ body.has-selection .team-merge-bar{
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
+        <div class="modal-sub">Approve or decline logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them. Decline removes their profile.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
@@ -9026,7 +9033,7 @@ if(!window.supabase){
   throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const APP_VERSION = '8.2.0';
+const APP_VERSION = '8.3.0';
 window.APP_VERSION = APP_VERSION;
 
 
@@ -11950,6 +11957,19 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     });
     if(!ok) return;
   }
+  // Live duplicate PhilHealth warning
+  if(typeof isDuplicate === 'function' && isDuplicate(phid, editingId)){
+    const other = (state.patients || []).find(x => !x.deleted && x.id !== editingId && (x.phid || '').trim() === phid.trim());
+    const where = other ? ((other.team || 'another site') + (other.name ? (' · ' + other.name) : '')) : 'another patient';
+    const okDup = await showAppConfirm({
+      title: 'Duplicate PhilHealth ID',
+      message: 'This PhilHealth ID is already on file under ' + where + '. Save as another record anyway?',
+      confirmLabel: 'Save anyway',
+      cancelLabel: 'Go back',
+      danger: true
+    });
+    if(!okDup) return;
+  }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
     encodedBy: (document.getElementById('f_encodedBy') && document.getElementById('f_encodedBy').value) || null,
@@ -12260,17 +12280,16 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const byTeam = {};
   rows.forEach(p => {
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0, missed24:0, dups:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, mca:0, t1:0, t2:0, missed24:0, dups:0};
     const b = byTeam[t];
     b.total++;
     if(p.status==='registered') b.registered++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
     if(p.mca) b.mca++;
-    if(p.claim==='t1') b.t1++;
+    if(p.claim==='t1' || p.claim==='t2') b.t1++;
+    if(p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
   });
   // Approximate dups per team
@@ -12285,9 +12304,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const lines = [
     ['DR CARE Daily Summary', scope, new Date().toISOString()].map(csvSafe).join(','),
     '',
-    ['Team','Total','Registered','MCA','Rice','Lab','Meds','Vits','Referral','T1','Missed 24h','Dup flags'].join(','),
+    ['Team','Total','Registered','MCA','Rice','Lab','Meds','T1','T2','Missed 24h','Dup flags'].join(','),
     ...Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([team,b]) =>
-      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.vitamins, b.referral, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
+      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.t1, b.t2, b.missed24, b.dups].map(csvSafe).join(',')
     ),
     '',
     ['TOTAL', total,
@@ -12296,9 +12315,8 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
       rows.filter(p=>p.rice).length,
       rows.filter(p=>p.lab).length,
       rows.filter(p=>p.medicine).length,
-      rows.filter(p=>p.vitamins).length,
-      rows.filter(p=>p.referral).length,
-      rows.filter(p=>p.claim==='t1').length,
+      rows.filter(p=>p.claim==='t1' || p.claim==='t2').length,
+      rows.filter(p=>p.claim==='t2').length,
       rows.filter(p=>p.claim==='missed24').length,
       countDuplicateExtras(rows)
     ].map(csvSafe).join(',')
@@ -12334,7 +12352,7 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Vitamins Availed","Referral","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Notes"];
 
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
@@ -13724,16 +13742,14 @@ function renderDashboard(){
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, t1:0, t2:0, missed24:0, dups:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(p.vitamins) b.vitamins++;
-    if(p.referral) b.referral++;
-    if(typeof hasT1 === 'function' ? hasT1(p) : p.claim==='t1') b.t1++;
+    if(typeof hasT1 === 'function' ? hasT1(p) : (p.claim==='t1' || p.claim==='t2')) b.t1++;
     if(typeof hasT2 === 'function' ? hasT2(p) : p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
   });
@@ -14417,7 +14433,13 @@ adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeA
 async function renderAdminUsers(){
   const body = document.getElementById('adminUsersBody');
   body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
-  const users = await loadAllProfiles();
+  let users = await loadAllProfiles();
+  users = (users || []).filter(u => {
+    const n = String(u.full_name || u.fullName || '');
+    if(n.startsWith('[DECLINED]')) return false;
+    if(u.role === 'declined') return false;
+    return true;
+  });
   if(!users.length){
     body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
     return;
@@ -14492,6 +14514,7 @@ async function renderAdminUsers(){
               title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
             Approve login
           </label>
+          ${(!approved && !isSelf && !isUserAdmin) ? `<button type="button" class="btn admin-decline-btn" data-uid="${u.id}" data-label="${escapeAttr(u.full_name || u.email || 'this user')}" title="Decline signup and remove this account">Decline</button>` : ''}
           <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
             ${roleOptions(u.role || 'encoder')}
           </select>
@@ -14544,6 +14567,49 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }finally{
         cb.disabled = false;
+      }
+    });
+  });
+
+  body.querySelectorAll('.admin-decline-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const uid = btn.dataset.uid;
+      const label = btn.dataset.label || 'this user';
+      if(!uid) return;
+      const ok = await showAppConfirm({
+        title: 'Decline signup?',
+        message: 'Decline "' + label + '"? Their access will be removed and they will not appear in this list.',
+        confirmLabel: 'Decline & delete',
+        cancelLabel: 'Cancel',
+        danger: true
+      });
+      if(!ok) return;
+      btn.disabled = true;
+      try{
+        let removed = false;
+        const del = await sb.from('profiles').delete().eq('id', uid).select('id');
+        if(!del.error && del.data && del.data.length){
+          removed = true;
+        } else {
+          if(del.error) console.warn('Profile DELETE blocked:', del.error.message || del.error);
+          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
+          const up = await sb.from('profiles').update({
+            approved: false,
+            full_name: '[DECLINED] ' + clean,
+            role: 'encoder',
+            updated_at: new Date().toISOString()
+          }).eq('id', uid).select('id');
+          if(up.error) throw up.error;
+          if(!up.data || !up.data.length) throw new Error('RLS blocked profile change. Allow admin UPDATE/DELETE on profiles.');
+          removed = true;
+        }
+        if(typeof profileCache !== 'undefined' && profileCache[uid]) delete profileCache[uid];
+        setSyncStatus('Signup declined — removed from list', '');
+        await renderAdminUsers();
+      }catch(e){
+        console.error('Decline failed:', e);
+        showAppAlert('Could not decline', String(e.message || e));
+        btn.disabled = false;
       }
     });
   });
@@ -15064,7 +15130,7 @@ async function initApp(){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=10').then(reg=>{
       // New version waiting → show a small update toast
       if(reg.waiting){
         showSwUpdateToast(reg);
@@ -15656,8 +15722,7 @@ function buildSummaryText(){
   lines.push('Generated: ' + new Date().toLocaleString());
   lines.push('Total patients: ' + rows.length);
   lines.push('Rice: ' + rows.filter(p=>p.rice).length + ' | Lab: ' + rows.filter(p=>p.lab).length +
-    ' | Meds: ' + rows.filter(p=>p.medicine).length + ' | Vits: ' + rows.filter(p=>p.vitamins).length +
-    ' | Referral: ' + rows.filter(p=>p.referral).length);
+    ' | Meds: ' + rows.filter(p=>p.medicine).length);
   lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1').length +
     ' | Missed 24h: ' + rows.filter(p=>p.claim==='missed24').length);
   const byTeam = {};
@@ -17150,11 +17215,28 @@ function loadFieldMode(){
 function getClaimDuePatients(){
   const list = (typeof filteredPatients === 'function') ? filteredPatients() : (state.patients||[]).filter(p=>!p.deleted);
   const now = new Date();
+  const T2_AGING_DAYS = 7;
   const due = [];
   list.forEach(p=>{
     if(p.deleted) return;
     if(p.claim === 'missed24'){
       due.push({ p, reason: 'Missed 24h' });
+      return;
+    }
+    // T1 submitted but no T2 after N days
+    if(p.claim === 't1'){
+      const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
+      if(base){
+        const d = new Date(base);
+        if(!isNaN(d.getTime())){
+          const ageDays = (now - d) / 86400000;
+          if(ageDays >= T2_AGING_DAYS){
+            due.push({ p, reason: 'T1 open ' + Math.floor(ageDays) + 'd — T2 not filed' });
+            return;
+          }
+        }
+      }
+      due.push({ p, reason: 'T1 submitted — await T2' });
       return;
     }
     if(p.claim === 'pending' || !p.claim){
