@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="app-version" content="8.3.1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DR CARE — Divine Rays Patient Care Tracker</title>
@@ -1114,14 +1113,7 @@
   .admin-user-info{ flex:1 1 140px; min-width:0; }
   .admin-user-info .nm{ font-weight:700; font-size:14px; }
   .admin-user-info .em{ font-size:12px; color:var(--muted); word-break:break-all; }
-  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .admin-decline-btn{
-    font-size:11px !important; font-weight:700 !important;
-    padding:5px 12px !important; border-radius:8px !important;
-    background:transparent !important; color:var(--red) !important;
-    border:1px solid var(--red) !important; cursor:pointer;
-  }
-  .admin-decline-btn:hover{ background:var(--red-bg) !important; }
+  .admin-user-meta{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
   .presence-dot{
     width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px;
     background:#94a3b8;
@@ -4884,61 +4876,6 @@ body.dark #appConfirmMessage{ color: #b7c4bf !important; }
 
 #appConfirmExtra.show{ display: flex !important; }
 
-.app-confirm-input{
-  width: 100% !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;
-  padding: 12px 14px !important;
-  border-radius: 12px !important;
-  border: 1px solid rgba(143, 217, 196, 0.28) !important;
-  background: rgba(0,0,0,0.22) !important;
-  color: #eef5f2 !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  font-family: inherit !important;
-  outline: none !important;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.18) !important;
-}
-.app-confirm-input:focus{
-  border-color: rgba(45, 212, 160, 0.65) !important;
-  box-shadow: 0 0 0 3px rgba(45, 212, 160, 0.18), inset 0 1px 2px rgba(0,0,0,0.18) !important;
-}
-.app-confirm-input::placeholder{ color: rgba(168, 190, 182, 0.7) !important; font-weight: 500 !important; }
-body:not(.dark) .app-confirm-input{
-  background: #fff !important;
-  border-color: rgba(20, 82, 74, 0.2) !important;
-  color: #0f2e28 !important;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-}
-body:not(.dark) .app-confirm-input:focus{
-  border-color: rgba(15, 118, 110, 0.55) !important;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14) !important;
-}
-.app-confirm-list{
-  text-align: left !important;
-  margin: 12px 0 0 !important;
-  padding: 10px 12px !important;
-  border-radius: 12px !important;
-  background: rgba(0,0,0,0.18) !important;
-  border: 1px solid rgba(143, 217, 196, 0.14) !important;
-  max-height: 160px !important;
-  overflow: auto !important;
-}
-body:not(.dark) .app-confirm-list{
-  background: rgba(15, 118, 110, 0.06) !important;
-  border-color: rgba(20, 82, 74, 0.12) !important;
-}
-.app-confirm-list li{
-  margin: 0 0 6px !important;
-  padding: 0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: inherit !important;
-  line-height: 1.4 !important;
-}
-.app-confirm-list li:last-child{ margin-bottom: 0 !important; }
-
-
 #appConfirmExtra .btn{
     width: 100% !important;
     justify-content: center !important;
@@ -7780,187 +7717,36 @@ select.badge-select.claim-missed24, .claim-chip-missed24 {
   color: #fff !important;
 }
 
-
-
-/* ===== Design tokens (v8.2) ===== */
-:root{
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --shadow-float: 0 12px 40px rgba(15, 23, 42, 0.14);
-}
-/* Field mode: encoder-focused chrome */
-body.field-mode #dashboardBtn,
-body.field-mode #logWorkBtn,
-body.field-mode #activityBtn,
-body.field-mode #adminBtn,
-body.field-mode #manageEncodersBtn,
-body.field-mode #recycleBtn,
-body.field-mode .legend-wrap,
-body.field-mode #statStrip{
-  display: none !important;
-}
-body.field-mode .toolbar-nav .tb-group:nth-child(2) .btn:not(#addTeamBtn):not(#todayMissionBtn):not(#fieldModeBtn):not(#claimDueBtn):not(#dupAssistBtn){
-  /* keep core */
-}
-body.field-mode header{ padding-bottom: 8px !important; }
-body.field-mode .brand-title .tag{ font-size: 11px; }
-#fieldModeBtn.active, #claimDueBtn.has-due{
-  background: rgba(15, 118, 110, 0.12) !important;
-  border-color: rgba(15, 118, 110, 0.35) !important;
-}
-#claimDueBtn.has-due{ color: #b45309 !important; border-color: rgba(180, 83, 9, 0.4) !important; background: rgba(251, 191, 36, 0.15) !important; }
-.pending-queue-chip{
-  display:none; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px;
-  background:rgba(239,68,68,0.12); color:#b91c1c; border:1px solid rgba(239,68,68,0.25);
-  margin-right:6px; white-space:nowrap;
-}
-.pending-queue-chip.show{ display:inline-flex; align-items:center; }
-/* Mobile patient cards */
-@media (max-width: 720px){
-  body.field-mode .team-group table thead{ display:none !important; }
-  body.field-mode .team-group table,
-  body.field-mode .team-group tbody,
-  body.field-mode .team-group tr,
-  body.field-mode .team-group td{
-    display: block !important;
-    width: 100% !important;
-  }
-  body.field-mode .team-group tr{
-    background: var(--card) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: var(--radius-md) !important;
-    margin: 0 0 10px !important;
-    padding: 10px 12px !important;
-    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-  }
-  body.field-mode .team-group td{
-    border: none !important;
-    padding: 4px 0 !important;
-    text-align: left !important;
-  }
-  body.field-mode .team-group td.col-select{ display:flex !important; align-items:center; gap:8px; }
-  body.field-mode .team-group td.name{ font-size: 15px !important; font-weight: 800 !important; }
-  body.field-mode .team-head{ position: sticky; top: 0; z-index: 5; background: var(--card); }
-}
-.claim-due-list{ list-style:none; margin:0; padding:0; max-height:50vh; overflow:auto; }
-.claim-due-list li{
-  display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center;
-  padding:10px 12px; border-bottom:1px solid var(--line); font-size:13px;
-}
-.claim-due-list li:hover{ background: rgba(15,118,110,0.05); }
-.claim-due-list .cd-name{ font-weight:700; flex:1 1 140px; }
-.claim-due-list .cd-meta{ color:var(--muted); font-size:12px; }
-.dup-assist-list{ list-style:none; margin:0; padding:0; max-height:50vh; overflow:auto; }
-.dup-assist-list li{
-  padding:12px; border:1px solid var(--line); border-radius:var(--radius-md); margin:0 0 10px;
-  background:var(--card);
-}
-.site-check-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; font-size:12px; }
-.site-check-row label{ display:inline-flex; gap:4px; align-items:center; font-weight:600; color:var(--muted); cursor:pointer; }
-
-.app-version-badge{
-  display:inline-flex; align-items:center; font-size:10.5px; font-weight:800;
-  letter-spacing:0.02em; padding:3px 8px; border-radius:999px;
-  background:rgba(15,118,110,0.12); color:var(--teal-deep, #0f766e);
-  border:1px solid rgba(15,118,110,0.2); margin-right:8px; white-space:nowrap;
-}
-body.dark .app-version-badge{
-  background:rgba(45,212,160,0.12); color:#9ee7cb; border-color:rgba(45,212,160,0.25);
-}
-.sync-pill.live{ background:rgba(34,197,94,0.15) !important; color:#15803d !important; border-color:rgba(34,197,94,0.35) !important; }
-body.dark .sync-pill.live{ background:rgba(34,197,94,0.2) !important; color:#86efac !important; }
-.empty-roster-hint{ font-size:13px; color:var(--muted); max-width:42ch; margin:8px auto 0; line-height:1.45; }
-.kbd-hint{ font-size:11px; color:var(--muted); margin-left:8px; }
-.kbd-hint kbd{
-  font:600 10px ui-monospace,monospace; padding:1px 5px; border-radius:4px;
-  border:1px solid var(--line); background:var(--card);
-}
 /* --- Batch action bar (floating, appears on selection) --- */
-/* Single authoritative bulk bar style (panel, not pill — avoids clipping wrapped actions) */
 #bulkBar {
   position: fixed !important;
   left: 50% !important;
-  right: auto !important;
   transform: translateX(-50%) translateY(120%) !important;
-  bottom: 16px !important;
+  bottom: 20px !important;
   z-index: 90 !important;
-  display: none !important;
-  flex-direction: row !important;
-  flex-wrap: wrap !important;
+  display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 10px 12px !important;
-  padding: 12px 16px !important;
-  box-sizing: border-box !important;
-  width: max-content !important;
-  min-width: min(320px, calc(100vw - 24px)) !important;
-  max-width: min(920px, calc(100vw - 24px)) !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
   background: var(--card) !important;
   border: 1px solid var(--line) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.16) !important;
+  border-radius: 999px !important;
+  box-shadow: var(--shadow-md) !important;
   transition: transform 0.2s ease, opacity 0.2s ease !important;
   opacity: 0;
   pointer-events: none;
-  overflow: visible !important;
+  max-width: calc(100vw - 24px);
 }
 #bulkBar.open, #bulkBar.show, #bulkBar[data-open="1"] {
-  display: flex !important;
   transform: translateX(-50%) translateY(0) !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 #bulkBar .bulk-count {
-  font-weight: 800 !important;
-  font-size: 13px !important;
-  color: var(--ink) !important;
-  white-space: nowrap !important;
-  flex: 0 0 auto !important;
-  padding: 4px 2px !important;
-}
-#bulkBar .bulk-actions {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-#bulkBar .bulk-actions .btn,
-#bulkBar .bulk-actions select,
-#bulkBar .btn,
-#bulkBar select {
-  flex: 0 0 auto !important;
-  white-space: nowrap !important;
-  border-radius: 999px !important;
+  font-weight: 700 !important;
   font-size: 12.5px !important;
-  padding: 8px 12px !important;
-  line-height: 1.2 !important;
-  max-width: 100% !important;
-}
-body.dark #bulkBar {
-  background: #15201d !important;
-  border-color: #2a3a35 !important;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45) !important;
-}
-body.dark #bulkBar .bulk-count { color: #eef5f2 !important; }
-@media (max-width: 640px) {
-  #bulkBar {
-    left: 12px !important;
-    right: 12px !important;
-    width: auto !important;
-    max-width: none !important;
-    transform: translateY(120%) !important;
-  }
-  #bulkBar.open, #bulkBar.show, #bulkBar[data-open="1"] {
-    transform: translateY(0) !important;
-  }
+  color: var(--ink) !important;
+  white-space: nowrap;
 }
 
 /* --- Drawer: primary edit surface --- */
@@ -8320,8 +8106,8 @@ body.has-selection .team-merge-bar{
       </h1>
       <input class="org-input" id="orgName" placeholder="Organization / mission name (click to edit)">
       <div class="sync-row">
-        <span class="pending-queue-chip" id="pendingQueueChip" title="Local changes waiting to upload">0 pending</span><div class="sync-pill" id="syncPill">Connecting…</div>
-        <div class="who-row"><span id="appVersionBadge" class="app-version-badge" title="App version">v8.3.1</span><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
+        <div class="sync-pill" id="syncPill">Connecting…</div>
+        <div class="who-row"><span id="whoAmI"></span><button type="button" id="accountBtn" title="Account settings">Account</button><button id="logoutBtn">Sign out</button></div>
       </div>
     </div>
     <div class="stat-strip" id="statStrip"></div>
@@ -8338,9 +8124,6 @@ body.has-selection .team-merge-bar{
     <div class="tb-group">
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / walk-in day</button>
       <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
-      <button class="btn" type="button" id="fieldModeBtn" title="Hide admin chrome — encoder field layout">Field mode</button>
-      <button class="btn" type="button" id="claimDueBtn" title="Claims due or missed">Claims due</button>
-      <button class="btn" type="button" id="dupAssistBtn" title="Review duplicate PhilHealth IDs">Duplicates</button>
       <button class="btn" id="dashboardBtn"></button>
       <button class="btn" id="logWorkBtn" title="Log accomplishment"></button>
       <button class="btn" id="activityBtn"></button>
@@ -8475,7 +8258,6 @@ body.has-selection .team-merge-bar{
       <option value="registered">Registered</option>
       <option value="registered_other">Other facility</option>
     </select>
-    <button class="btn" type="button" id="bulkPrintMca">Print MCA packets</button>
     <button class="btn" type="button" id="bulkClear">Clear</button>
   </div>
 </div>
@@ -8702,7 +8484,8 @@ body.has-selection .team-merge-bar{
       <input type="text" id="newFacilityLabel" placeholder="e.g. Catbalogan, Calbayog">
       <button class="btn btn-primary" type="button" id="addFacilityBtn">Add</button>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <button class="btn btn-ghost" type="button" id="facilitiesResetBtn" title="Restore official DR branch list">Reset to defaults</button>
       <button class="btn btn-primary" type="button" id="facilitiesAdminDone">Save &amp; close</button>
     </div>
   </div>
@@ -8869,7 +8652,7 @@ body.has-selection .team-merge-bar{
     <div class="dash-head">
       <div>
         <h3>Admin — Users &amp; roles</h3>
-        <div class="modal-sub">Approve or decline logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them. Decline removes their profile.</div>
+        <div class="modal-sub">Approve logins, set roles, see who is online. New signups stay <b>Pending</b> until you approve them.</div>
       </div>
       <button class="dash-close" id="adminCloseBtn" title="Close">✕</button>
     </div>
@@ -8927,40 +8710,6 @@ body.has-selection .team-merge-bar{
   </div>
 </div>
 
-
-<!-- Claims due -->
-<div class="dash-backdrop" id="claimDueBackdrop">
-  <div class="dash-modal" style="max-width:560px;">
-    <div class="dash-head">
-      <div>
-        <h3>Claims due</h3>
-        <div class="modal-sub">Pending claims past deadline and Missed 24h in the current filter.</div>
-      </div>
-      <button class="dash-close" id="claimDueCloseBtn" type="button" title="Close">✕</button>
-    </div>
-    <ul class="claim-due-list" id="claimDueList"></ul>
-    <div class="modal-foot" style="margin-top:12px;display:flex;justify-content:flex-end;">
-      <button type="button" class="btn btn-ghost" id="claimDueCloseBtn2">Close</button>
-    </div>
-  </div>
-</div>
-<!-- Duplicate PHID assistant -->
-<div class="dash-backdrop" id="dupAssistBackdrop">
-  <div class="dash-modal" style="max-width:560px;">
-    <div class="dash-head">
-      <div>
-        <h3>Duplicate PhilHealth IDs</h3>
-        <div class="modal-sub">Same PHID on more than one active patient in the current month/filter. Review and open records to fix.</div>
-      </div>
-      <button class="dash-close" id="dupAssistCloseBtn" type="button" title="Close">✕</button>
-    </div>
-    <div id="dupAssistList" class="dup-assist-list"></div>
-    <div class="modal-foot" style="margin-top:12px;display:flex;justify-content:flex-end;">
-      <button type="button" class="btn btn-ghost" id="dupAssistCloseBtn2">Close</button>
-    </div>
-  </div>
-</div>
-
 <!-- App confirm dialog -->
 <div class="dash-backdrop" id="appConfirmBackdrop">
   <div class="app-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
@@ -8987,12 +8736,11 @@ body.has-selection .team-merge-bar{
     <div class="dash-head">
       <div>
         <h3>Recent Activity</h3>
-        <div class="modal-sub">Shared log of adds, edits, archives, and deletes across all staff — updates in real time.</div>
+        <div class="modal-sub">Admin-only log of adds, edits, archives, and deletes on this device.</div>
       </div>
       <button class="dash-close" id="activityCloseBtn" title="Close">✕</button>
     </div>
     <div class="activity-toolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px;padding:0 2px;">
-      <button type="button" class="btn btn-ghost btn-sm" id="activityExportBtn" title="Download activity log as CSV">Export CSV</button>
       <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
         Show
         <select id="activityPageSize" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);">
@@ -9033,9 +8781,6 @@ if(!window.supabase){
   throw new Error('supabase.js not found — see STEP 0 instructions in the file header');
 }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const APP_VERSION = '8.3.1';
-window.APP_VERSION = APP_VERSION;
-
 
 /* Facility lists */
 const HOME_FACILITY = "Abucay";
@@ -9055,26 +8800,95 @@ const DEFAULT_FACILITIES = [
   "Pawing",
   "Catarman"
 ];
+/* Words/fragments that are NOT branch names (corruption / OCR noise) */
+const FACILITY_BLOCKLIST = new Set([
+  'characteristics','characterist','characteristic','start','salt','right','right.',
+  'in burau','left','stop','open','close','yes','no','test','asdf','null','undefined',
+  'name','value','option','select','facility','branch','none','n/a','na'
+]);
+function isPlausibleFacilityName(s){
+  const t = String(s || '').trim();
+  if(t.length < 3 || t.length > 48) return false;
+  if(/^[\d\s.\-_]+$/.test(t)) return false;
+  if(FACILITY_BLOCKLIST.has(t.toLowerCase())) return false;
+  // reject pure dictionary-noise fragments without capital place-style letter when short
+  if(/^(characteristics?|start|salt|right\.?|left|stop)$/i.test(t)) return false;
+  return true;
+}
+function sanitizeFacilityList(list){
+  const out = [];
+  const seen = new Set();
+  (list || []).forEach(raw=>{
+    let t = String(raw || '').trim().replace(/\s+/g, ' ');
+    if(!t) return;
+    // Fix known typos / partials
+    if(/^catarm/i.test(t) && t.length <= 9) t = 'Catarman';
+    if(/^in\s*burau/i.test(t)) t = 'Burauen';
+    if(!isPlausibleFacilityName(t)) return;
+    const key = t.toLowerCase();
+    if(seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
+  });
+  // Always ensure official defaults exist
+  DEFAULT_FACILITIES.forEach(d=>{
+    const key = d.toLowerCase();
+    if(!seen.has(key)){ seen.add(key); out.push(d); }
+  });
+  // Prefer default order first, then any extra custom branches
+  const defaultSet = new Set(DEFAULT_FACILITIES.map(x=>x.toLowerCase()));
+  const ordered = [];
+  DEFAULT_FACILITIES.forEach(d=>{
+    const hit = out.find(x => x.toLowerCase() === d.toLowerCase());
+    if(hit) ordered.push(hit);
+  });
+  out.forEach(x=>{
+    if(!defaultSet.has(x.toLowerCase())) ordered.push(x);
+  });
+  return ordered;
+}
 function loadFacilityOptions(){
   try{
     const raw = localStorage.getItem('drcare_facilities');
     if(raw){
       const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length) return parsed.map(String);
+      if(Array.isArray(parsed) && parsed.length){
+        const clean = sanitizeFacilityList(parsed.map(String));
+        // If list was badly corrupted, rewrite storage
+        if(clean.length && JSON.stringify(clean) !== JSON.stringify(parsed.map(s=>String(s).trim()))){
+          try{ localStorage.setItem('drcare_facilities', JSON.stringify(clean)); }catch(e){}
+        }
+        return clean;
+      }
     }
   }catch(e){}
   return DEFAULT_FACILITIES.slice();
 }
 function saveFacilityOptions(list){
-  localStorage.setItem('drcare_facilities', JSON.stringify(list));
+  const clean = sanitizeFacilityList(list);
+  localStorage.setItem('drcare_facilities', JSON.stringify(clean));
   try{
     if(typeof sb !== 'undefined' && sb){
-      sb.from('settings').upsert({ key: 'facilities', value: JSON.stringify(list) }).catch(()=>{});
+      sb.from('settings').upsert({ key: 'facilities', value: JSON.stringify(clean) }).catch(()=>{});
     }
   }catch(e){}
+  return clean;
+}
+function resetFacilitiesToDefault(){
+  try{ localStorage.removeItem('drcare_facilities'); }catch(e){}
+  const clean = DEFAULT_FACILITIES.slice();
+  saveFacilityOptions(clean);
+  facilityOptionsAll = clean;
+  facilityOptionsOther = clean.filter(f => f !== HOME_FACILITY);
+  return clean;
 }
 let facilityOptionsAll = loadFacilityOptions();
 let facilityOptionsOther = facilityOptionsAll.filter(f => f !== HOME_FACILITY);
+// One-time cleanup of corrupted names on boot
+try{
+  facilityOptionsAll = saveFacilityOptions(facilityOptionsAll);
+  facilityOptionsOther = facilityOptionsAll.filter(f => f !== HOME_FACILITY);
+}catch(e){}
 
 const CACHE_KEY = "roster_patients_v1";
 const PENDING_KEY = "roster_pending_v1";
@@ -9475,41 +9289,8 @@ function monthDateBounds(ym){
 }
 
 /** Cap in-memory roster: prefer active month, drop old deleted rows first */
-
-/* ===== Scale pack: indexes + cheaper filters for 10k+ ===== */
-let _monthIndex = null;
-let _monthIndexDirty = true;
-let _phidIndexDirty = true;
-
-function markPatientIndexesDirty(){
-  _monthIndexDirty = true;
-  _phidIndexDirty = true;
-}
-
-function rebuildMonthIndex(){
-  const map = new Map();
-  const pts = state.patients || [];
-  for(let i = 0; i < pts.length; i++){
-    const p = pts[i];
-    if(!p) continue;
-    const enc = (p.dateEncoded || '').trim();
-    const key = enc.length >= 7 ? enc.slice(0, 7) : '__none__';
-    let arr = map.get(key);
-    if(!arr){ arr = []; map.set(key, arr); }
-    arr.push(p);
-  }
-  _monthIndex = map;
-  _monthIndexDirty = false;
-  return map;
-}
-
-function ensureMonthIndex(){
-  if(_monthIndexDirty || !_monthIndex) rebuildMonthIndex();
-  return _monthIndex;
-}
-
 function prunePatientsMemory(maxKeep){
-  maxKeep = maxKeep || 6000;
+  maxKeep = maxKeep || 8000;
   if(!Array.isArray(state.patients) || state.patients.length <= maxKeep) return;
   const month = currentMonthFilterValue();
   const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds : new Set();
@@ -9521,7 +9302,6 @@ function prunePatientsMemory(maxKeep){
   const kept = scored.slice(0, maxKeep).map(x=>x.p);
   state.patients = kept;
   console.info('[scale] pruned roster memory to', kept.length);
-  markPatientIndexesDirty();
 }
 
 
@@ -9631,7 +9411,6 @@ async function tryOfflinePasswordLogin(email, password){
 }
 async function enterOfflineApp(){
   loginOverlay.classList.add('hidden');
-  try{ document.body.dataset.appVersion = window.APP_VERSION || '8.2.0'; }catch(e){}
   const roleLabel = currentUser.role ? ` · ${currentUser.role}` : '';
   if(whoAmI) whoAmI.textContent = `${currentUser.fullName || currentUser.email}${roleLabel} · offline`;
   const adminBtn = document.getElementById('adminBtn');
@@ -9742,23 +9521,17 @@ async function loadAllProfiles(){
 
 const syncPill = document.getElementById('syncPill');
 function setSyncStatus(text, mode){
-  if(!syncPill) return;
+  // Always surface pending count when there are unsynced local changes
   const pending = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
-  let display = text || '';
-  let m = mode || '';
-  // Richer status labels for multi-user / offline clarity
-  if(m === 'live') display = display || 'Live';
-  if(m === 'busy') display = display || 'Syncing…';
-  if(!m && pending > 0 && navigator.onLine) display = (display ? display + ' · ' : '') + pending + ' pending';
-  if(!navigator.onLine && m !== 'busy'){
-    display = display || 'Offline — saved on this device';
-    m = m || 'err';
+  let display = text;
+  if(pending > 0 && !/uploading|Syncing|Offline|failed|Connecting|Loading/i.test(text || '')){
+    display = `${text} · ${pending} unsynced`;
   }
   syncPill.textContent = display;
-  syncPill.className = 'sync-pill' + (m ? ' ' + m : '') + (pending > 0 && m !== 'busy' && m !== 'live' ? ' err' : '');
+  syncPill.className = 'sync-pill' + (mode ? ' ' + mode : '') + (pending > 0 && mode !== 'busy' ? ' err' : '');
   syncPill.title = pending > 0
-    ? (pending + ' change(s) not yet on server. Tap Sync now if this persists.')
-    : (m === 'live' ? 'Realtime connected — updates from other users appear automatically.' : (display || 'Sync status'));
+    ? `${pending} change(s) saved on this device and waiting to upload`
+    : (text || '');
 }
 function timeNow(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 
@@ -9845,103 +9618,6 @@ async function flushPending(){
     setSyncStatus(`${left} not synced — tap Sync now (schema or network)`, 'err');
     syncPill.title = 'Upload failed. Often missing Supabase columns (medicine, mca_photo, etc.). Core data may still be local. Open browser console for details.';
   } else setSyncStatus('Synced ' + timeNow());
-}
-
-
-/* ===== Live multi-user: Supabase Realtime on patients ===== */
-let _patientsChannel = null;
-let _realtimeToastAt = 0;
-
-function applyRemotePatientRow(r, eventType){
-  if(!r || !r.id) return false;
-  if(typeof purgedIds !== 'undefined' && purgedIds.has(r.id)) return false;
-  // Never clobber an unsynced local edit
-  if(typeof pendingIds !== 'undefined' && pendingIds.has(r.id)){
-    // Keep local unsynced edit; remote change arrives after we push
-    return false;
-  }
-
-  if(eventType === 'DELETE'){
-    const before = (state.patients || []).length;
-    state.patients = (state.patients || []).filter(p => p.id !== r.id);
-    return state.patients.length !== before;
-  }
-
-  const remote = fromRemote(r);
-  const local = (state.patients || []).find(p => p.id === r.id);
-  if(local){
-    const keepLabs = Array.isArray(local.labTests) ? local.labTests.slice() : [];
-    const keepEnc = local.encodedBy || null;
-    const keepT1 = local.t1By || null;
-    const keepT2 = local.t2By || null;
-    const keepT1At = local.t1At || null;
-    const keepT2At = local.t2At || null;
-    const keepCb = (local.customBenefits && typeof local.customBenefits === 'object') ? Object.assign({}, local.customBenefits) : {};
-    Object.assign(local, remote);
-    if((!local.labTests || !local.labTests.length) && keepLabs.length) local.labTests = keepLabs;
-    if(!local.encodedBy && keepEnc) local.encodedBy = keepEnc;
-    if(!local.t1By && keepT1) local.t1By = keepT1;
-    if(!local.t2By && keepT2) local.t2By = keepT2;
-    if(!local.t1At && keepT1At) local.t1At = keepT1At;
-    if(!local.t2At && keepT2At) local.t2At = keepT2At;
-    if(keepCb && Object.keys(keepCb).length){
-      local.customBenefits = Object.assign({}, keepCb, local.customBenefits || {});
-    }
-  } else {
-    if(!Array.isArray(state.patients)) state.patients = [];
-    state.patients.push(remote);
-  }
-  try{ if(typeof markPatientIndexesDirty === 'function') markPatientIndexesDirty(); }catch(e){}
-  return true;
-}
-
-function stopPatientsRealtime(){
-  try{
-    if(_patientsChannel){
-      sb.removeChannel(_patientsChannel);
-    }
-  }catch(e){}
-  _patientsChannel = null;
-}
-
-function startPatientsRealtime(){
-  if(!navigator.onLine || !sb || !sb.channel) return;
-  stopPatientsRealtime();
-  try{
-    _patientsChannel = sb.channel('dr-care-patients-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
-        try{
-          const eventType = payload.eventType || payload.event || '';
-          const row = (eventType === 'DELETE')
-            ? (payload.old || payload.old_record || {})
-            : (payload.new || payload.record || {});
-          if(!row || !row.id) return;
-          // Ignore echoes of our own pending pushes when still pending
-          const changed = applyRemotePatientRow(row, eventType === 'DELETE' ? 'DELETE' : eventType);
-          if(!changed) return;
-          try{ if(typeof saveLocalCache === 'function') saveLocalCache(); }catch(e){}
-          if(typeof scheduleRenderAll === 'function') scheduleRenderAll(80);
-          else if(typeof renderAll === 'function') renderAll();
-          const now = Date.now();
-          if(now - _realtimeToastAt > 8000 && typeof softToast === 'function'){
-            _realtimeToastAt = now;
-            softToast(eventType === 'DELETE' ? 'Roster updated (live)' : 'New data from another user (live)');
-          }
-        }catch(err){
-          console.warn('realtime patients handler', err);
-        }
-      })
-      .subscribe((status) => {
-        if(status === 'SUBSCRIBED'){
-          console.info('[realtime] patients channel live');
-          try{ setSyncStatus('Live · multi-user', 'live'); }catch(e){}
-        } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
-          console.warn('[realtime] patients channel', status, '— falling back to 20s poll');
-        }
-      });
-  }catch(e){
-    console.warn('startPatientsRealtime failed', e);
-  }
 }
 
 async function pullRemote(){
@@ -10048,7 +9724,6 @@ async function pullRemote(){
       state.patients.forEach(p=>{ if(p && p.team && !p.deleted) registerKnownTeam(p.team); });
       if(typeof pushKnownTeams === 'function') pushKnownTeams();
     }catch(e){}
-    markPatientIndexesDirty();
     saveLocalCache();
     renderAll();
     const pendingCount = prunePendingIds();
@@ -10205,21 +9880,14 @@ function scheduleRenderAll(delay){
   if(typeof renderAll !== 'function') return;
   _renderAllPending = true;
   if(_renderAllTimer) return;
-  // Larger rosters: coalesce paints a bit longer to avoid thrashing during typing/sync
-  let d = delay;
-  if(d == null){
-    const n = (state.patients && state.patients.length) || 0;
-    d = n >= 3000 ? 120 : (n >= 1000 ? 80 : 50);
-  }
   _renderAllTimer = setTimeout(()=>{
     _renderAllTimer = null;
-    if(_renderAllPending){ _renderAllPending = false; renderAll(); try{ updatePendingQueueChip(); refreshClaimDueBadge(); }catch(e){} }
-  }, d);
+    if(_renderAllPending){ _renderAllPending = false; renderAll(); }
+  }, delay == null ? 50 : delay);
 }
 
 /* Called after any local add/edit/delete */
 async function persistChange(p){
-  try{ markPatientIndexesDirty(); }catch(e){}
   if(typeof mirrorPatientMeta === 'function') mirrorPatientMeta(p);
   if(!canEdit()){
     setSyncStatus('View only — changes not saved', 'err');
@@ -10402,31 +10070,18 @@ function monthLabel(ym){
 let showArchived = false;
 
 function monthPatients(){
-  const monthEl = document.getElementById('monthFilter');
-  const month = monthEl ? monthEl.value : '';
+  const month = document.getElementById('monthFilter').value; // "YYYY-MM" or ""
   const wantDeleted = showArchived;
-  if(month){
-    const idx = ensureMonthIndex();
-    const primary = idx.get(month) || [];
-    const undated = idx.get('__none__') || [];
-    const out = [];
-    for(let i = 0; i < primary.length; i++){
-      const p = primary[i];
-      if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
-    }
-    for(let i = 0; i < undated.length; i++){
-      const p = undated[i];
-      if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
-    }
-    return out;
+  // Fast path: no month filter
+  if(!month){
+    return state.patients.filter(p => wantDeleted ? p.deleted : !p.deleted);
   }
-  const pts = state.patients || [];
-  const out = [];
-  for(let i = 0; i < pts.length; i++){
-    const p = pts[i];
-    if(wantDeleted ? p.deleted : !p.deleted) out.push(p);
-  }
-  return out;
+  return state.patients.filter(p=>{
+    if(wantDeleted ? !p.deleted : p.deleted) return false;
+    const enc = (p.dateEncoded||'').trim();
+    if(!enc) return true; // undated stay visible
+    return enc.slice(0,7) === month;
+  });
 }
 
 function defaultEncodedDate(){
@@ -10468,20 +10123,14 @@ let phidIndex = new Map(); // cleanPhid -> [{id, team}]
 
 function rebuildPhidIndex(){
   phidIndex = new Map();
-  // Prefer month-scoped set when a filter is active (much cheaper at 10k+)
-  const monthEl = document.getElementById('monthFilter');
-  const month = monthEl ? monthEl.value : '';
-  const source = month ? monthPatients() : (state.patients || []);
-  for(let i = 0; i < source.length; i++){
-    const p = source[i];
-    if(!p || p.deleted) continue;
-    const clean = (p.phid || '').trim();
-    if(!clean) continue;
+  state.patients.forEach(p=>{
+    if(p.deleted) return;
+    const clean = (p.phid||'').trim();
+    if(!clean) return;
     let arr = phidIndex.get(clean);
     if(!arr){ arr = []; phidIndex.set(clean, arr); }
     arr.push({ id: p.id, team: p.team });
-  }
-  _phidIndexDirty = false;
+  });
 }
 
 function isDuplicate(phid, excludeId){
@@ -10524,7 +10173,7 @@ function claimDeadline(dateStr){
 function autoFlagMissedClaims(){
   const now = new Date();
   let changed = false;
-  monthPatients().forEach(p=>{
+  state.patients.forEach(p=>{
     if(p.deleted) return;
     if(p.claim !== 'pending') return;
     // Already marked within 24h — do not force Missed 24h
@@ -10616,19 +10265,16 @@ function restoreScrollPositions(positions){
 /* DR CARE — UI: render roster, rows, filters, stats */
 function renderAll(){
   const savedScroll = captureScrollPositions();
-  try{ preferMonthIfLarge(); updateScaleWarn(); }catch(e){}
-  // Scale: only flag missed claims on the visible month set (not entire 10k history)
-  try{ autoFlagMissedClaims(); }catch(e){}
+  autoFlagMissedClaims();
   rebuildPhidIndex();
-  // normalizeFacility only on the working set for this paint
-  const monthList = monthPatients();
-  for(let i = 0; i < monthList.length; i++){
-    try{ normalizeFacility(monthList[i]); }catch(e){}
-  }
+  try{ preferMonthIfLarge(); updateScaleWarn(); }catch(e){}
+  // rebuildPhidIndex is O(n) once — used by duplicate checks instead of O(n²) scans
+  state.patients.forEach(normalizeFacility);
   renderStats();
   renderLegend();
   updateOfflineBanner();
   const teams = getTeams();
+  const monthList = monthPatients();
   let list = filteredPatients();
   if(window.__todayMission){
     const td = (typeof isoToday === 'function' ? isoToday() : new Date().toISOString().slice(0,10));
@@ -10640,14 +10286,11 @@ function renderAll(){
 
   // Month filter: show groups with patients in that month, plus known/empty groups (never hide saved sites)
   let teamsToShow = teams;
-  // Scale: only re-register teams from the current working set (not full history every paint)
+  // Re-register every patient team so groups never "disappear" after refresh
   try{
-    const regSrc = monthVal ? monthList : (state.patients || []);
-    const limit = Math.min(regSrc.length, monthVal ? regSrc.length : 3000);
-    for(let i = 0; i < limit; i++){
-      const p = regSrc[i];
+    state.patients.forEach(p=>{
       if(p && p.team && !p.deleted) registerKnownTeam(p.team);
-    }
+    });
   }catch(e){}
   if(monthVal){
     const teamsWithPatients = new Set(monthList.map(p => p.team).filter(Boolean));
@@ -10887,17 +10530,18 @@ function updateTeamMergeBar(){
   if(mergeBtn) mergeBtn.disabled = n < 2;
 }
 
-async function mergeSelectedTeams(){
+function mergeSelectedTeams(){
   if(typeof canEdit === 'function' && !canEdit()){
-    await showAppAlert('Permission needed', 'Only encoders and admins can merge sites.');
+    alert('Only encoders and admins can merge sites.');
     return;
   }
   const teams = [...selectedTeams];
   if(teams.length < 2){
-    await showAppAlert('Select more sites', 'Check at least 2 sites / walk-in days to merge.');
+    alert('Check at least 2 sites / walk-in days to merge.');
     return;
   }
   const suggested = teams.slice().sort((a,b)=>{
+    // prefer the one with earliest patient encode time as default name base
     const minTs = (name)=>{
       let m = Infinity;
       (state.patients||[]).forEach(p=>{
@@ -10908,30 +10552,18 @@ async function mergeSelectedTeams(){
     };
     return minTs(a) - minTs(b);
   })[0];
-
-  const listLines = teams.map(t => '• ' + t).join('\n');
-  const dest = await showAppPrompt({
-    title: 'Merge sites / walk-in days',
-    message: 'Selected:\n' + listLines + '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name for the merged site:',
-    defaultValue: suggested,
-    confirmLabel: 'Continue',
-    placeholder: 'e.g. DAILY WALK-IN 10-09-2026'
-  });
+  const dest = prompt(
+    'Merge into one site / walk-in day.\n\nSelected:\n• ' + teams.join('\n• ') +
+    '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name:',
+    suggested
+  );
   if(dest == null) return;
   const target = String(dest).trim();
-  if(!target){
-    await showAppAlert('Name required', 'Enter a final name for the merged site / walk-in day.');
-    return;
-  }
-  const ok = await showAppConfirm({
-    title: 'Confirm merge',
-    message: 'Merge ' + teams.length + ' sites into "' + target + '"?\n\nThis cannot be undone except by editing patients manually.',
-    confirmLabel: 'Merge sites',
-    danger: true
-  });
-  if(!ok) return;
+  if(!target){ alert('Name is required.'); return; }
+  if(!confirm('Merge ' + teams.length + ' sites into "' + target + '"?\nThis cannot be undone except by editing patients manually.')) return;
 
   const sources = teams.filter(t => t !== target);
+  // Move patients
   let moved = 0;
   (state.patients || []).forEach(p=>{
     if(p.deleted) return;
@@ -10943,14 +10575,16 @@ async function mergeSelectedTeams(){
       }
     }
   });
+  // Also rename if one of the selected is already named target — patients already there stay
 
+  // Merge staff lists
   if(typeof teamStaff === 'object'){
     const seen = new Set();
     const mergedStaff = [];
-    teams.forEach(t=>{
+    [target, ...sources].forEach(t=>{
       (teamStaff[t] || []).forEach(s=>{
-        const key = (s.name || '') + '|' + (s.role || '');
-        if(seen.has(key)) return;
+        const key = (typeof staffEntryToText === 'function' ? staffEntryToText(s) : String(s)).toLowerCase();
+        if(!key || seen.has(key)) return;
         seen.add(key);
         mergedStaff.push(s);
       });
@@ -10961,6 +10595,7 @@ async function mergeSelectedTeams(){
     try{ if(typeof pushTeamStaff === 'function') pushTeamStaff(); }catch(e){}
   }
 
+  // Meta / known teams
   sources.forEach(t=>{
     if(typeof teamMeta === 'object' && teamMeta[t]){
       teamMeta[target] = Object.assign({}, teamMeta[t], teamMeta[target] || {});
@@ -10986,7 +10621,7 @@ async function mergeSelectedTeams(){
   try{ if(typeof flushPending === 'function') flushPending(); }catch(e){}
   updateTeamMergeBar();
   renderAll();
-  await showAppAlert('Merge complete', 'Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
+  alert('Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
 }
 
 
@@ -11264,12 +10899,7 @@ groupsContainer.addEventListener('click', e=>{
       showAppAlert('Nothing to delete', 'No archived patients left in this group. The live site on the main roster was not changed.');
       return;
     }
-    showAppConfirm({
-      title: 'Delete archived patients',
-      message: 'Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.',
-      confirmLabel: 'Delete permanently',
-      danger: true
-    }).then(ok => { if(!ok) return;
+    if(confirm('Permanently delete ' + ids.length + ' archived patient(s) in "' + team + '"?\n\nThe site stays on the Active roster. Only archived patient records are removed.')){
       permanentlyDeletePatients(ids).then(() => {
         // Keep site on Active roster
         if(team && !knownTeams.some(t => String(t).toLowerCase() === String(team).toLowerCase())){
@@ -11281,7 +10911,7 @@ groupsContainer.addEventListener('click', e=>{
         renderAll();
         if(typeof softToast === 'function') softToast('Archived patients deleted · site kept on Active');
       });
-    });
+    }
     return;
   }
 });
@@ -11825,7 +11455,7 @@ function toDateInputValue(v){
 }
 function openModal(id, presetTeam){
   if(!id && !canEdit()){
-    showAppAlert('Viewers cannot edit', 'Viewers cannot add patients. Ask an admin to change your role to Encoder.');
+    alert('Viewers cannot add patients. Ask an admin to change your role to Encoder.');
     return;
   }
   editingId = id ? String(id) : null;
@@ -11957,19 +11587,6 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     });
     if(!ok) return;
   }
-  // Live duplicate PhilHealth warning
-  if(typeof isDuplicate === 'function' && isDuplicate(phid, editingId)){
-    const other = (state.patients || []).find(x => !x.deleted && x.id !== editingId && (x.phid || '').trim() === phid.trim());
-    const where = other ? ((other.team || 'another site') + (other.name ? (' · ' + other.name) : '')) : 'another patient';
-    const okDup = await showAppConfirm({
-      title: 'Duplicate PhilHealth ID',
-      message: 'This PhilHealth ID is already on file under ' + where + '. Save as another record anyway?',
-      confirmLabel: 'Save anyway',
-      cancelLabel: 'Go back',
-      danger: true
-    });
-    if(!okDup) return;
-  }
   const data = {
     team: document.getElementById('f_team').value, name, phid,
     encodedBy: (document.getElementById('f_encodedBy') && document.getElementById('f_encodedBy').value) || null,
@@ -12078,9 +11695,9 @@ function closeTeamModal(){ teamModalBackdrop.classList.remove('open'); editingTe
 document.getElementById('tm_cancelBtn').addEventListener('click', closeTeamModal);
 teamModalBackdrop.addEventListener('click', e=>{ if(e.target===teamModalBackdrop) closeTeamModal(); });
 
-document.getElementById('tm_saveBtn').addEventListener('click', async ()=>{
+document.getElementById('tm_saveBtn').addEventListener('click', ()=>{
   const name = document.getElementById('tm_name').value.trim();
-  if(!name){ await showAppAlert('Name required', 'Enter a name (e.g. mobile site or walk-in day).'); return; }
+  if(!name){ alert("Name is required (e.g. mobile site or walk-in day)."); return; }
   const staffNames = [...document.querySelectorAll('#tm_staffList .staff-row')].map(row=>({
     name: row.querySelector('.tm-staff-input').value.trim(),
     position: row.querySelector('.tm-staff-position').value
@@ -12091,16 +11708,11 @@ document.getElementById('tm_saveBtn').addEventListener('click', async ()=>{
   const collidesWith = existingTeams.find(t => t.toLowerCase() === name.toLowerCase() && t !== editingTeamOriginalName);
 
   if(!editingTeamOriginalName && collidesWith){
-    await showAppAlert('Name already used', `A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
+    alert(`A group named "${collidesWith}" already exists. Choose a different name, or edit that group instead.`);
     return;
   }
   if(editingTeamOriginalName && editingTeamOriginalName !== name && collidesWith){
-    const proceed = await showAppConfirm({
-      title: 'Merge into existing site?',
-      message: `A site named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form.`,
-      confirmLabel: 'Merge & continue',
-      danger: true
-    });
+    const proceed = confirm(`A mobile named "${collidesWith}" already exists. Renaming will MERGE all of "${editingTeamOriginalName}"'s patients into "${collidesWith}", and its staff list will be replaced with what's in this form. Continue?`);
     if(!proceed) return;
   }
 
@@ -12265,7 +11877,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 document.getElementById('installBtn').addEventListener('click', async () => {
   if(!deferredInstallPrompt){
-    showAppAlert('Install app', 'Install is available from your browser menu (Add to Home Screen / Install app), or after visiting this site a few times over HTTPS.');
+    alert('Install is available from your browser menu (Add to Home Screen / Install app), or after visiting this site a few times over HTTPS.');
     return;
   }
   deferredInstallPrompt.prompt();
@@ -12280,16 +11892,17 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const byTeam = {};
   rows.forEach(p => {
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, mca:0, t1:0, t2:0, missed24:0, dups:0};
+    if(!byTeam[t]) byTeam[t] = {total:0, registered:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, mca:0, t1:0, missed24:0, dups:0};
     const b = byTeam[t];
     b.total++;
     if(p.status==='registered') b.registered++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
+    if(p.vitamins) b.vitamins++;
+    if(p.referral) b.referral++;
     if(p.mca) b.mca++;
-    if(p.claim==='t1' || p.claim==='t2') b.t1++;
-    if(p.claim==='t2') b.t2++;
+    if(p.claim==='t1') b.t1++;
     if(p.claim==='missed24') b.missed24++;
   });
   // Approximate dups per team
@@ -12304,9 +11917,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
   const lines = [
     ['DR CARE Daily Summary', scope, new Date().toISOString()].map(csvSafe).join(','),
     '',
-    ['Team','Total','Registered','MCA','Rice','Lab','Meds','T1','T2','Missed 24h','Dup flags'].join(','),
+    ['Team','Total','Registered','MCA','Rice','Lab','Meds','Vits','Referral','T1','Missed 24h','Dup flags'].join(','),
     ...Object.entries(byTeam).sort((a,b)=>a[0].localeCompare(b[0])).map(([team,b]) =>
-      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.t1, b.t2, b.missed24, b.dups].map(csvSafe).join(',')
+      [team, b.total, b.registered, b.mca, b.rice, b.lab, b.medicine, b.vitamins, b.referral, b.t1, b.missed24, b.dups].map(csvSafe).join(',')
     ),
     '',
     ['TOTAL', total,
@@ -12315,8 +11928,9 @@ document.getElementById('dailyReportBtn').addEventListener('click', () => {
       rows.filter(p=>p.rice).length,
       rows.filter(p=>p.lab).length,
       rows.filter(p=>p.medicine).length,
-      rows.filter(p=>p.claim==='t1' || p.claim==='t2').length,
-      rows.filter(p=>p.claim==='t2').length,
+      rows.filter(p=>p.vitamins).length,
+      rows.filter(p=>p.referral).length,
+      rows.filter(p=>p.claim==='t1').length,
       rows.filter(p=>p.claim==='missed24').length,
       countDuplicateExtras(rows)
     ].map(csvSafe).join(',')
@@ -12352,7 +11966,7 @@ orgInput.addEventListener('input', ()=>{
 });
 
 /* ---------------- CSV export / import ---------------- */
-const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Notes"];
+const CSV_HEADERS = ["Team","Patient Name","PhilHealth ID","Status","Facility","Digital MCA","Date Validated & Submitted","Within 24h","Status of Claim","Rice Availed","Lab Availed","Medicines Availed","Vitamins Availed","Referral","Notes"];
 
 function csvSafe(v){ v = String(v ?? ''); return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"' + v.replace(/"/g,'""') + '"' : v; }
 
@@ -12399,7 +12013,7 @@ document.getElementById('csvTemplateBtn').addEventListener('click', ()=>{
 
 document.getElementById('xlsxTemplateBtn').addEventListener('click', ()=>{
   if(!window.XLSX){
-    showAppAlert('Excel library missing', 'Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
+    alert('Excel template needs xlsx.full.min.js next to this file. Use the CSV template button instead.');
     return;
   }
   const data = [
@@ -12498,7 +12112,7 @@ function rowLooksLikeHeader(cols){
 
 async function processImportRows(allRows, targetTeam){
   if(!allRows || !allRows.length){
-    showAppAlert('Empty file', 'No rows found in that file.');
+    alert('No rows found in that file.');
     return;
   }
   let start = 0;
@@ -12510,7 +12124,7 @@ async function processImportRows(allRows, targetTeam){
   }
   // Minimal import needs at least Patient Name (or PhilHealth ID)
   if(colIndex && colIndex.name === undefined && colIndex.phid === undefined){
-    showAppAlert('Import headers', 'Could not find a Patient Name or PhilHealth ID column in the header row. Use headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
+    alert('Could not find a Patient Name or PhilHealth ID column in the header row.\\n\\nUse headers like: Patient Name, PhilHealth ID, Status, Facility, Digital MCA');
     return;
   }
 
@@ -12649,7 +12263,7 @@ async function processImportRows(allRows, targetTeam){
     msg += `\\n\\n${badDates} row(s) had a date that could not be read. Those dates were left blank.`;
   }
   msg += viewNote;
-  showAppAlert('Notice', msg);
+  alert(msg);
 }
 
 document.getElementById('importBtn').addEventListener('click', ()=>{ importTargetTeam = null; document.getElementById('importFile').click(); });
@@ -12662,7 +12276,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
 
   if(isXlsx){
     if(!window.XLSX){
-      showAppAlert('Excel library missing', 'Excel (.xlsx) import needs xlsx.full.min.js next to this file. Save as CSV and import that instead, or add the library (see STEP 0b in page source).');
+      alert("Excel (.xlsx) import needs the xlsx.full.min.js library next to this file — see the STEP 0b comment near the top of the page source for how to add it. In the meantime, save your workbook as CSV (File > Save As > CSV) and import that instead.");
       e.target.value = ''; importTargetTeam = null; return;
     }
     reader.onload = evt=>{
@@ -12671,8 +12285,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
         const sheetName = wb.SheetNames.includes('Patients') ? 'Patients' : wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         const allRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); showAppAlert('Import failed', String(err.message||err)); });
-      }catch(err){ showAppAlert('Could not read Excel', 'Make sure it matches the DR CARE import format (see the Excel template button).'); console.error(err); }
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
+      }catch(err){ alert("Could not read that Excel file. Make sure it matches the DR CARE import format (see the Excel template button)."); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
     };
@@ -12681,8 +12295,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
     reader.onload = evt=>{
       try{
         const allRows = parseCsvRows(evt.target.result);
-        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); showAppAlert('Import failed', String(err.message||err)); });
-      }catch(err){ showAppAlert('Could not read CSV', 'Make sure it matches the DR CARE import format (see the CSV template button).'); console.error(err); }
+        processImportRows(allRows, targetTeam).catch(err=>{ console.error(err); alert("Import failed: " + (err.message||err)); });
+      }catch(err){ alert("Could not read that CSV file. Make sure it matches the DR CARE import format (see the CSV template button)."); console.error(err); }
       e.target.value = '';
       importTargetTeam = null;
     };
@@ -12839,67 +12453,6 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
 }
 function showAppAlert(title, message){
   return showAppConfirm({ title: title || 'Notice', message: message || '', confirmLabel: 'OK', hideCancel: true, info: true });
-}
-
-/** Styled prompt — returns string on OK, null on cancel (same contract as window.prompt). */
-function showAppPrompt({ title, message, defaultValue, confirmLabel, cancelLabel, placeholder, danger, inputType }){
-  return new Promise((resolve) => {
-    const backdrop = document.getElementById('appConfirmBackdrop');
-    const titleEl = document.getElementById('appConfirmTitle');
-    const msgEl = document.getElementById('appConfirmMessage');
-    const okBtn = document.getElementById('appConfirmOk');
-    const cancelBtn = document.getElementById('appConfirmCancel');
-    const icon = document.getElementById('appConfirmIcon');
-    const extra = document.getElementById('appConfirmExtra');
-    if(!backdrop || !okBtn){
-      resolve(window.prompt(message || title || '', defaultValue == null ? '' : String(defaultValue)));
-      return;
-    }
-    titleEl.textContent = title || 'Enter value';
-    msgEl.textContent = message || '';
-    okBtn.textContent = confirmLabel || 'OK';
-    okBtn.style.display = '';
-    cancelBtn.textContent = cancelLabel || 'Cancel';
-    cancelBtn.style.display = '';
-    icon.className = 'app-confirm-icon' + (danger ? ' danger' : ' info');
-    icon.textContent = danger ? '⚠' : '✎';
-    okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
-    backdrop.classList.remove('has-choices');
-    if(extra){
-      const val = defaultValue == null ? '' : String(defaultValue);
-      const ph = (placeholder || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-      const type = inputType || 'text';
-      extra.innerHTML = '<input type="' + type + '" id="appConfirmInput" class="app-confirm-input" autocomplete="off" spellcheck="false" placeholder="' + ph + '">';
-      extra.classList.add('show');
-      const inp = document.getElementById('appConfirmInput');
-      if(inp) inp.value = val;
-    }
-    const onKey = (e) => {
-      if(e.key === 'Enter'){ e.preventDefault(); okBtn.click(); }
-      if(e.key === 'Escape'){ e.preventDefault(); finish(null); }
-    };
-    function finish(val){
-      document.removeEventListener('keydown', onKey);
-      backdrop.classList.remove('open', 'has-choices');
-      if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
-      okBtn.onclick = null;
-      cancelBtn.onclick = null;
-      backdrop.onclick = null;
-      resolve(val);
-    }
-    okBtn.onclick = () => {
-      const inp = document.getElementById('appConfirmInput');
-      finish(inp ? inp.value : '');
-    };
-    cancelBtn.onclick = () => finish(null);
-    backdrop.onclick = (e) => { if(e.target === backdrop) finish(null); };
-    document.addEventListener('keydown', onKey);
-    backdrop.classList.add('open');
-    setTimeout(() => {
-      const inp = document.getElementById('appConfirmInput');
-      if(inp){ inp.focus(); inp.select(); }
-    }, 40);
-  });
 }
 function showAppChoice({ title, message, choices }){
   // choices: [{ id, label, primary?, danger? }]
@@ -13742,14 +13295,16 @@ function renderDashboard(){
   const byTeam = {};
   scoped.forEach(p=>{
     const t = p.team || 'Unknown';
-    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, t1:0, t2:0, missed24:0, dups:0 };
+    if(!byTeam[t]) byTeam[t] = { total:0, mca:0, rice:0, lab:0, medicine:0, vitamins:0, referral:0, t1:0, t2:0, missed24:0, dups:0 };
     const b = byTeam[t];
     b.total++;
     if(p.mca) b.mca++;
     if(p.rice) b.rice++;
     if(p.lab) b.lab++;
     if(p.medicine) b.medicine++;
-    if(typeof hasT1 === 'function' ? hasT1(p) : (p.claim==='t1' || p.claim==='t2')) b.t1++;
+    if(p.vitamins) b.vitamins++;
+    if(p.referral) b.referral++;
+    if(typeof hasT1 === 'function' ? hasT1(p) : p.claim==='t1') b.t1++;
     if(typeof hasT2 === 'function' ? hasT2(p) : p.claim==='t2') b.t2++;
     if(p.claim==='missed24') b.missed24++;
   });
@@ -14256,15 +13811,12 @@ document.getElementById('dashWeekInput')?.addEventListener('change', renderDashb
 
 /* ---------------- Recent Activity (admin-only log) ---------------- */
 const activityBackdrop = document.getElementById('activityBackdrop');
-document.getElementById('activityExportBtn')?.addEventListener('click', exportActivityCsv);
 if(document.getElementById('activityCloseBtn')) document.getElementById('activityCloseBtn').innerHTML = icon('x', 15);
 
 const ACTIVITY_KEY = 'drcare_activity_v1';
 let activityLog = [];
 let activityPage = 0;
 let activityPageSize = 20;
-let activityCloudOk = null; // null=unknown, true=table works, false=missing
-let activityRealtimeCh = null;
 
 function loadActivityLog(){
   try{
@@ -14276,113 +13828,6 @@ function saveActivityLog(){
   try{ localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityLog.slice(0, 500))); }catch(e){}
 }
 loadActivityLog();
-
-function activityEntryToRemote(e){
-  return {
-    id: e.id,
-    at: e.at,
-    who: e.who || null,
-    who_name: e.whoName || '',
-    action: e.action || '',
-    name: e.name || '',
-    team: e.team || '',
-    extra: e.extra || ''
-  };
-}
-function activityEntryFromRemote(r){
-  return {
-    id: r.id,
-    at: r.at,
-    who: r.who || null,
-    whoName: r.who_name || r.whoName || '',
-    action: r.action || '',
-    name: r.name || '',
-    team: r.team || '',
-    extra: r.extra || ''
-  };
-}
-function mergeActivityEntry(entry){
-  if(!entry || !entry.id) return;
-  const i = activityLog.findIndex(x => x.id === entry.id);
-  if(i >= 0) activityLog[i] = entry;
-  else activityLog.push(entry);
-  activityLog.sort((a,b) => String(b.at||'').localeCompare(String(a.at||'')));
-  if(activityLog.length > 500) activityLog = activityLog.slice(0, 500);
-  saveActivityLog();
-}
-
-async function pushActivityToCloud(entry){
-  if(!sb || activityCloudOk === false) return;
-  try{
-    const { error } = await sb.from('activity_log').upsert(activityEntryToRemote(entry), { onConflict: 'id' });
-    if(error){
-      // Table missing or RLS — fall back to local only
-      if(/relation|does not exist|permission|policy|42501|42P01/i.test(String(error.message||error.code||''))){
-        activityCloudOk = false;
-        console.warn('activity_log unavailable — using device log only:', error.message || error);
-      }
-      return;
-    }
-    activityCloudOk = true;
-  }catch(e){
-    console.warn('pushActivityToCloud', e);
-  }
-}
-
-async function fetchActivityFromCloud(){
-  if(!sb || activityCloudOk === false) return activityLog;
-  try{
-    const { data, error } = await sb.from('activity_log')
-      .select('id, at, who, who_name, action, name, team, extra')
-      .order('at', { ascending: false })
-      .limit(500);
-    if(error){
-      if(/relation|does not exist|permission|policy|42501|42P01/i.test(String(error.message||error.code||''))){
-        activityCloudOk = false;
-      }
-      return activityLog;
-    }
-    activityCloudOk = true;
-    const remote = (data || []).map(activityEntryFromRemote);
-    // Merge remote + local (local may have offline entries not yet pushed)
-    const map = new Map();
-    remote.forEach(e => map.set(e.id, e));
-    activityLog.forEach(e => {
-      if(!map.has(e.id)) map.set(e.id, e);
-    });
-    activityLog = [...map.values()].sort((a,b) => String(b.at||'').localeCompare(String(a.at||''))).slice(0, 500);
-    saveActivityLog();
-    // Push any local-only entries up
-    for(const e of activityLog){
-      if(!remote.find(r => r.id === e.id)) pushActivityToCloud(e);
-    }
-    return activityLog;
-  }catch(e){
-    console.warn('fetchActivityFromCloud', e);
-    return activityLog;
-  }
-}
-
-function subscribeActivityRealtime(){
-  if(!sb || activityCloudOk === false || activityRealtimeCh) return;
-  try{
-    activityRealtimeCh = sb.channel('activity_log_live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log' }, (payload) => {
-        try{
-          if(payload.eventType === 'DELETE' && payload.old){
-            activityLog = activityLog.filter(x => x.id !== payload.old.id);
-            saveActivityLog();
-          } else if(payload.new){
-            mergeActivityEntry(activityEntryFromRemote(payload.new));
-          }
-          if(typeof activityBackdrop !== 'undefined' && activityBackdrop && activityBackdrop.classList.contains('open')){
-            renderActivityPage();
-          }
-        }catch(e){ console.warn('activity realtime', e); }
-      })
-      .subscribe();
-  }catch(e){ console.warn('subscribeActivityRealtime', e); }
-}
 
 function logActivity(action, detail){
   try{
@@ -14399,7 +13844,6 @@ function logActivity(action, detail){
     activityLog.unshift(entry);
     if(activityLog.length > 500) activityLog = activityLog.slice(0, 500);
     saveActivityLog();
-    pushActivityToCloud(entry);
   }catch(e){ console.warn('logActivity', e); }
 }
 
@@ -14479,19 +13923,14 @@ function renderActivityPage(){
   }).join('');
 }
 
-async function openActivity(){
+function openActivity(){
   if(!isAdminUser()){
-    showAppAlert('Admins only', 'Recent Activity is available to admins only.');
+    alert('Recent Activity is available to admins only.');
     return;
   }
   activityPage = 0;
+  renderActivityPage();
   activityBackdrop.classList.add('open');
-  renderActivityPage(); // show local immediately
-  try{
-    await fetchActivityFromCloud();
-    subscribeActivityRealtime();
-    renderActivityPage();
-  }catch(e){ console.warn('openActivity cloud', e); }
 }
 function closeActivity(){ activityBackdrop.classList.remove('open'); }
 
@@ -14506,38 +13945,25 @@ document.getElementById('activityClearAll')?.addEventListener('click', () => {
   if(!activityLog.length){ showAppAlert('Activity log', 'The log is already empty.'); return; }
   showAppConfirm({
     title: 'Clear activity log?',
-    message: 'Clear the shared activity log for everyone? This cannot be undone.',
+    message: 'Clear the entire activity log on this device? This cannot be undone.',
     confirmLabel: 'Clear all',
     danger: true
-  }).then(async ok => {
+  }).then(ok => {
     if(!ok) return;
-    const ids = activityLog.map(x => x.id);
     activityLog = [];
     saveActivityLog();
     try{ localStorage.removeItem(ACTIVITY_KEY); }catch(e){}
     activityPage = 0;
     renderActivityPage();
-    if(sb && activityCloudOk !== false){
-      try{
-        // Delete in batches
-        for(let i = 0; i < ids.length; i += 50){
-          const chunk = ids.slice(i, i+50);
-          await sb.from('activity_log').delete().in('id', chunk);
-        }
-      }catch(e){ console.warn('clear cloud activity', e); }
-    }
   });
 });
-document.getElementById('activityBody')?.addEventListener('click', async e => {
+document.getElementById('activityBody')?.addEventListener('click', e => {
   const btn = e.target.closest('[data-del-activity]');
   if(!btn || !isAdminUser()) return;
   const id = btn.getAttribute('data-del-activity');
   activityLog = activityLog.filter(x => x.id !== id);
   saveActivityLog();
   renderActivityPage();
-  if(sb && activityCloudOk !== false && id){
-    try{ await sb.from('activity_log').delete().eq('id', id); }catch(err){ console.warn(err); }
-  }
 });
 
 /* ---------------- Admin panel ---------------- */
@@ -14547,7 +13973,7 @@ document.getElementById('adminCloseBtn').innerHTML = icon('x', 15);
 
 async function openAdmin(){
   if(!isAdmin()){
-    showAppAlert('Admins only', 'Admin access only.');
+    alert('Admin access only.');
     return;
   }
   adminBackdrop.classList.add('open');
@@ -14561,13 +13987,7 @@ adminBackdrop.addEventListener('click', e=>{ if(e.target===adminBackdrop) closeA
 async function renderAdminUsers(){
   const body = document.getElementById('adminUsersBody');
   body.innerHTML = `<div class="dash-empty">Loading users…</div>`;
-  let users = await loadAllProfiles();
-  users = (users || []).filter(u => {
-    const n = String(u.full_name || u.fullName || '');
-    if(n.startsWith('[DECLINED]')) return false;
-    if(u.role === 'declined') return false;
-    return true;
-  });
+  const users = await loadAllProfiles();
   if(!users.length){
     body.innerHTML = `<div class="dash-empty">No user profiles yet. Have staff sign up from the login screen, then refresh this panel.</div>`;
     return;
@@ -14642,7 +14062,6 @@ async function renderAdminUsers(){
               title="${approved ? 'Approved — can log in' : 'Not approved — cannot log in'}">
             Approve login
           </label>
-          ${(!approved && !isSelf && !isUserAdmin) ? `<button type="button" class="btn admin-decline-btn" data-uid="${u.id}" data-label="${escapeAttr(u.full_name || u.email || 'this user')}" title="Decline signup and remove this account">Decline</button>` : ''}
           <select class="admin-role-select" data-uid="${u.id}" ${isSelf ? 'disabled' : ''} style="font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);">
             ${roleOptions(u.role || 'encoder')}
           </select>
@@ -14670,7 +14089,7 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }catch(e){
         console.error(e);
-        showAppAlert('Role update failed', String(e.message || e));
+        alert('Could not update role: ' + (e.message || e));
         await renderAdminUsers();
       }finally{
         sel.disabled = false;
@@ -14691,53 +14110,10 @@ async function renderAdminUsers(){
         await renderAdminUsers();
       }catch(e){
         console.error(e);
-        showAppAlert('Approval update failed', String(e.message || e));
+        alert('Could not update approval: ' + (e.message || e));
         await renderAdminUsers();
       }finally{
         cb.disabled = false;
-      }
-    });
-  });
-
-  body.querySelectorAll('.admin-decline-btn').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const uid = btn.dataset.uid;
-      const label = btn.dataset.label || 'this user';
-      if(!uid) return;
-      const ok = await showAppConfirm({
-        title: 'Decline signup?',
-        message: 'Decline "' + label + '"? Their access will be removed and they will not appear in this list.',
-        confirmLabel: 'Decline & delete',
-        cancelLabel: 'Cancel',
-        danger: true
-      });
-      if(!ok) return;
-      btn.disabled = true;
-      try{
-        let removed = false;
-        const del = await sb.from('profiles').delete().eq('id', uid).select('id');
-        if(!del.error && del.data && del.data.length){
-          removed = true;
-        } else {
-          if(del.error) console.warn('Profile DELETE blocked:', del.error.message || del.error);
-          const clean = String(label).replace(/^\[DECLINED\]\s*/i, '').trim() || 'user';
-          const up = await sb.from('profiles').update({
-            approved: false,
-            full_name: '[DECLINED] ' + clean,
-            role: 'encoder',
-            updated_at: new Date().toISOString()
-          }).eq('id', uid).select('id');
-          if(up.error) throw up.error;
-          if(!up.data || !up.data.length) throw new Error('RLS blocked profile change. Allow admin UPDATE/DELETE on profiles.');
-          removed = true;
-        }
-        if(typeof profileCache !== 'undefined' && profileCache[uid]) delete profileCache[uid];
-        setSyncStatus('Signup declined — removed from list', '');
-        await renderAdminUsers();
-      }catch(e){
-        console.error('Decline failed:', e);
-        showAppAlert('Could not decline', String(e.message || e));
-        btn.disabled = false;
       }
     });
   });
@@ -14980,7 +14356,6 @@ async function doLogin(){
 })();
 
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-  try{ if(typeof stopPatientsRealtime === 'function') stopPatientsRealtime(); }catch(e){}
   try{ await sb.auth.signOut(); }catch(e){}
   location.reload();
 });
@@ -15056,8 +14431,6 @@ async function onSignedIn(session){
       if(typeof pullExtraEncoders==='function') await withTimeout(pullExtraEncoders(), 8000, 'Encoders').catch(()=>{});
     }
     if(typeof startPresence === 'function') startPresence();
-  try{ wireKeyboardShortcuts(); }catch(e){}
-  try{ wireV82Features(); }catch(e){}
   }catch(e){ console.warn('post-login', e); }
 }
 
@@ -15093,18 +14466,15 @@ async function initApp(){
   try{ if(typeof pullTeamMeta==='function') await pullTeamMeta(); }catch(e){}
   try{ if(typeof pullKnownTeams==='function') await pullKnownTeams(); }catch(e){}
   try{ ensureTeamsFromPatients();
-    if(typeof prunePatientsMemory==='function') prunePatientsMemory(6000); }catch(e){}
+    if(typeof prunePatientsMemory==='function') prunePatientsMemory(8000); }catch(e){}
   renderAll();
   if(navigator.onLine){ await flushPending(); await pullRemote(); }
   else setSyncStatus('Offline — saved on this device', 'err');
 
-  try{ if(typeof startPatientsRealtime === 'function') startPatientsRealtime(); }catch(e){}
-
-  // Poll remains as backup if Realtime is off / RLS / replication not enabled
   setInterval(()=>{ flushPending().then(pullRemote); pullTeamStaff().then(renderAll); }, 20000);
   setInterval(()=>{ if(autoFlagMissedClaims()) renderAll(); }, 60000);
-  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); try{ startPatientsRealtime(); }catch(e){} });
-  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); try{ stopPatientsRealtime(); }catch(e){} });
+  window.addEventListener('online', ()=>{ updateOfflineBanner(); flushPending().then(pullRemote); });
+  window.addEventListener('offline', ()=>{ updateOfflineBanner(); setSyncStatus('Offline — saved on this device', 'err'); });
 }
 
 /* Login liquid canvas background — slow organic mesh (~20s drift) */
@@ -15258,7 +14628,7 @@ async function initApp(){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=11').then(reg=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
       // New version waiting → show a small update toast
       if(reg.waiting){
         showSwUpdateToast(reg);
@@ -15391,7 +14761,7 @@ function readCustomBenefitsFromForm(){
 
 function openBenefitsAdmin(){
   const list = document.getElementById('benefitsAdminList');
-  if(!list){ showAppAlert('Panel missing', 'Benefits panel missing — re-upload index.html'); return; }
+  if(!list){ alert('Benefits panel missing — re-upload index.html'); return; }
   const defs = loadCustomBenefits();
   list.innerHTML = defs.length ? defs.map((d,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
@@ -15451,13 +14821,13 @@ function updateTeamMapLink(){
 document.getElementById('tm_lat')?.addEventListener('input', updateTeamMapLink);
 document.getElementById('tm_lng')?.addEventListener('input', updateTeamMapLink);
 document.getElementById('tm_geoBtn')?.addEventListener('click', ()=>{
-  if(!navigator.geolocation){ showAppAlert('Location unavailable', 'Geolocation is not available on this device.'); return; }
+  if(!navigator.geolocation){ alert('Geolocation not available on this device.'); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     document.getElementById('tm_lat').value = pos.coords.latitude.toFixed(6);
     document.getElementById('tm_lng').value = pos.coords.longitude.toFixed(6);
     updateTeamMapLink();
   }, err=>{
-    showAppAlert('Location failed', String(err.message || 'permission denied'));
+    alert('Could not get location: ' + (err.message || 'permission denied'));
   }, { enableHighAccuracy: true, timeout: 15000 });
 });
 
@@ -15567,7 +14937,7 @@ function renderMcaFileCard(dataUrl, meta){
       if(!dataUrl) return;
       // Open in new tab for viewing (images + PDFs). Download is optional via long-press/save in browser.
       const win = window.open('');
-      if(!win){ showAppAlert('Pop-up blocked', 'Allow pop-ups to view the MCA file.'); return; }
+      if(!win){ alert('Allow pop-ups to view the MCA file.'); return; }
       if(kind === 'img' || String(dataUrl).startsWith('data:image')){
         win.document.write('<!DOCTYPE html><html><head><title>' + String(name).replace(/</g,'') + '</title>' +
           '<style>html,body{margin:0;background:#0f172a;height:100%;display:grid;place-items:center}' +
@@ -15626,7 +14996,7 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
   const file = e.target.files && e.target.files[0];
   if(!file) return;
   const maxBytes = 8 * 1024 * 1024;
-  if(file.size > maxBytes){ showAppAlert('File too large', 'Maximum size is 8MB.'); e.target.value = ''; return; }
+  if(file.size > maxBytes){ alert('File too large (max 8MB).'); e.target.value = ''; return; }
   const kind = mcaFileKind(file.type, file.name);
   try{
     let dataUrl = null;
@@ -15635,14 +15005,14 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
     } else {
       // PDF / documents stored as file data URL (capped)
       if(file.size > 4 * 1024 * 1024){
-        showAppAlert('File too large', 'Document is over 4MB. Use a smaller PDF or compress the file.');
+        alert('Document is over 4MB. Please use a smaller PDF or compress the file.');
         e.target.value = '';
         return;
       }
       dataUrl = await readFileAsDataURL(file);
     }
     if(!dataUrl){
-      showAppAlert('Could not read file', 'Could not read that file.');
+      alert('Could not read that file.');
       return;
     }
     setPendingMcaFile(dataUrl, {
@@ -15655,7 +15025,7 @@ document.getElementById('f_mcaPhoto')?.addEventListener('change', async (e)=>{
     if(mcaCb) mcaCb.checked = true;
   }catch(err){
     console.error(err);
-    showAppAlert('Attach failed', 'Could not attach file.');
+    alert('Could not attach file.');
   }
 });
 document.getElementById('f_mcaPhotoClear')?.addEventListener('click', ()=>{
@@ -15850,7 +15220,8 @@ function buildSummaryText(){
   lines.push('Generated: ' + new Date().toLocaleString());
   lines.push('Total patients: ' + rows.length);
   lines.push('Rice: ' + rows.filter(p=>p.rice).length + ' | Lab: ' + rows.filter(p=>p.lab).length +
-    ' | Meds: ' + rows.filter(p=>p.medicine).length);
+    ' | Meds: ' + rows.filter(p=>p.medicine).length + ' | Vits: ' + rows.filter(p=>p.vitamins).length +
+    ' | Referral: ' + rows.filter(p=>p.referral).length);
   lines.push('MCA on file: ' + rows.filter(p=>p.mca).length + ' | T1: ' + rows.filter(p=>p.claim==='t1').length +
     ' | Missed 24h: ' + rows.filter(p=>p.claim==='missed24').length);
   const byTeam = {};
@@ -15866,7 +15237,7 @@ document.getElementById('pdfReportBtn')?.addEventListener('click', ()=>{
   const scope = monthVal && typeof monthLabel === 'function' ? monthLabel(monthVal) : 'All months';
   const org = document.getElementById('orgName')?.value || 'DR CARE';
   const w = window.open('', '_blank');
-  if(!w){ showAppAlert('Pop-up blocked', 'Allow pop-ups to print the PDF report.'); return; }
+  if(!w){ alert('Pop-up blocked — allow pop-ups to print the PDF report.'); return; }
 
   const esc = (s)=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const display = (uid)=>{
@@ -16178,13 +15549,13 @@ document.getElementById('reportCfgSend')?.addEventListener('click', async ()=>{
         body: JSON.stringify({ text: '```' + text + '```' })
       });
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      showAppAlert('Sent', 'Message sent to Slack.');
+      alert('Sent to Slack.');
     }catch(e){
-      showAppAlert('Slack failed', 'Check webhook URL and CORS. Email may still have opened.');
+      alert('Slack send failed (check webhook URL and CORS). Email may still have opened.');
     }
   }
   if(!email && !slack){
-    showAppAlert('Missing destination', 'Enter an email and/or Slack webhook URL.');
+    alert('Enter an email and/or Slack webhook URL.');
     return;
   }
   document.getElementById('reportCfgBackdrop').classList.remove('open');
@@ -16381,7 +15752,7 @@ setInterval(()=>{
 /* Facilities admin */
 function openFacilitiesAdmin(){
   const list = document.getElementById('facilitiesAdminList');
-  if(!list){ showAppAlert('Panel missing', 'Facilities panel missing — re-upload index.html'); return; }
+  if(!list){ alert('Facilities panel missing — re-upload index.html'); return; }
   const defs = loadFacilityOptions();
   list.innerHTML = defs.map((f,i)=>`
     <div class="benefit-admin-row" data-idx="${i}">
@@ -16423,7 +15794,7 @@ function openFacilitiesAdmin(){
     const label = document.getElementById('newFacilityLabel')?.value.trim();
     if(!label) return;
     const defs = loadFacilityOptions();
-    if(defs.some(f => f.toLowerCase() === label.toLowerCase())){ showAppAlert('Already added', 'That item is already in the list.'); return; }
+    if(defs.some(f => f.toLowerCase() === label.toLowerCase())){ alert('Already in the list'); return; }
     defs.push(label);
     saveFacilityOptions(defs);
     facilityOptionsAll = defs;
@@ -16438,8 +15809,18 @@ function openFacilitiesAdmin(){
       const v = inp.value.trim();
       if(v) defs.push(v);
     });
-    if(defs.length){ saveFacilityOptions(defs); facilityOptionsAll = defs; }
+    if(defs.length){
+      facilityOptionsAll = saveFacilityOptions(defs);
+      facilityOptionsOther = facilityOptionsAll.filter(f => f !== HOME_FACILITY);
+    }
     document.getElementById('facilitiesAdminBackdrop')?.classList.remove('open');
+    if(typeof renderAll === 'function') renderAll();
+  });
+  document.getElementById('facilitiesResetBtn')?.addEventListener('click', ()=>{
+    if(!confirm('Reset facility / branch list to the official DR CARE defaults? Custom names not on the default list will be removed.')) return;
+    resetFacilitiesToDefault();
+    openFacilitiesAdmin();
+    if(typeof renderAll === 'function') renderAll();
   });
 })();
 
@@ -16751,7 +16132,7 @@ document.getElementById('mergeBtn')?.addEventListener('click', ()=>{
   if(typeof persistChange === 'function') persistChange(master);
   if(typeof renderAll === 'function') renderAll();
   document.getElementById('mergeBanner')?.classList.remove('show');
-  showAppAlert('Patients merged', `Merged ${others.length + 1} records into one patient.`);
+  alert(`Merged ${others.length + 1} records into one patient.`);
 });
 document.addEventListener('change', e=>{
   if(e.target && e.target.classList && e.target.classList.contains('row-check')) updateMergeBanner();
@@ -16871,24 +16252,18 @@ if(typeof allTeams === 'function'){
       btn.type = 'button';
       btn.className = 'btn btn-ghost btn-sm assign-teams-btn';
       btn.textContent = 'Assign mobiles';
-      btn.addEventListener('click', async ()=>{
+      btn.addEventListener('click', ()=>{
         const map = loadAssignedTeams();
         const current = (map[id] || []).join(', ');
         const teams = (typeof allTeams === 'function' ? allTeams() : []);
         // Temporarily unfilter for admin listing all team names from patients
         const allNames = [...new Set(state.patients.filter(p=>!p.deleted).map(p=>p.team).filter(Boolean))].sort();
-        const ans = await showAppPrompt({
-          title: 'Assign mobiles',
-          message: 'Comma-separated mobile / site names.\nAvailable: ' + (allNames.join(', ') || '(none yet)') + '\nLeave blank = all mobiles.',
-          defaultValue: current,
-          confirmLabel: 'Save',
-          placeholder: 'e.g. Tacloban Mobile, DAILY WALK-IN'
-        });
+        const ans = prompt(`Mobiles for this user (comma-separated).\nAvailable: ${allNames.join(', ') || '(none yet)'}\nLeave blank = all mobiles.`, current);
         if(ans === null) return;
         const list = ans.split(',').map(s=>s.trim()).filter(Boolean);
         map[id] = list;
         saveAssignedTeams(map);
-        await showAppAlert('Mobiles updated', list.length ? ('Assigned: ' + list.join(', ')) : 'No restriction (sees all mobiles)');
+        alert(list.length ? `Assigned: ${list.join(', ')}` : 'No restriction (sees all mobiles)');
       });
       row.appendChild(btn);
     });
@@ -16902,9 +16277,9 @@ function addToPrintQueue(id){
 }
 function printMcaPackets(ids){
   const pts = ids.map(id => state.patients.find(p => p.id === id)).filter(Boolean);
-  if(!pts.length){ showAppAlert('Nothing to print', 'No patients to print.'); return; }
+  if(!pts.length){ alert('No patients to print'); return; }
   const w = window.open('', '_blank');
-  if(!w){ showAppAlert('Pop-up blocked', 'Allow pop-ups to print.'); return; }
+  if(!w){ alert('Allow pop-ups to print'); return; }
   const esc = (typeof escapeHtml === 'function')
     ? escapeHtml
     : (s)=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -17208,7 +16583,7 @@ function printMcaPackets(ids){
   btn.textContent = 'Print MCA packets';
   btn.addEventListener('click', ()=>{
     const ids = selectedPatientIds();
-    if(!ids.length){ showAppAlert('Nothing selected', 'Select patients first.'); return; }
+    if(!ids.length){ alert('Select patients first'); return; }
     ids.forEach(addToPrintQueue);
     printMcaPackets(ids);
   });
@@ -17233,240 +16608,6 @@ setTimeout(()=>{
 }, 800);
 
 /* ========== DR CARE unique UX features ========== */
-
-function wireKeyboardShortcuts(){
-  if(window.__drcareKbd) return;
-  window.__drcareKbd = true;
-  document.addEventListener('keydown', (e)=>{
-    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
-    const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable);
-    // / focuses search
-    if(e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey){
-      const s = document.getElementById('search');
-      if(s){ e.preventDefault(); s.focus(); s.select(); }
-      return;
-    }
-    // N new patient (encoders)
-    if((e.key === 'n' || e.key === 'N') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey){
-      if(typeof canEdit === 'function' && canEdit()){
-        const btn = document.getElementById('addPatientBtn') || document.querySelector('[data-action="add-patient"]');
-        // open first team's add or global add if exists
-        const addBtns = document.querySelectorAll('.team-add-patient, #addPatientBtn, button[id^="addPt"]');
-        if(addBtns.length){ e.preventDefault(); addBtns[0].click(); }
-      }
-      return;
-    }
-    // Escape closes topmost backdrop
-    if(e.key === 'Escape'){
-      const open = document.querySelector('.modal-backdrop.open, .dash-backdrop.open, #appConfirmBackdrop.open');
-      if(open){
-        const cancel = open.querySelector('#appConfirmCancel, .dash-close, #cancelBtn, #tm_cancelBtn');
-        if(cancel) cancel.click();
-      }
-    }
-  });
-}
-
-function exportActivityCsv(){
-  try{
-    const key = 'drcare_activity_log_v1';
-    let rows = [];
-    try{ rows = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ rows = []; }
-    if(!Array.isArray(rows) || !rows.length){
-      // try alternate keys used by app
-      for(const k of Object.keys(localStorage)){
-        if(/activity/i.test(k)){
-          try{
-            const v = JSON.parse(localStorage.getItem(k) || '[]');
-            if(Array.isArray(v) && v.length){ rows = v; break; }
-          }catch(e){}
-        }
-      }
-    }
-    if(!rows.length){
-      if(typeof showAppAlert === 'function') showAppAlert('Nothing to export', 'No activity log entries on this device yet.');
-      else alert('No activity log entries yet.');
-      return;
-    }
-    const headers = ['at','action','detail','user','team','patient'];
-    const esc = (v)=> '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-    const lines = [headers.join(',')];
-    rows.forEach(r=>{
-      lines.push([r.at||r.ts||r.time||'', r.action||r.type||'', r.detail||r.message||r.msg||'', r.user||r.by||r.email||'', r.team||'', r.patient||r.name||r.patientName||''].map(esc).join(','));
-    });
-    const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'dr-care-activity-'+new Date().toISOString().slice(0,10)+'.csv';
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
-    if(typeof softToast === 'function') softToast('Activity CSV downloaded');
-  }catch(e){
-    console.error(e);
-    if(typeof showAppAlert === 'function') showAppAlert('Export failed', String(e.message||e));
-  }
-}
-
-/* ===== v8.2 field mode, claims due, duplicate assistant, pending chip ===== */
-function updatePendingQueueChip(){
-  const el = document.getElementById('pendingQueueChip');
-  if(!el) return;
-  const n = (typeof pendingIds !== 'undefined' && pendingIds) ? pendingIds.size : 0;
-  if(n > 0){
-    el.textContent = n + ' pending';
-    el.classList.add('show');
-    el.title = n + ' local change(s) waiting to upload — tap Sync now';
-  } else {
-    el.classList.remove('show');
-  }
-}
-const _setSyncStatusOrig = typeof setSyncStatus === 'function' ? setSyncStatus : null;
-// Hook pending chip onto existing status updates via periodic + render
-function applyFieldMode(on){
-  document.body.classList.toggle('field-mode', !!on);
-  try{ localStorage.setItem('drcare_field_mode', on ? '1' : '0'); }catch(e){}
-  const btn = document.getElementById('fieldModeBtn');
-  if(btn){
-    btn.classList.toggle('active', !!on);
-    btn.textContent = on ? 'Field mode · ON' : 'Field mode';
-  }
-}
-function loadFieldMode(){
-  let on = false;
-  try{ on = localStorage.getItem('drcare_field_mode') === '1'; }catch(e){}
-  // Default field mode for non-admins
-  if(!on && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'encoder'){
-    on = true;
-  }
-  applyFieldMode(on);
-}
-function getClaimDuePatients(){
-  const list = (typeof filteredPatients === 'function') ? filteredPatients() : (state.patients||[]).filter(p=>!p.deleted);
-  const now = new Date();
-  const T2_AGING_DAYS = 7;
-  const due = [];
-  list.forEach(p=>{
-    if(p.deleted) return;
-    if(p.claim === 'missed24'){
-      due.push({ p, reason: 'Missed 24h' });
-      return;
-    }
-    // T1 submitted but no T2 after N days
-    if(p.claim === 't1'){
-      const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
-      if(base){
-        const d = new Date(base);
-        if(!isNaN(d.getTime())){
-          const ageDays = (now - d) / 86400000;
-          if(ageDays >= T2_AGING_DAYS){
-            due.push({ p, reason: 'T1 open ' + Math.floor(ageDays) + 'd — T2 not filed' });
-            return;
-          }
-        }
-      }
-      due.push({ p, reason: 'T1 submitted — await T2' });
-      return;
-    }
-    if(p.claim === 'pending' || !p.claim){
-      const base = (p.dateT1 || p.dateSubmitted || p.dateEncoded || '').trim();
-      if(!base) return;
-      let deadline = null;
-      try{ if(typeof claimDeadline === 'function') deadline = claimDeadline(base); }catch(e){}
-      if(deadline && now >= deadline){
-        due.push({ p, reason: 'Past claim deadline' });
-      } else if(p.claim === 'pending'){
-        due.push({ p, reason: 'Pending claim' });
-      }
-    }
-  });
-  // unique by id
-  const seen = new Set();
-  return due.filter(x=>{
-    if(seen.has(x.p.id)) return false;
-    seen.add(x.p.id);
-    return true;
-  });
-}
-function openClaimDue(){
-  const backdrop = document.getElementById('claimDueBackdrop');
-  const ul = document.getElementById('claimDueList');
-  if(!backdrop || !ul) return;
-  const due = getClaimDuePatients();
-  const btn = document.getElementById('claimDueBtn');
-  if(btn){
-    btn.classList.toggle('has-due', due.length > 0);
-    btn.textContent = due.length ? ('Claims due · ' + due.length) : 'Claims due';
-  }
-  if(!due.length){
-    ul.innerHTML = '<li class="cd-meta">No due or missed claims in the current filter. Nice work.</li>';
-  } else {
-    ul.innerHTML = due.map(({p, reason})=>
-      '<li data-id="'+p.id+'">'
-      + '<span class="cd-name">'+escapeHtml(p.name||'—')+'</span>'
-      + '<span class="cd-meta">'+escapeHtml(p.team||'')+'</span>'
-      + '<span class="cd-meta">'+escapeHtml(p.phid||'')+'</span>'
-      + '<span class="cd-meta">'+escapeHtml(reason)+'</span>'
-      + '</li>'
-    ).join('');
-  }
-  backdrop.classList.add('open');
-}
-function openDupAssist(){
-  const backdrop = document.getElementById('dupAssistBackdrop');
-  const box = document.getElementById('dupAssistList');
-  if(!backdrop || !box) return;
-  try{ if(typeof rebuildPhidIndex === 'function') rebuildPhidIndex(); }catch(e){}
-  const groups = [];
-  if(typeof phidIndex !== 'undefined' && phidIndex){
-    phidIndex.forEach((arr, phid)=>{
-      if(!arr || arr.length < 2) return;
-      const patients = arr.map(x => (state.patients||[]).find(p=>p.id===x.id)).filter(p=>p && !p.deleted);
-      if(patients.length < 2) return;
-      groups.push({ phid, patients });
-    });
-  }
-  groups.sort((a,b)=> b.patients.length - a.patients.length);
-  if(!groups.length){
-    box.innerHTML = '<p class="modal-sub">No duplicate PhilHealth IDs in the current filter.</p>';
-  } else {
-    box.innerHTML = groups.map(g=>
-      '<li><div style="font-weight:800;margin-bottom:6px;">PHID '+escapeHtml(g.phid)+' · '+g.patients.length+' records</div>'
-      + g.patients.map(p=>'<div class="cd-meta">'+escapeHtml(p.name||'—')+' · '+escapeHtml(p.team||'')+' · '+escapeHtml(claimLabel[p.claim]||p.claim||'')+'</div>').join('')
-      + '</li>'
-    ).join('');
-  }
-  backdrop.classList.add('open');
-}
-function refreshClaimDueBadge(){
-  const btn = document.getElementById('claimDueBtn');
-  if(!btn) return;
-  try{
-    const n = getClaimDuePatients().length;
-    btn.classList.toggle('has-due', n > 0);
-    btn.textContent = n ? ('Claims due · ' + n) : 'Claims due';
-  }catch(e){}
-}
-function wireV82Features(){
-  if(window.__v82wired) return;
-  window.__v82wired = true;
-  document.getElementById('fieldModeBtn')?.addEventListener('click', ()=>{
-    applyFieldMode(!document.body.classList.contains('field-mode'));
-  });
-  document.getElementById('claimDueBtn')?.addEventListener('click', openClaimDue);
-  document.getElementById('dupAssistBtn')?.addEventListener('click', openDupAssist);
-  ['claimDueCloseBtn','claimDueCloseBtn2'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('click', ()=> document.getElementById('claimDueBackdrop')?.classList.remove('open'));
-  });
-  ['dupAssistCloseBtn','dupAssistCloseBtn2'].forEach(id=>{
-    document.getElementById(id)?.addEventListener('click', ()=> document.getElementById('dupAssistBackdrop')?.classList.remove('open'));
-  });
-  document.getElementById('claimDueBackdrop')?.addEventListener('click', e=>{ if(e.target.id==='claimDueBackdrop') e.currentTarget.classList.remove('open'); });
-  document.getElementById('dupAssistBackdrop')?.addEventListener('click', e=>{ if(e.target.id==='dupAssistBackdrop') e.currentTarget.classList.remove('open'); });
-  loadFieldMode();
-  updatePendingQueueChip();
-  refreshClaimDueBadge();
-}
-
 function softToast(msg, ms){
   const el = document.getElementById('softToast');
   if(!el) return;
@@ -17735,11 +16876,10 @@ setInterval(applyMissionMood, 30*60*1000);
 function updateScaleWarn(){
   const el = document.getElementById('scaleWarnBanner');
   if(!el) return;
-  const n = (state.patients || []).length;
+  const n = state.patients.filter(p=>!p.deleted).length;
   const month = document.getElementById('monthFilter')?.value;
   const dismissed = sessionStorage.getItem('scaleWarnDismissed') === '1';
-  // Warn earlier; hide when a month is selected
-  el.style.display = (!dismissed && n >= 400 && !month) ? 'block' : 'none';
+  el.style.display = (!dismissed && n >= 800 && !month) ? 'block' : 'none';
 }
 document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
   sessionStorage.setItem('scaleWarnDismissed', '1');
@@ -17748,12 +16888,11 @@ document.getElementById('scaleWarnDismiss')?.addEventListener('click', ()=>{
 
 let _didPreferMonth = false;
 function preferMonthIfLarge(){
+  if(_didPreferMonth) return;
   try{
-    const n = (state.patients || []).length;
+    const n = (state.patients || []).filter(p=>!p.deleted).length;
     const mf = document.getElementById('monthFilter');
-    if(!mf) return;
-    // Auto-select current month once when roster is non-trivial (keeps UI responsive at 10k+)
-    if(!_didPreferMonth && n >= 200 && !mf.value){
+    if(mf && n >= 500 && !mf.value){
       const now = new Date();
       mf.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
       _didPreferMonth = true;
