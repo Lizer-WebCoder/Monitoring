@@ -1,7 +1,12 @@
-const CACHE_NAME = 'dr-care-v11';
+const CACHE_NAME = 'dr-care-v9';
 const APP_SHELL = [
   './',
   './index.html',
+  './css/app.css',
+  './js/core.js',
+  './js/ui.js',
+  './js/screens.js',
+  './js/features.js',
   './supabase.js',
   './xlsx.full.min.js',
   './manifest.json',
