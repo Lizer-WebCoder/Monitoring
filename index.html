@@ -4720,6 +4720,7 @@ body.dark .app-confirm-actions{ border-color: #2a3a35; }
 /* Confirm / choice dialog — centered, balanced */
 
 #appConfirmMessage, .app-confirm-body p{
+  white-space: pre-wrap;
     margin: 10px 0 0 !important;
     font-size: 14px !important;
     line-height: 1.55 !important;
@@ -8033,6 +8034,140 @@ body.has-selection .team-merge-bar{
   bottom: 78px; /* sit above patient bulk bar when both open */
 }
 
+
+/* === DR CARE polish v2026-11 === */
+.app-prompt-label{
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+.app-prompt-input{
+  width:100%;
+  box-sizing:border-box;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--ink);
+  font-size:14px;
+  font-family:inherit;
+}
+.app-prompt-input:focus{
+  outline:none;
+  border-color:var(--brand, var(--teal, #0f766e));
+  box-shadow:0 0 0 3px rgba(15,118,110,.15);
+}
+#appConfirmExtra.show{
+  display:block;
+  padding:0 22px 8px;
+}
+.app-footer{
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  padding:28px 16px 40px;
+  letter-spacing:.02em;
+}
+.team-group{
+  margin-bottom:14px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--card);
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+.team-head{
+  background:linear-gradient(180deg, #f8fafc 0%, var(--card) 100%);
+}
+body.dark .team-head{
+  background:linear-gradient(180deg, rgba(255,255,255,.03) 0%, transparent 100%);
+}
+.team-head-top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:12px 14px 8px;
+}
+.team-title-block h2{
+  font-size:15px;
+  font-weight:750;
+  letter-spacing:-.01em;
+  margin:0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.team-tools{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-left:auto;
+}
+.tt-btn{
+  font-size:12px !important;
+  padding:6px 10px !important;
+  border-radius:8px !important;
+}
+.table-wrap{
+  border-radius:0 0 14px 14px;
+  border-top:1px solid var(--line);
+}
+.table-wrap thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:var(--table-head, #f1f5f9) !important;
+  font-size:10.5px;
+  letter-spacing:.03em;
+}
+.table-wrap tbody tr:hover{
+  background:rgba(15,118,110,.04);
+}
+#softToast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%) translateY(20px);
+  background:#0f172a;
+  color:#fff;
+  padding:10px 16px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:600;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s, transform .2s;
+  z-index:300;
+  box-shadow:0 8px 24px rgba(15,23,42,.2);
+}
+#softToast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.toolbar-row{
+  gap:8px;
+}
+.type-badge{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--surface-2, #f8fafc);
+  color:var(--muted);
+}
+.type-badge.mobile{ background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+.type-badge.walkin{ background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.type-badge.profiling{ background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+
 </style>
 </head>
 <body>
@@ -10399,7 +10534,7 @@ function renderAll(){
           <div class="team-title-block">
             <h2 title="${escapeAttr(team)}">${escapeHtml(team)} <span class="type-badge ${getTeamType(team)}">${teamTypeLabel(getTeamType(team))}</span></h2>
             <span class="photo-pct">${photoPctForTeam(team, allRows)}</span>
-            <span class="count">${totalInTeam} patient${totalInTeam===1?'':'s'}${monthVal ? ' this month' : ''}</span>
+            <span class="count" title="${totalFiltered !== totalInTeam ? (totalInTeam + ' this month · ' + totalFiltered + ' match filters') : ''}">${totalFiltered} patient${totalFiltered===1?'':'s'}${monthVal && totalFiltered===totalInTeam ? ' this month' : (totalFiltered !== totalInTeam ? ' matching' : '')}</span>
             ${staffList.length ? `<button class="staff-toggle" type="button" data-staff-popup="${escapeAttr(team)}">${icon('users',12)} ${staffList.length} staff</button>` : ''}
           </div>
           <div class="team-tools">
@@ -10435,7 +10570,13 @@ function renderAll(){
             </tr>
           </thead>
           <tbody>
-            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="18" class="empty-state">${monthVal ? `No patients for ${team} in ${monthLabel(monthVal)} yet. Use “+ Add Patient” above, or switch months to see records from another month.` : `No matching patients in this team.`}</td></tr>`}
+            ${rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="18" class="empty-state" style="padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5;">${
+              totalInTeam > 0 && totalFiltered === 0
+                ? `No patients match the current filters (${totalInTeam} on this site this month). Clear search or status filters to see them.`
+                : (monthVal
+                    ? `No patients for ${escapeHtml(team)} in ${monthLabel(monthVal)} yet. Use “+ Add Patient”, or switch months.`
+                    : `No matching patients in this site.`)
+            }</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -10537,54 +10678,59 @@ function updateTeamMergeBar(){
   if(mergeBtn) mergeBtn.disabled = n < 2;
 }
 
-function mergeSelectedTeams(){
+async function mergeSelectedTeams(){
   if(typeof canEdit === 'function' && !canEdit()){
-    alert('Only encoders and admins can merge sites.');
+    await showAppAlert('Permission needed', 'Only encoders and admins can merge sites.');
     return;
   }
   const teams = [...selectedTeams];
   if(teams.length < 2){
-    alert('Check at least 2 sites / walk-in days to merge.');
+    await showAppAlert('Select more sites', 'Check at least 2 sites / walk-in days to merge.');
     return;
   }
-  const suggested = teams.slice().sort((a,b)=>{
-    // prefer the one with earliest patient encode time as default name base
-    const minTs = (name)=>{
-      let m = Infinity;
-      (state.patients||[]).forEach(p=>{
-        if(p.deleted || p.team !== name) return;
-        m = Math.min(m, patientEncodeTs(p));
-      });
-      return m === Infinity ? 0 : m;
-    };
-    return minTs(a) - minTs(b);
-  })[0];
-  const dest = prompt(
-    'Merge into one site / walk-in day.\n\nSelected:\n• ' + teams.join('\n• ') +
-    '\n\nPatients will appear in order of when they were encoded (earliest first).\n\nFinal name:',
-    suggested
-  );
+  const minTs = (name)=>{
+    let m = Infinity;
+    (state.patients||[]).forEach(p=>{
+      if(p.deleted || p.team !== name) return;
+      m = Math.min(m, patientEncodeTs(p));
+    });
+    return m === Infinity ? 0 : m;
+  };
+  const suggested = teams.slice().sort((a,b)=> minTs(a) - minTs(b))[0];
+  const dest = await showAppPrompt({
+    title: 'Merge sites / walk-in days',
+    message: 'Selected:\n• ' + teams.join('\n• ') + '\n\nPatients will appear in order of encode time (earliest first). Enter the final name:',
+    defaultValue: suggested,
+    placeholder: 'Final site / walk-in day name',
+    confirmLabel: 'Continue',
+    cancelLabel: 'Cancel'
+  });
   if(dest == null) return;
   const target = String(dest).trim();
-  if(!target){ alert('Name is required.'); return; }
-  if(!confirm('Merge ' + teams.length + ' sites into "' + target + '"?\nThis cannot be undone except by editing patients manually.')) return;
+  if(!target){
+    await showAppAlert('Name required', 'Please enter a final site / walk-in day name.');
+    return;
+  }
+  const ok = await showAppConfirm({
+    title: 'Confirm merge',
+    message: 'Merge ' + teams.length + ' sites into "' + target + '"? Patients keep their data; list order follows encode time.',
+    confirmLabel: 'Merge',
+    cancelLabel: 'Cancel',
+    danger: true
+  });
+  if(!ok) return;
 
   const sources = teams.filter(t => t !== target);
-  // Move patients
   let moved = 0;
   (state.patients || []).forEach(p=>{
     if(p.deleted) return;
-    if(sources.includes(p.team) || (teams.includes(p.team) && p.team !== target && target)){
-      if(p.team !== target){
-        p.team = target;
-        pendingIds.add(p.id);
-        moved++;
-      }
+    if(sources.includes(p.team)){
+      p.team = target;
+      pendingIds.add(p.id);
+      moved++;
     }
   });
-  // Also rename if one of the selected is already named target — patients already there stay
 
-  // Merge staff lists
   if(typeof teamStaff === 'object'){
     const seen = new Set();
     const mergedStaff = [];
@@ -10602,7 +10748,6 @@ function mergeSelectedTeams(){
     try{ if(typeof pushTeamStaff === 'function') pushTeamStaff(); }catch(e){}
   }
 
-  // Meta / known teams
   sources.forEach(t=>{
     if(typeof teamMeta === 'object' && teamMeta[t]){
       teamMeta[target] = Object.assign({}, teamMeta[t], teamMeta[target] || {});
@@ -10628,8 +10773,10 @@ function mergeSelectedTeams(){
   try{ if(typeof flushPending === 'function') flushPending(); }catch(e){}
   updateTeamMergeBar();
   renderAll();
-  alert('Merged ' + moved + ' patient(s) into "' + target + '". List is ordered by encode time.');
+  if(typeof softToast === 'function') softToast('Merged ' + moved + ' patient(s) → ' + target);
+  else await showAppAlert('Merged', 'Moved ' + moved + ' patient(s) into "' + target + '".');
 }
+
 
 
 function rowHtml(p){
@@ -12459,6 +12606,7 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
     if(extra){ extra.classList.remove('show'); extra.innerHTML = ''; }
     titleEl.textContent = title || 'Confirm';
     msgEl.textContent = message || '';
+    msgEl.style.whiteSpace = 'pre-wrap';
     okBtn.textContent = confirmLabel || 'Confirm';
     okBtn.style.display = '';
     cancelBtn.textContent = cancelLabel || 'Cancel';
@@ -12485,6 +12633,59 @@ function showAppConfirm({ title, message, confirmLabel, cancelLabel, danger, inf
 function showAppAlert(title, message){
   return showAppConfirm({ title: title || 'Notice', message: message || '', confirmLabel: 'OK', hideCancel: true, info: true });
 }
+function showAppPrompt({ title, message, defaultValue, placeholder, confirmLabel, cancelLabel }){
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('appConfirmBackdrop');
+    const titleEl = document.getElementById('appConfirmTitle');
+    const msgEl = document.getElementById('appConfirmMessage');
+    const okBtn = document.getElementById('appConfirmOk');
+    const cancelBtn = document.getElementById('appConfirmCancel');
+    const icon = document.getElementById('appConfirmIcon');
+    const extra = document.getElementById('appConfirmExtra');
+    if(!backdrop || !okBtn || !extra){
+      resolve(window.prompt(message || title || '', defaultValue || '') );
+      return;
+    }
+    titleEl.textContent = title || 'Input';
+    msgEl.textContent = message || '';
+    okBtn.textContent = confirmLabel || 'OK';
+    okBtn.style.display = '';
+    cancelBtn.textContent = cancelLabel || 'Cancel';
+    cancelBtn.style.display = '';
+    icon.className = 'app-confirm-icon info';
+    icon.textContent = '✎';
+    okBtn.className = 'btn btn-primary';
+    extra.classList.add('show');
+    extra.innerHTML = `<label class="app-prompt-label" for="appPromptInput">Name</label>
+      <input type="text" id="appPromptInput" class="app-prompt-input" value="${String(defaultValue||'').replace(/"/g,'&quot;')}" placeholder="${String(placeholder||'').replace(/"/g,'&quot;')}" autocomplete="off">`;
+    backdrop.classList.remove('has-choices');
+    const finish = (val) => {
+      backdrop.classList.remove('open', 'has-choices');
+      extra.classList.remove('show');
+      extra.innerHTML = '';
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      backdrop.onclick = null;
+      resolve(val);
+    };
+    okBtn.onclick = () => {
+      const inp = document.getElementById('appPromptInput');
+      finish(inp ? inp.value : '');
+    };
+    cancelBtn.onclick = () => finish(null);
+    backdrop.onclick = (e) => { if(e.target === backdrop) finish(null); };
+    backdrop.classList.add('open');
+    setTimeout(() => {
+      const inp = document.getElementById('appPromptInput');
+      if(inp){ inp.focus(); inp.select(); }
+    }, 40);
+    extra.querySelector('#appPromptInput')?.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); okBtn.click(); }
+      if(e.key === 'Escape'){ e.preventDefault(); cancelBtn.click(); }
+    });
+  });
+}
+
 function showAppChoice({ title, message, choices }){
   // choices: [{ id, label, primary?, danger? }]
   return new Promise((resolve) => {
