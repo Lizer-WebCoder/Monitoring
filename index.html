@@ -9958,6 +9958,14 @@ function getTeamMonth(name){
 }
 function teamVisibleInMonth(team, monthVal){
   if(!monthVal) return true;
+  // Explicit meta month wins (supports Transfer month feature)
+  try{
+    const metaM = teamMeta[team] && teamMeta[team].month;
+    if(metaM && /^\d{4}-\d{2}$/.test(String(metaM))){
+      if(String(metaM) === monthVal) return true;
+      // If meta says another month, still show when patients exist in this month
+    }
+  }catch(e){}
   try{
     const hit = (state.patients || []).some(p=>{
       if(!p || p.deleted || p.team !== team) return false;
@@ -9971,6 +9979,147 @@ function teamVisibleInMonth(team, monthVal){
   if(tm) return tm === monthVal;
   return false;
 }
+
+/** Move a mobile / walk-in / profiling site to another calendar month. */
+async function transferTeamToMonth(team){
+  if(!team) return;
+  if(typeof canEdit === 'function' && !canEdit()){
+    if(typeof showAppAlert === 'function') await showAppAlert('Permission needed', 'Only encoders and admins can transfer sites.');
+    return;
+  }
+  const curMonth = (typeof getTeamMonth === 'function' ? getTeamMonth(team) : '')
+    || (document.getElementById('monthFilter')?.value || '')
+    || new Date().toISOString().slice(0, 7);
+  const patientCount = (state.patients || []).filter(p => p.team === team && !p.deleted).length;
+
+  const backdrop = document.getElementById('appConfirmBackdrop');
+  const titleEl = document.getElementById('appConfirmTitle');
+  const msgEl = document.getElementById('appConfirmMessage');
+  const okBtn = document.getElementById('appConfirmOk');
+  const cancelBtn = document.getElementById('appConfirmCancel');
+  const iconEl = document.getElementById('appConfirmIcon');
+  const extra = document.getElementById('appConfirmExtra');
+
+  const ym = await new Promise((resolve) => {
+    if(!backdrop || !okBtn || !extra){
+      const ans = window.prompt('Transfer "' + team + '" to which month? (YYYY-MM)', curMonth);
+      resolve(ans);
+      return;
+    }
+    titleEl.textContent = 'Transfer to another month';
+    msgEl.textContent = '"' + team + '" · ' + patientCount + ' patient(s)\nCurrent month: ' + (curMonth || '—') + '\n\nChoose the target month. Patients can keep the same day-of-month under the new month.';
+    msgEl.style.whiteSpace = 'pre-wrap';
+    okBtn.textContent = 'Transfer';
+    okBtn.className = 'btn btn-primary';
+    okBtn.style.display = '';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.display = '';
+    if(iconEl){ iconEl.className = 'app-confirm-icon info'; iconEl.textContent = '→'; }
+    extra.classList.add('show');
+    extra.innerHTML = `
+      <label class="app-prompt-label" for="transferMonthInput">Target month</label>
+      <input type="month" id="transferMonthInput" class="app-prompt-input" value="${String(curMonth||'').slice(0,7)}">
+      <label class="check-row" style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:13px;color:var(--ink);cursor:pointer;">
+        <input type="checkbox" id="transferUpdateDates" checked style="margin-top:3px;">
+        <span>Also update <b>Date encoded</b> for all patients on this site to the target month (keeps day of month when possible)</span>
+      </label>`;
+    const finish = (val) => {
+      backdrop.classList.remove('open');
+      extra.classList.remove('show');
+      extra.innerHTML = '';
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      backdrop.onclick = null;
+      resolve(val);
+    };
+    okBtn.onclick = () => {
+      const inp = document.getElementById('transferMonthInput');
+      const upd = document.getElementById('transferUpdateDates');
+      finish({
+        month: inp ? inp.value : '',
+        updateDates: upd ? !!upd.checked : true
+      });
+    };
+    cancelBtn.onclick = () => finish(null);
+    backdrop.onclick = (e) => { if(e.target === backdrop) finish(null); };
+    backdrop.classList.add('open');
+    setTimeout(() => document.getElementById('transferMonthInput')?.focus(), 40);
+  });
+
+  if(ym == null) return;
+  const target = typeof ym === 'object' ? String(ym.month || '').slice(0, 7) : String(ym || '').slice(0, 7);
+  const updateDates = typeof ym === 'object' ? !!ym.updateDates : true;
+  if(!/^\d{4}-\d{2}$/.test(target)){
+    if(typeof showAppAlert === 'function') await showAppAlert('Invalid month', 'Please choose a valid month (YYYY-MM).');
+    return;
+  }
+  if(target === curMonth && !updateDates){
+    if(typeof softToast === 'function') softToast('Already on ' + target);
+    return;
+  }
+
+  const ok = await (typeof showAppConfirm === 'function'
+    ? showAppConfirm({
+        title: 'Confirm transfer',
+        message: 'Move "' + team + '" to ' + (typeof monthLabel === 'function' ? monthLabel(target) : target)
+          + (updateDates ? ' and update Date encoded for ' + patientCount + ' patient(s)?' : '?')
+          + '\n\nThe site will show under that month filter.',
+        confirmLabel: 'Transfer',
+        cancelLabel: 'Cancel',
+        danger: false
+      })
+    : Promise.resolve(confirm('Transfer?')));
+  if(!ok) return;
+
+  // 1) Site month meta
+  if(typeof setTeamMonth === 'function') setTeamMonth(team, target);
+  try{ if(typeof pushTeamMeta === 'function') pushTeamMeta(); }catch(e){}
+
+  // 2) Optionally shift patient dateEncoded into target month
+  let shifted = 0;
+  if(updateDates){
+    (state.patients || []).forEach(p => {
+      if(!p || p.deleted || p.team !== team) return;
+      const prev = (p.dateEncoded || '').trim();
+      let day = '01';
+      if(/^\d{4}-\d{2}-\d{2}/.test(prev)) day = prev.slice(8, 10);
+      // clamp day to last day of target month
+      const y = +target.slice(0, 4), m = +target.slice(5, 7);
+      const last = new Date(y, m, 0).getDate();
+      let d = Math.min(parseInt(day, 10) || 1, last);
+      const next = target + '-' + String(d).padStart(2, '0');
+      if(p.dateEncoded !== next){
+        p.dateEncoded = next;
+        if(typeof pendingIds !== 'undefined') pendingIds.add(p.id);
+        shifted++;
+      }
+      if(p.customBenefits && typeof p.customBenefits === 'object'){
+        // keep month consistency helpers if any
+      }
+    });
+  }
+
+  try{ if(typeof savePending === 'function') savePending(); }catch(e){}
+  try{ if(typeof saveLocalCache === 'function') await saveLocalCache(); }catch(e){}
+  try{ if(typeof flushPending === 'function') flushPending(); }catch(e){}
+
+  // 3) Jump UI to target month so the site is visible
+  const mf = document.getElementById('monthFilter');
+  if(mf){
+    mf.value = target;
+    try{ mf.dispatchEvent(new Event('change', { bubbles: true })); }catch(e){}
+  }
+  try{ expandedTeams.add(team); }catch(e){}
+  if(typeof renderAll === 'function') renderAll();
+
+  const label = (typeof monthLabel === 'function') ? monthLabel(target) : target;
+  if(typeof softToast === 'function'){
+    softToast('Transferred to ' + label + (shifted ? ' · ' + shifted + ' dates updated' : ''));
+  } else if(typeof showAppAlert === 'function'){
+    await showAppAlert('Transferred', '"' + team + '" is now under ' + label + (shifted ? '. Updated ' + shifted + ' Date encoded values.' : '.'));
+  }
+}
+
 function teamTypeLabel(t){
   if(t === 'walkin') return 'Walk-in';
   if(t === 'profiling') return 'Profiling';
@@ -10445,6 +10594,11 @@ function renderAll(){
         return !pm || pm === monthVal;
       }
       if(teamsWithPatients.has(t)) return true;
+      // Transferred sites: meta month matches even before patient dates sync
+      try{
+        const metaM = teamMeta[t] && teamMeta[t].month;
+        if(metaM && String(metaM).slice(0,7) === monthVal) return true;
+      }catch(e){}
       return (typeof teamVisibleInMonth === 'function') ? teamVisibleInMonth(t, monthVal) : false;
     });
   }
@@ -10543,6 +10697,7 @@ function renderAll(){
           <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
           <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
+          <button type="button" class="tt-btn" data-transfer-month="${escapeAttr(team)}" title="Move this site to another month">${icon('calendar',13) || '📅'} Transfer month</button>
           <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${totalInTeam === 0 ? `${icon('trash',13)} Remove` : `${icon('archive',13)} Archive`}</button>` : ''}
           ${canEdit() && showArchived ? (totalInTeam === 0
             ? `<button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
@@ -10917,6 +11072,11 @@ groupsContainer.addEventListener('click', e=>{
   if(e.target.closest('[data-import-team]')){
     importTargetTeam = e.target.closest('[data-import-team]').dataset.importTeam;
     document.getElementById('importFile').click();
+    return;
+  }
+  if(e.target.closest('[data-transfer-month]')){
+    const team = e.target.closest('[data-transfer-month]').dataset.transferMonth;
+    if(team && typeof transferTeamToMonth === 'function') transferTeamToMonth(team);
     return;
   }
   if(e.target.closest('[data-edit-team]')){
