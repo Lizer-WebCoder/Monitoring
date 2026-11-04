@@ -3870,18 +3870,18 @@ header .hdr-iso{
     inset: -40%;
     width: 180%;
     height: 180%;
-    opacity: 0.72;
+    opacity: 0.38;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%233ecf9a' fill-opacity='0.55' stroke='%2378e6c0' stroke-opacity='0.65' stroke-width='1.2'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%231a5c4e' fill-opacity='0.75' stroke='%234db89a' stroke-opacity='0.5' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%232a7a6a' fill-opacity='0.7' stroke='%231a6b5c' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
-    background-size: 90px 78px;
-    animation: hdrIsoDrift 26s linear infinite;
+    background-size: 100px 86px;
+    animation: hdrIsoDrift 48s linear infinite;
   }
 
 header .hdr-iso-2{
-    opacity: 0.45;
-    background-position: 45px 39px;
-    animation-duration: 32s;
+    opacity: 0.22;
+    background-position: 50px 43px;
+    animation-duration: 72s;
     animation-direction: reverse;
-    filter: brightness(1.15) saturate(1.2);
+    filter: none;
   }
 
 header .hdr-shine{
@@ -3909,41 +3909,38 @@ header .hdr-glow{
   }
 
 header .hdr-glow-a{
-    width: 280px; height: 280px;
-    top: -55%; left: 2%;
-    background: radial-gradient(circle, rgba(62,207,154,0.75) 0%, rgba(15,118,110,0.2) 45%, transparent 70%);
+    width: 200px; height: 200px;
+    top: -50%; left: 8%;
+    background: radial-gradient(circle, rgba(62,207,154,0.28) 0%, transparent 70%);
+    animation-duration: 14s;
   }
 
 header .hdr-glow-b{
-    width: 240px; height: 240px;
-    bottom: -45%; right: 4%;
-    background: radial-gradient(circle, rgba(94,234,212,0.55) 0%, rgba(13,148,136,0.25) 40%, transparent 70%);
-    animation-delay: -3s;
+    width: 180px; height: 180px;
+    bottom: -40%; right: 10%;
+    background: radial-gradient(circle, rgba(94,234,212,0.22) 0%, transparent 70%);
+    animation-delay: -5s;
+    animation-duration: 18s;
   }
 header .hdr-shine{
-    opacity: 1 !important;
+    opacity: 0.55 !important;
     mix-blend-mode: soft-light;
-  }
-header .hdr-iso{
-    animation-duration: 18s !important;
+    animation-duration: 16s !important;
   }
 
 @keyframes hdrIsoDrift{
-    0%{ transform: translate(0,0) scale(1); }
-    50%{ transform: translate(-45px,-39px) scale(1.03); }
-    100%{ transform: translate(-90px,-78px) scale(1); }
+    0%{ transform: translate(0, 0); }
+    100%{ transform: translate(-45px, -39px); }
   }
 
 @keyframes hdrShine{
-    0%{ background-position: 130% 0; opacity: 0.35; }
-    40%{ background-position: 40% 0; opacity: 0.95; }
-    60%{ background-position: 20% 0; opacity: 1; }
-    100%{ background-position: -130% 0; opacity: 0.35; }
+    0%, 100%{ background-position: 100% 0; opacity: 0.25; }
+    50%{ background-position: 0% 0; opacity: 0.4; }
   }
 
 @keyframes hdrGlow{
-    0%,100%{ opacity: 0.55; transform: scale(1); }
-    50%{ opacity: 1; transform: scale(1.28); }
+    0%, 100%{ opacity: 0.35; transform: scale(1); }
+    50%{ opacity: 0.5; transform: scale(1.04); }
   }
 
 /* Soft base gradient under cubes */
@@ -8934,6 +8931,49 @@ body.dark .app-prompt-input{
   color: #f1f5f9 !important;
 }
 
+
+/* Site More menu — never clipped by card */
+.team-group{
+  overflow: visible !important;
+}
+.team-head{
+  overflow: visible !important;
+}
+.team-tools{
+  overflow: visible !important;
+  position: relative;
+  z-index: 5;
+}
+.site-more-wrap{
+  position: relative;
+  z-index: 50;
+}
+.site-more-menu{
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  left: auto !important;
+  z-index: 200 !important;
+  min-width: 200px !important;
+  max-height: min(70vh, 360px);
+  overflow-y: auto;
+  background: #fff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(15,23,42,0.18) !important;
+  padding: 6px !important;
+}
+body.dark .site-more-menu{
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+.site-more-menu[hidden]{ display: none !important; }
+/* When menu is open, lift this card above siblings */
+.team-group.menu-open{
+  z-index: 30;
+  position: relative;
+}
+
 </style>
 </head>
 <body>
@@ -11857,7 +11897,7 @@ groupsContainer.addEventListener('click', e=>{
     const btn = e.target.closest('[data-site-more]');
     const team = btn.dataset.siteMore;
     let menu = null;
-    try{ menu = btn.parentElement && btn.parentElement.querySelector('.site-more-menu'); }catch(e){}
+    try{ menu = btn.parentElement && btn.parentElement.querySelector('.site-more-menu'); }catch(err){}
     if(!menu){
       document.querySelectorAll('.site-more-menu').forEach(m=>{
         if(m.getAttribute('data-site-menu') === team) menu = m;
@@ -11866,15 +11906,19 @@ groupsContainer.addEventListener('click', e=>{
     document.querySelectorAll('.site-more-menu').forEach(m => {
       if(m !== menu) m.hidden = true;
     });
+    document.querySelectorAll('.team-group.menu-open').forEach(g => g.classList.remove('menu-open'));
     if(menu){
       menu.hidden = !menu.hidden;
       btn.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+      const card = btn.closest('.team-group');
+      if(card && !menu.hidden) card.classList.add('menu-open');
     }
     return;
   }
-  // Close site menus when clicking elsewhere in roster (not inside a menu)
+  // Close site menus when clicking elsewhere
   if(!e.target.closest('.site-more-wrap')){
     document.querySelectorAll('.site-more-menu').forEach(m => { m.hidden = true; });
+    document.querySelectorAll('.team-group.menu-open').forEach(g => g.classList.remove('menu-open'));
   }
   if(e.target.closest('[data-transfer-month]')){
     const team = e.target.closest('[data-transfer-month]').dataset.transferMonth;
