@@ -3860,6 +3860,9 @@ header .header-bg{
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
+    /* Phase 1: calmer clinical band — not full forest green */
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 48%, #134e4a 100%) !important;
+    opacity: 1;
   }
 
 header .hdr-iso{
@@ -3867,7 +3870,7 @@ header .hdr-iso{
     inset: -40%;
     width: 180%;
     height: 180%;
-    opacity: 0.55;
+    opacity: 0.22;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%232a7a6a' fill-opacity='0.5' stroke='%234db89a' stroke-opacity='0.4' stroke-width='1'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%23104038' fill-opacity='0.6' stroke='%231a6b5c' stroke-opacity='0.35' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%23165248' fill-opacity='0.55' stroke='%231a6b5c' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
     background-size: 90px 78px;
     animation: hdrIsoDrift 26s linear infinite;
@@ -8168,6 +8171,194 @@ body.dark .team-head{
 .type-badge.walkin{ background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
 .type-badge.profiling{ background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
 
+
+/* === Phase 1–3 redesign: clinical chrome + site More menus === */
+header{
+  position: relative;
+  color: #ecfdf5;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 1px 0 rgba(15,23,42,0.06);
+}
+header .brand-eyebrow{
+  color: rgba(204,251,241,0.9) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+}
+header .brand-title{
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+header .brand-title .tag{
+  background: rgba(255,255,255,0.14) !important;
+  color: #ecfdf5 !important;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-weight: 650 !important;
+}
+header .org-input{
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+}
+header .org-input::placeholder{ color: rgba(236,253,245,0.65) !important; }
+header .sync-pill{
+  background: rgba(255,255,255,0.14) !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  color: #ecfdf5 !important;
+}
+header .who-row, header .who-row button, header #whoAmI{
+  color: #ecfdf5 !important;
+}
+header .who-row button{
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  border-radius: 8px !important;
+}
+/* KPI strip: readable white chips on brand header */
+header .stat-strip .stat,
+header .stat{
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(255,255,255,0.9) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08) !important;
+  color: #0f172a !important;
+  min-width: 68px !important;
+  padding: 8px 10px !important;
+}
+header .stat .num, header .stat-strip .stat .num{
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  font-variant-numeric: tabular-nums;
+}
+header .stat .lbl, header .stat-strip .stat .lbl{
+  color: #64748b !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+/* Toolbar surface */
+.toolbar{
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04) !important;
+  margin-top: 12px !important;
+  padding: 10px 12px !important;
+}
+.toolbar-row{
+  gap: 8px !important;
+  align-items: center !important;
+}
+.toolbar .btn{
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+}
+.toolbar .btn-primary{
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+
+/* Nav More menu */
+.nav-more-wrap{
+  position: relative;
+  display: inline-flex;
+}
+.nav-more-menu{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 80;
+  min-width: 200px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15,23,42,0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-more-menu[hidden]{ display: none !important; }
+.nav-more-item{
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+}
+.nav-more-item:hover{
+  background: var(--surface-2, #f8fafc) !important;
+}
+
+/* Site card More menu */
+.site-more-wrap{
+  position: relative;
+  display: inline-flex;
+}
+.site-more-menu{
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15,23,42,0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.site-more-menu[hidden]{ display: none !important; }
+.site-more-item{
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.site-more-item:hover{ background: var(--surface-2, #f8fafc) !important; }
+.site-more-danger{ color: var(--danger) !important; }
+.tt-btn.tt-primary, .tt-btn.tt-primary{
+  background: var(--brand) !important;
+  color: #fff !important;
+  border-color: var(--brand) !important;
+  font-weight: 700 !important;
+}
+.team-title-block .count,
+.team-title-block .photo-pct{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+body{
+  background: var(--paper) !important;
+}
+
 </style>
 </head>
 <body>
@@ -8260,15 +8451,20 @@ body.dark .team-head{
       <button class="btn btn-primary" id="addTeamBtn">+ Add site / walk-in day</button>
       <button class="btn" type="button" id="todayMissionBtn" title="Focus on today's sites and patients">Today's mission</button>
       <button class="btn" id="dashboardBtn"></button>
-      <button class="btn" id="logWorkBtn" title="Log accomplishment"></button>
-      <button class="btn" id="activityBtn"></button>
-      <button class="btn" id="archiveToggleBtn" title="Show archived patients"></button>
-      <button type="button" class="btn btn-ghost btn-sm" id="manageEncodersBtn" title="Manage user names" style="display:none;">Users</button>
-    <button type="button" class="btn btn-ghost btn-sm" id="adminBtn" style="display:none;"></button>
+      <div class="nav-more-wrap" id="navMoreWrap">
+        <button type="button" class="btn" id="navMoreBtn" aria-haspopup="true" aria-expanded="false">More ▾</button>
+        <div class="nav-more-menu" id="navMoreMenu" hidden role="menu">
+          <button class="nav-more-item" id="logWorkBtn" title="Log accomplishment" role="menuitem"></button>
+          <button class="nav-more-item" id="activityBtn" role="menuitem"></button>
+          <button class="nav-more-item" id="archiveToggleBtn" title="Show archived patients" role="menuitem"></button>
+          <button type="button" class="nav-more-item" id="manageEncodersBtn" title="Manage user names" style="display:none;" role="menuitem">Users</button>
+          <button type="button" class="nav-more-item" id="adminBtn" style="display:none;" role="menuitem"></button>
+          <button type="button" class="nav-more-item" id="recycleBtn" title="Recycle bin — recently deleted" role="menuitem"></button>
+        </div>
+      </div>
     </div>
     <div class="tb-group tb-group-end">
       <button class="btn btn-ghost btn-sm" id="themeToggle"></button>
-<button class="btn btn-ghost btn-sm" id="recycleBtn" title="Recycle bin — recently deleted"></button>
     </div>
   </div>
   <!-- Row 2: search + filters -->
@@ -10693,16 +10889,21 @@ function renderAll(){
           </div>
           <div class="team-tools">
           ${canEdit() && !showArchived ? `<button type="button" class="tt-btn tt-primary" data-add-patient="${escapeAttr(team)}">+ Add Patient</button>` : ''}
-          <button type="button" class="tt-btn" data-print-team="${escapeAttr(team)}" title="Print just this mobile's roster">${icon('printer',13)} Print</button>
-          <button type="button" class="tt-btn" data-export-team="${escapeAttr(team)}" title="Export only this mobile's patients to CSV">${icon('download',13)} Export</button>
-          ${canEdit() && !showArchived ? `<button type="button" class="tt-btn" data-import-team="${escapeAttr(team)}" title="Import patients from CSV into only this mobile">${icon('upload',13)} Import</button>
-          <button type="button" class="tt-btn" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
-          <button type="button" class="tt-btn" data-transfer-month="${escapeAttr(team)}" title="Move this site to another month">${icon('transfer',13)} Transfer month</button>
-          <button type="button" class="tt-btn tt-danger" data-delete-team="${escapeAttr(team)}">${totalInTeam === 0 ? `${icon('trash',13)} Remove` : `${icon('archive',13)} Archive`}</button>` : ''}
-          ${canEdit() && showArchived ? (totalInTeam === 0
-            ? `<button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
-            : `<button type="button" class="tt-btn tt-primary" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
-          <button type="button" class="tt-btn tt-danger" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>`) : ''}
+          <div class="site-more-wrap">
+            <button type="button" class="tt-btn site-more-btn" data-site-more="${escapeAttr(team)}" aria-haspopup="true" aria-expanded="false">⋯ More</button>
+            <div class="site-more-menu" data-site-menu="${escapeAttr(team)}" hidden role="menu">
+              <button type="button" class="site-more-item" role="menuitem" data-print-team="${escapeAttr(team)}">${icon('printer',13)} Print</button>
+              <button type="button" class="site-more-item" role="menuitem" data-export-team="${escapeAttr(team)}">${icon('download',13)} Export</button>
+              ${canEdit() && !showArchived ? `<button type="button" class="site-more-item" role="menuitem" data-import-team="${escapeAttr(team)}">${icon('upload',13)} Import</button>
+              <button type="button" class="site-more-item" role="menuitem" data-edit-team="${escapeAttr(team)}">${icon('edit',13)} Edit</button>
+              <button type="button" class="site-more-item" role="menuitem" data-transfer-month="${escapeAttr(team)}">${icon('transfer',13)} Transfer month</button>
+              <button type="button" class="site-more-item site-more-danger" role="menuitem" data-delete-team="${escapeAttr(team)}">${totalInTeam === 0 ? `${icon('trash',13)} Remove` : `${icon('archive',13)} Archive`}</button>` : ''}
+              ${canEdit() && showArchived ? (totalInTeam === 0
+                ? `<button type="button" class="site-more-item site-more-danger" role="menuitem" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Remove</button>`
+                : `<button type="button" class="site-more-item" role="menuitem" data-restore-team="${escapeAttr(team)}">${icon('restore',13)} Restore all</button>
+              <button type="button" class="site-more-item site-more-danger" role="menuitem" data-purge-team="${escapeAttr(team)}">${icon('trash',13)} Delete</button>`) : ''}
+            </div>
+          </div>
           </div>
         </div>
         <div class="team-head-bottom" onclick="event.stopPropagation()">
@@ -11076,8 +11277,33 @@ groupsContainer.addEventListener('click', e=>{
     document.getElementById('importFile').click();
     return;
   }
+  if(e.target.closest('[data-site-more]')){
+    e.stopPropagation();
+    const btn = e.target.closest('[data-site-more]');
+    const team = btn.dataset.siteMore;
+    let menu = null;
+    try{ menu = btn.parentElement && btn.parentElement.querySelector('.site-more-menu'); }catch(e){}
+    if(!menu){
+      document.querySelectorAll('.site-more-menu').forEach(m=>{
+        if(m.getAttribute('data-site-menu') === team) menu = m;
+      });
+    }
+    document.querySelectorAll('.site-more-menu').forEach(m => {
+      if(m !== menu) m.hidden = true;
+    });
+    if(menu){
+      menu.hidden = !menu.hidden;
+      btn.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+    }
+    return;
+  }
+  // Close site menus when clicking elsewhere in roster (not inside a menu)
+  if(!e.target.closest('.site-more-wrap')){
+    document.querySelectorAll('.site-more-menu').forEach(m => { m.hidden = true; });
+  }
   if(e.target.closest('[data-transfer-month]')){
     const team = e.target.closest('[data-transfer-month]').dataset.transferMonth;
+    document.querySelectorAll('.site-more-menu').forEach(m => { m.hidden = true; });
     if(team && typeof transferTeamToMonth === 'function') transferTeamToMonth(team);
     return;
   }
@@ -12181,7 +12407,33 @@ try{
   if(_send && !_send.textContent.trim()) _send.textContent = 'Send report';
 }catch(_e){}
 
+
+(function wireNavMore(){
+  const btn = document.getElementById('navMoreBtn');
+  const menu = document.getElementById('navMoreMenu');
+  if(!btn || !menu) return;
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const open = menu.hidden;
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('#navMoreWrap')){
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  // Close after choosing an item
+  menu.addEventListener('click', (e)=>{
+    if(e.target.closest('button')){
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
 document.getElementById('dashboardBtn').innerHTML = `${icon('chart')} Dashboard`;
+
 const __logWorkBtn = document.getElementById('logWorkBtn');
 if(__logWorkBtn && typeof icon === 'function') __logWorkBtn.innerHTML = `${icon('file')} Log task`;
 document.getElementById('activityBtn').innerHTML = `${icon('activity')} Activity`;
