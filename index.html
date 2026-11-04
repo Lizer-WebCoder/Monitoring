@@ -3873,7 +3873,7 @@ header .hdr-iso{
     opacity: 0.38;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='95' viewBox='0 0 110 95'%3E%3Cpath d='M55 4 L102 31 L55 58 L8 31 Z' fill='%233ecf9a' fill-opacity='0.55' stroke='%2378e6c0' stroke-opacity='0.65' stroke-width='1.2'/%3E%3Cpath d='M8 31 L55 58 L55 90 L8 63 Z' fill='%231a5c4e' fill-opacity='0.75' stroke='%234db89a' stroke-opacity='0.5' stroke-width='1'/%3E%3Cpath d='M55 58 L102 31 L102 63 L55 90 Z' fill='%232a7a6a' fill-opacity='0.7' stroke='%231a6b5c' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E");
     background-size: 100px 86px;
-    animation: hdrIsoDrift 48s linear infinite;
+    animation: none;
   }
 
 header .hdr-iso-2{
@@ -8972,6 +8972,70 @@ body.dark .site-more-menu{
 .team-group.menu-open{
   z-index: 30;
   position: relative;
+}
+
+
+/* Header: calm ambient motion (no optical-illusion grid drift) */
+header .hdr-iso,
+header .hdr-iso-2{
+  /* Cubes stay still — pattern is decoration only */
+  animation: none !important;
+  transform: none !important;
+  opacity: 0.32 !important;
+  filter: blur(0.2px);
+}
+header .hdr-iso-2{
+  opacity: 0.16 !important;
+}
+/* Soft light wash — very slow, one direction, low contrast */
+header .hdr-shine{
+  animation: hdrCalmShine 22s ease-in-out infinite !important;
+  opacity: 0.55 !important;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255,255,255,0.07) 48%,
+    rgba(204,251,241,0.12) 50%,
+    rgba(255,255,255,0.07) 52%,
+    transparent 62%,
+    transparent 100%
+  ) !important;
+  background-size: 250% 100% !important;
+}
+/* Gentle breathing glows — opacity only, almost no scale */
+header .hdr-glow-a,
+header .hdr-glow-b{
+  animation: hdrCalmGlow 10s ease-in-out infinite !important;
+  filter: blur(56px) !important;
+}
+header .hdr-glow-a{
+  opacity: 0.4 !important;
+  background: radial-gradient(circle, rgba(94,234,212,0.45) 0%, transparent 70%) !important;
+}
+header .hdr-glow-b{
+  opacity: 0.32 !important;
+  animation-delay: -5s !important;
+  background: radial-gradient(circle, rgba(45,212,191,0.35) 0%, transparent 70%) !important;
+}
+
+@keyframes hdrCalmShine{
+  0%{ background-position: 100% 0; }
+  50%{ background-position: 0% 0; }
+  100%{ background-position: 100% 0; }
+}
+@keyframes hdrCalmGlow{
+  0%, 100%{ opacity: 0.28; transform: scale(1); }
+  50%{ opacity: 0.48; transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  header .hdr-iso, header .hdr-iso-2, header .hdr-shine,
+  header .hdr-glow, header .hdr-glow-a, header .hdr-glow-b{
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 </style>
