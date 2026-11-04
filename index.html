@@ -4037,8 +4037,8 @@ header .stat-strip{
 header .stat-strip .stat,
   header .stat{
     flex: 0 0 auto !important;
-    min-width: 72px !important;
-    max-width: 96px;
+    min-width: 76px !important;
+    max-width: none !important;
   }
 
 @media (max-width: 1100px){
@@ -9038,6 +9038,88 @@ header .hdr-glow-b{
   }
 }
 
+
+/* KPI strip — full labels, no ellipsis */
+header .stat-strip,
+.stat-strip{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  max-width: 100%;
+}
+header .stat-strip .stat,
+header .stat,
+.stat-strip .stat{
+  flex: 0 0 auto !important;
+  min-width: 76px !important;
+  max-width: none !important;
+  width: auto !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  background: #fff !important;
+  border: 1px solid rgba(255,255,255,0.85) !important;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.1) !important;
+}
+header .stat .num,
+header .stat-strip .stat .num,
+.stat .num{
+  font-family: var(--font-mono, "IBM Plex Mono", monospace) !important;
+  font-size: 17px !important;
+  font-weight: 650 !important;
+  line-height: 1.15 !important;
+  color: #0f172a !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+header .stat .lbl,
+header .stat-strip .stat .lbl,
+.stat .lbl{
+  font-family: var(--font-ui, Inter, system-ui, sans-serif) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+  margin-top: 4px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+}
+header .stat.stat-warn,
+.stat.stat-warn{
+  background: #fffbeb !important;
+  border-color: #fcd34d !important;
+}
+header .stat.stat-warn .num,
+header .stat.stat-warn .lbl{
+  color: #b45309 !important;
+}
+body.dark header .stat-strip .stat,
+body.dark header .stat{
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark header .stat .num{ color: #f8fafc !important; }
+body.dark header .stat .lbl{ color: #94a3b8 !important; }
+body.dark header .stat.stat-warn{
+  background: #422006 !important;
+  border-color: #d97706 !important;
+}
+body.dark header .stat.stat-warn .num,
+body.dark header .stat.stat-warn .lbl{
+  color: #fbbf24 !important;
+}
+@media (max-width: 1100px){
+  header .stat-strip{ justify-content: flex-start !important; }
+}
+
 </style>
 </head>
 <body>
@@ -11382,13 +11464,15 @@ function renderStats(){
     ["Other", all.filter(p=>p.status==='registered_other').length, '', 'Registered to other DR facility'],
     ["Rice", all.filter(p=>p.rice).length, '', 'Rice availed'],
     ["Lab", all.filter(p=>p.lab).length, '', 'Laboratory availed'],
-    ["Meds", all.filter(p=>p.medicine).length, '', 'Medicines availed'],
-    ["Dups", countDuplicateExtras(all), '', 'Duplicate PhilHealth ID records'],
-    ["Sync", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : '', unsyncedCount > 0 ? unsyncedCount + ' change(s) waiting to upload' : 'All changes synced'],
+    ["Medicines", all.filter(p=>p.medicine).length, '', 'Medicines availed'],
+    ["Duplicates", countDuplicateExtras(all), countDuplicateExtras(all) > 0 ? 'stat-warn' : '', 'Duplicate PhilHealth ID records'],
+    ["Unsynced", unsyncedCount, unsyncedCount > 0 ? 'stat-warn' : '', unsyncedCount > 0 ? unsyncedCount + ' change(s) waiting to upload' : 'All changes synced'],
   ];
+  if(!statStrip) return;
   statStrip.innerHTML = stats.map(([lbl,num,extra,tip])=>
-    `<div class="stat ${extra}" title="${tip || lbl}">
-      <div class="num">${num}</div><div class="lbl">${lbl}</div>
+    `<div class="stat ${extra||''}" title="${String(tip||lbl).replace(/"/g,'&quot;')}">
+      <div class="num">${num}</div>
+      <div class="lbl">${lbl}</div>
     </div>`).join('');
 }
 
