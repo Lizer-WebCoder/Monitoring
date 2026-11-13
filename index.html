@@ -9120,6 +9120,21 @@ body.dark header .stat.stat-warn .lbl{
   header .stat-strip{ justify-content: flex-start !important; }
 }
 
+
+#bulkBar input[type="date"]{
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #f2ede0;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  min-height: 34px;
+}
+#bulkBar input[type="date"]::-webkit-calendar-picker-indicator{
+  filter: invert(1); opacity: 0.85;
+}
+
 </style>
 </head>
 <body>
@@ -9350,6 +9365,10 @@ body.dark header .stat.stat-warn .lbl{
       <option value="registered">Registered</option>
       <option value="registered_other">Other facility</option>
     </select>
+    <select id="bulkT1By" title="T1 submitted by">
+      <option value="">T1 by…</option>
+    </select>
+    <input type="date" id="bulkT1Date" title="T1 submitted date" aria-label="T1 submitted date">
     <button class="btn" type="button" id="bulkClear">Clear</button>
   </div>
 </div>
@@ -12330,12 +12349,11 @@ groupsContainer.addEventListener('change', e=>{
   p[field] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if(field === 'status') normalizeFacility(p);
   if(field === 'dateT1'){
-    p.dateSubmitted = p.dateT1;
+    p.dateSubmitted = p.dateT1 || '';
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
     if(p.dateT1){
       p.claim = 't1';
       p.customBenefits.dateT1 = p.dateT1;
-      if(typeof stampAttribution === 'function') stampAttribution(p, 't1');
     } else {
       delete p.customBenefits.dateT1;
     }
@@ -12345,7 +12363,6 @@ groupsContainer.addEventListener('change', e=>{
     if(p.dateT2){
       p.claim = 't2';
       p.customBenefits.dateT2 = p.dateT2;
-      if(typeof stampAttribution === 'function') stampAttribution(p, 't2');
     } else {
       delete p.customBenefits.dateT2;
     }
@@ -12353,25 +12370,26 @@ groupsContainer.addEventListener('change', e=>{
   if(field === 't1By'){
     p.t1By = e.target.value || null;
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
-    p.customBenefits.t1By = p.t1By;
     if(p.t1By){
+      p.customBenefits.t1By = p.t1By;
       p.t1At = new Date().toISOString();
       p.customBenefits.t1At = p.t1At;
-      if(!p.dateT1) p.dateT1 = new Date().toISOString().slice(0,10);
-      p.dateSubmitted = p.dateT1;
-      p.claim = 't1';
+      // leave T1 date blank until staff sets it
+      if(p.dateT1){ p.dateSubmitted = p.dateT1; p.claim = 't1'; }
+    } else {
+      delete p.customBenefits.t1By;
     }
   }
   if(field === 't2By'){
     p.t2By = e.target.value || null;
     if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
-    p.customBenefits.t2By = p.t2By;
     if(p.t2By){
+      p.customBenefits.t2By = p.t2By;
       p.t2At = new Date().toISOString();
       p.customBenefits.t2At = p.t2At;
-      if(!p.dateT2) p.dateT2 = new Date().toISOString().slice(0,10);
-      p.customBenefits.dateT2 = p.dateT2;
-      p.claim = 't2';
+      if(p.dateT2){ p.customBenefits.dateT2 = p.dateT2; p.claim = 't2'; }
+    } else {
+      delete p.customBenefits.t2By;
     }
   }
   if(field === 'encodedBy'){
@@ -12407,6 +12425,9 @@ function updateBulkBar(){
   if(n > 0){
     bar.setAttribute('data-open', '1');
     document.body.classList.add('has-selection');
+    if(typeof populateBulkT1BySelect === 'function') populateBulkT1BySelect();
+    const d = document.getElementById('bulkT1Date');
+    if(d) d.value = '';
   } else {
     bar.removeAttribute('data-open');
     document.body.classList.remove('has-selection');
@@ -12461,6 +12482,43 @@ document.getElementById('bulkStatus').addEventListener('change', e=>{
   const v = e.target.value;
   if(!v) return;
   applyBulkChange(p => { p.status = v; normalizeFacility(p); });
+  e.target.value = '';
+});
+
+function populateBulkT1BySelect(){
+  const sel = document.getElementById('bulkT1By');
+  if(!sel || typeof getEncoderOptions !== 'function') return;
+  const cur = sel.value;
+  const opts = getEncoderOptions();
+  sel.innerHTML = '<option value="">T1 by…</option>' + opts.map(o =>
+    '<option value="'+escapeAttr(o.id)+'">'+escapeHtml(o.label)+'</option>'
+  ).join('');
+  if(cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  else sel.value = '';
+}
+document.getElementById('bulkT1By')?.addEventListener('change', e=>{
+  const v = e.target.value;
+  if(!v) return;
+  applyBulkChange(p => {
+    p.t1By = v;
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.t1By = v;
+    p.t1At = new Date().toISOString();
+    p.customBenefits.t1At = p.t1At;
+    if(p.dateT1){ p.dateSubmitted = p.dateT1; p.claim = 't1'; }
+  });
+  e.target.value = '';
+});
+document.getElementById('bulkT1Date')?.addEventListener('change', e=>{
+  const v = (e.target.value || '').trim();
+  if(!v) return;
+  applyBulkChange(p => {
+    p.dateT1 = v;
+    p.dateSubmitted = v;
+    p.claim = 't1';
+    if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+    p.customBenefits.dateT1 = v;
+  });
   e.target.value = '';
 });
 
@@ -12568,16 +12626,15 @@ function stampAttribution(p, kind){
     p.customBenefits.encodedBy = p.encodedBy || uid;
   }
   if(kind === 't1'){
-    if(uid) p.t1By = uid;
+    // Never auto-fill t1By with current user — staff must choose
     p.t1At = now;
-    p.customBenefits.t1By = uid;
     p.customBenefits.t1At = now;
+    if(p.t1By) p.customBenefits.t1By = p.t1By;
   }
   if(kind === 't2'){
-    if(uid) p.t2By = uid;
     p.t2At = now;
-    p.customBenefits.t2By = uid;
     p.customBenefits.t2At = now;
+    if(p.t2By) p.customBenefits.t2By = p.t2By;
   }
   if(kind === 'edit' || kind === 'encode' || kind === 't1' || kind === 't2'){
     if(uid) p.updatedBy = uid;
@@ -12922,7 +12979,18 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   let p;
   const isNew = !editingId;
   if(editingId){ p = state.patients.find(p=>p.id===editingId); Object.assign(p, data); }
-  else { p = Object.assign({id:cryptoId(), createdAt: new Date().toISOString()}, data); state.patients.push(p); }
+  else {
+    p = Object.assign({
+      id: cryptoId(),
+      createdAt: new Date().toISOString(),
+      t1By: null,
+      t2By: null,
+      dateT1: data.dateT1 || '',
+      dateT2: data.dateT2 || '',
+      dateSubmitted: data.dateT1 || ''
+    }, data);
+    state.patients.push(p);
+  }
   p.labTests = Array.isArray(data.labTests) ? data.labTests.slice() : [];
   p.lab = !!data.lab || p.labTests.length > 0;
   if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
@@ -12940,12 +13008,28 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   } else {
     if(typeof stampAttribution === 'function') stampAttribution(p, 'edit');
   }
-  // T1 / T2 submitter when claim or dates set
-  if(data.claim === 't1' || data.dateT1){
-    if(!p.t1By || data.claim === 't1') stampAttribution(p, 't1');
-  }
-  if(data.claim === 't2' || data.dateT2){
-    if(!p.t2By || data.claim === 't2') stampAttribution(p, 't2');
+  // T1/T2 dates from form only — never auto-assign submitter on save
+  if(isNew){
+    if(!data.dateT1){ p.dateT1 = ''; p.dateSubmitted = ''; p.t1By = null; }
+    if(!data.dateT2){ p.dateT2 = ''; p.t2By = null; }
+    if(p.customBenefits){
+      if(!p.t1By) delete p.customBenefits.t1By;
+      if(!p.t2By) delete p.customBenefits.t2By;
+      if(!p.dateT1) delete p.customBenefits.dateT1;
+      if(!p.dateT2) delete p.customBenefits.dateT2;
+    }
+  } else {
+    if(data.dateT1){
+      p.dateT1 = data.dateT1;
+      p.dateSubmitted = data.dateT1;
+      if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+      p.customBenefits.dateT1 = data.dateT1;
+    }
+    if(data.dateT2){
+      p.dateT2 = data.dateT2;
+      if(!p.customBenefits || typeof p.customBenefits !== 'object') p.customBenefits = {};
+      p.customBenefits.dateT2 = data.dateT2;
+    }
   }
   p.updatedAt = new Date().toISOString();
   pendingEmptyTeams.delete(data.team);
